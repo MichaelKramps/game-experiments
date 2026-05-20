@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Dungeon Crawler 1</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0d0d1a;
+      color: #e0e0e0;
+      font-family: Georgia, serif;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 24px 16px;
+    }
+
+    #app {
+      width: 100%;
+      max-width: 720px;
+    }
+
+    /* ── Buttons ── */
+    button {
+      background: #c9a84c;
+      color: #0d0d1a;
+      border: none;
+      border-radius: 6px;
+      padding: 11px 24px;
+      font-size: 0.95rem;
+      font-family: inherit;
+      font-weight: bold;
+      cursor: pointer;
+      letter-spacing: 0.04em;
+      transition: background 0.15s;
+    }
+    button:hover:not(:disabled) { background: #e0bf6a; }
+    button:disabled { background: #2a2a3a; color: #555; cursor: not-allowed; }
+
+    .btn-secondary {
+      background: transparent;
+      color: #aaa;
+      border: 1px solid #3a3a5a;
+      font-weight: normal;
+    }
+    .btn-secondary:hover:not(:disabled) { background: #1a1a2e; color: #fff; border-color: #5a5a8a; }
+    .btn-secondary.active { border-color: #c9a84c; color: #c9a84c; background: #1e1800; }
+
+    .btn-buy {
+      background: transparent;
+      color: #44ff88;
+      border: 1px solid #44ff88;
+      padding: 6px 12px;
+      font-size: 0.8rem;
+      font-weight: normal;
+    }
+    .btn-buy:hover:not(:disabled) { background: #0a2a1a; }
+
+    .btn-danger {
+      background: transparent;
+      color: #ff6666;
+      border: 1px solid #ff6666;
+      padding: 6px 12px;
+      font-size: 0.8rem;
+      font-weight: normal;
+    }
+    .btn-danger:hover:not(:disabled) { background: #2a0a0a; }
+
+    /* ── Top bar ── */
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid #1e1e3a;
+    }
+    .phase-label { color: #666; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.12em; }
+    .gold-badge {
+      background: #1e1800;
+      border: 1px solid #c9a84c;
+      color: #c9a84c;
+      border-radius: 20px;
+      padding: 4px 14px;
+      font-size: 0.95rem;
+      font-weight: bold;
+    }
+
+    /* ── Cards ── */
+    .card {
+      width: 58px;
+      height: 76px;
+      background: #1e1030;
+      border: 2px solid #4a2a6a;
+      border-radius: 7px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: border-color 0.15s, transform 0.1s;
+    }
+    .card.selectable {
+      cursor: pointer;
+      border-color: #c9a84c;
+    }
+    .card.selectable:hover { border-color: #e0bf6a; transform: translateY(-3px); }
+    .card-power { font-size: 1.7rem; font-weight: bold; color: #fff; line-height: 1; }
+    .card-sub { font-size: 0.5rem; text-transform: uppercase; color: #666; letter-spacing: 0.06em; margin-top: 4px; }
+
+    .card-row { display: flex; flex-wrap: wrap; gap: 8px; }
+
+    /* ── Panels ── */
+    .panel {
+      background: #111128;
+      border: 1px solid #1e1e3a;
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+    .panel-title {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #555;
+      margin-bottom: 12px;
+    }
+    .panel-title span { color: #44ff88; margin-left: 8px; font-size: 0.8rem; }
+
+    /* ── Room layout ── */
+    .room-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    .room-grid .full-width { grid-column: 1 / -1; }
+
+    .shop-items { display: flex; gap: 14px; flex-wrap: wrap; }
+    .shop-item { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+
+    .action-buttons { display: flex; gap: 10px; flex-wrap: wrap; }
+
+    .mode-hint {
+      margin-top: 10px;
+      font-size: 0.82rem;
+      color: #c9a84c;
+      font-style: italic;
+    }
+
+    .boss-preview .boss-name { color: #cc4444; font-size: 1.1rem; display: block; margin-bottom: 4px; }
+    .boss-preview .boss-stat { color: #888; font-size: 0.85rem; display: block; margin-bottom: 3px; }
+    .boss-preview .boss-ability-text { color: #666; font-size: 0.82rem; font-style: italic; }
+
+    /* ── Battle ── */
+    .battle-boss-card {
+      text-align: center;
+      padding: 24px;
+      background: #120808;
+      border: 1px solid #3a1010;
+      border-radius: 10px;
+      margin-bottom: 14px;
+    }
+    .battle-boss-card h2 { font-size: 2rem; color: #cc4444; margin-bottom: 8px; }
+    .battle-boss-card .boss-power-text { color: #aaa; font-size: 1rem; }
+    .battle-boss-card .boss-ability-text { color: #666; font-size: 0.85rem; font-style: italic; margin-top: 6px; }
+
+    .calc-panel { display: flex; flex-direction: column; gap: 10px; }
+    .calc-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.9rem;
+      color: #888;
+    }
+    .calc-row strong { color: #e0e0e0; font-size: 1rem; }
+    .calc-row.verdict {
+      padding-top: 12px;
+      border-top: 1px solid #1e1e3a;
+      font-size: 1rem;
+      color: #bbb;
+    }
+    .calc-row.verdict strong { font-size: 1.2rem; }
+
+    .result-banner {
+      text-align: center;
+      font-size: 2.2rem;
+      font-weight: bold;
+      padding: 22px;
+      border-radius: 10px;
+      margin-bottom: 10px;
+    }
+    .result-win { color: #44ff88; background: #071a0f; border: 1px solid #44ff88; }
+    .result-lose { color: #ff4444; background: #1a0707; border: 1px solid #ff4444; }
+
+    .reward-text { text-align: center; color: #c9a84c; font-size: 0.95rem; margin-bottom: 14px; }
+
+    .color-win { color: #44ff88; }
+    .color-lose { color: #ff4444; }
+
+    /* ── Title ── */
+    .title-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 85vh;
+      text-align: center;
+      gap: 22px;
+    }
+    .title-screen h1 { font-size: 2.8rem; color: #c9a84c; letter-spacing: 0.08em; }
+    .title-screen .subtitle { color: #555; font-size: 1rem; }
+    .title-screen .starting-box {
+      background: #111128;
+      border: 1px solid #1e1e3a;
+      border-radius: 10px;
+      padding: 18px 28px;
+      text-align: left;
+      font-size: 0.9rem;
+      color: #888;
+      line-height: 1.9;
+    }
+    .title-screen .starting-box strong { color: #e0e0e0; }
+
+    /* ── End screens ── */
+    .end-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 85vh;
+      text-align: center;
+      gap: 16px;
+    }
+    .end-screen h1 { font-size: 3rem; }
+    .end-screen p { color: #888; font-size: 0.95rem; }
+    .end-screen .final-deck { margin: 10px 0; }
+
+    .empty-text { color: #444; font-style: italic; font-size: 0.85rem; }
+
+    .proceed-btn { width: 100%; padding: 15px; font-size: 1.05rem; margin-top: 6px; }
+
+    /* ── Battle animations ── */
+    @keyframes bossShake {
+      0%, 100% { transform: translateX(0); }
+      15%  { transform: translateX(-10px); }
+      30%  { transform: translateX(10px); }
+      45%  { transform: translateX(-7px); }
+      60%  { transform: translateX(7px); }
+      75%  { transform: translateX(-4px); }
+      90%  { transform: translateX(4px); }
+    }
+    @keyframes bossDie {
+      0%   { transform: scale(1) rotate(0deg); opacity: 1; }
+      40%  { transform: scale(1.08) rotate(-4deg); opacity: 0.6; }
+      100% { transform: scale(0.15) rotate(20deg); opacity: 0; }
+    }
+    @keyframes projLaunch {
+      0%   { transform: scale(1) translateY(0); opacity: 1; }
+      100% { transform: scale(0.05) translateY(-160px); opacity: 0; }
+    }
+
+    .battle-screen { display: flex; flex-direction: column; }
+
+    .boss-section { display: flex; justify-content: center; padding: 16px 0; }
+
+    .boss-card {
+      width: min(300px, 92%);
+      text-align: center;
+      background: #120808;
+      border: 2px solid #5a1010;
+      border-radius: 12px;
+      padding: 22px 28px;
+      opacity: 0;
+      transform: translateY(-50px);
+      transition: opacity 0.5s ease, transform 0.5s ease, border-color 0.3s, box-shadow 0.3s;
+    }
+    .boss-card.enter    { opacity: 1; transform: translateY(0); }
+    .boss-card.impact   { animation: bossShake 0.5s ease; }
+    .boss-card.defeated { animation: bossDie 0.65s ease 0.1s forwards; }
+    .boss-card.survived { border-color: #cc2222; box-shadow: 0 0 30px #ff000055; }
+
+    .boss-name-display  { font-size: 1.6rem; color: #cc4444; margin-bottom: 6px; }
+    .boss-power-label   { font-size: 0.95rem; color: #888; }
+    .boss-ability-label { font-size: 0.78rem; color: #555; font-style: italic; margin-top: 5px; }
+
+    .projectile-zone {
+      height: 80px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .power-proj {
+      font-size: 3rem;
+      font-weight: bold;
+      color: #ffdd44;
+      text-shadow: 0 0 30px #ffdd44bb;
+      opacity: 0;
+      transform: scale(0.3);
+      transition: opacity 0.3s ease, transform 0.35s ease;
+      pointer-events: none;
+      line-height: 1;
+    }
+    .power-proj.appear { opacity: 1; transform: scale(1); }
+    .power-proj.launch { animation: projLaunch 0.55s ease-in forwards; }
+
+    .cards-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 0 14px;
+    }
+    .battle-cards-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+
+    .battle-card {
+      width: 52px;
+      height: 68px;
+      border-radius: 7px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      position: relative;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+    .battle-card.enter { opacity: var(--card-opacity, 1); transform: translateY(0); }
+    .battle-card.effective { --card-opacity: 1; background: #0e1e18; border: 2px solid #44ff88; }
+    .battle-card.nullified { --card-opacity: 0.25; background: #111; border: 2px solid #1e1e1e; }
+    .battle-card.nullified .card-power { color: #444; }
+    .battle-card.nullified::after {
+      content: '✕';
+      position: absolute;
+      font-size: 1.4rem;
+      color: #cc2222;
+      opacity: 0.85;
+    }
+    .battle-card.effective.lost {
+      opacity: 0.3;
+      border-color: #224422;
+      transition: opacity 0.5s ease, border-color 0.5s ease;
+    }
+
+    .ability-note {
+      font-size: 0.8rem;
+      color: #555;
+      font-style: italic;
+      text-align: center;
+      opacity: 0;
+      transition: opacity 0.4s;
+    }
+    .ability-note.visible { opacity: 1; }
+
+    .battle-outcome { opacity: 0; transition: opacity 0.5s; padding-bottom: 10px; }
+    .battle-outcome.visible { opacity: 1; }
+
+    #home-link {
+      position: fixed;
+      top: 12px;
+      left: 14px;
+      color: #333;
+      font-size: 0.8rem;
+      text-decoration: none;
+    }
+    #home-link:hover { color: #888; }
+  </style>
+</head>
+<body>
+  <a id="home-link" href="../index.html">← Home</a>
+  <div id="app"></div>
+  <script src="game.js"></script>
+</body>
+</html>
