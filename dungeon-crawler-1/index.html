@@ -86,11 +86,51 @@
       font-size: 0.95rem;
       font-weight: bold;
     }
+    .timer-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      position: relative;
+    }
+    .room-timer {
+      font-size: 1.1rem;
+      font-weight: bold;
+      color: #aaa;
+      min-width: 38px;
+      text-align: right;
+    }
+    .room-timer.timer-urgent { color: #e55; animation: timer-pulse 0.6s ease-in-out infinite alternate; }
+    @keyframes timer-pulse { from { opacity: 1; } to { opacity: 0.4; } }
+    .btn-timer-pause {
+      background: #1a1a2e;
+      border: 1px solid #444;
+      color: #ccc;
+      border-radius: 6px;
+      padding: 3px 10px;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+    .btn-timer-pause:hover { border-color: #888; color: #fff; }
+    .timer-pause-tip {
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1a1230;
+      border: 1px solid #554;
+      color: #cca;
+      font-size: 0.78rem;
+      padding: 7px 12px;
+      border-radius: 8px;
+      white-space: nowrap;
+      z-index: 10;
+      pointer-events: none;
+    }
 
     /* ── Cards ── */
     .card {
       width: 58px;
-      height: 76px;
+      height: 90px;
       background: #1e1030;
       border: 2px solid #3a2a5a;
       border-radius: 7px;
@@ -107,8 +147,12 @@
     .card.tier-3 { border-color: #4a1a6a; }
     .card.selectable.tier-2 { border-color: #c9a84c; }
     .card.selectable.tier-3 { border-color: #c9a84c; }
-    .card-power { font-size: 1.7rem; font-weight: bold; color: #fff; line-height: 1; }
-    .card-sub { font-size: 0.44rem; text-transform: uppercase; color: #555; letter-spacing: 0.04em; margin-top: 4px; text-align: center; }
+    .card-power { font-size: 1.5rem; font-weight: bold; color: #fff; line-height: 1; }
+    .card-sprite { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; margin: 2px 0; }
+    .card-sprite svg { width: 36px; height: 36px; }
+    .card-sub { font-size: 0.44rem; text-transform: uppercase; color: #555; letter-spacing: 0.04em; text-align: center; }
+    .sc-sprite { width: 52px; height: 52px; display: flex; align-items: center; justify-content: center; margin: 2px 0; }
+    .sc-sprite svg { width: 52px; height: 52px; }
 
     .card-row { display: flex; flex-wrap: wrap; gap: 8px; }
 
@@ -419,6 +463,7 @@
     .warcry-pop   { color: #ff8844; background: #2a1500; border: 1px solid #ff6622; }
     .empower-pop  { color: #44ffaa; background: #002a1a; border: 1px solid #22cc88; }
     .redirect-pop { color: #88aaff; background: #001a2a; border: 1px solid #4466cc; }
+    .inspire-pop  { color: #ffdd44; background: #2a2200; border: 1px solid #ddaa00; }
 
     /* Persistent redirect badge — stays for the rest of the battle */
     @keyframes redirectBadgeIn {
@@ -459,7 +504,7 @@
 
     .battle-card {
       width: 52px;
-      height: 68px;
+      height: 84px;
       border-radius: 7px;
       display: flex;
       flex-direction: column;
@@ -638,6 +683,12 @@
       z-index: 100;
     }
     #btn-mute:hover { color: #888; border-color: #4a4a6a; }
+
+    /* ── Deck drag reorder ── */
+    .card[draggable="true"] { cursor: grab; }
+    .card[draggable="true"]:active { cursor: grabbing; }
+    .card.dragging { opacity: 0.3; transform: scale(0.95) !important; transition: none; }
+    .card.drag-over { border-color: #c9a84c !important; background: #2a1a40; transform: translateY(-6px); }
 
     /* ── Card tooltip ── */
     #card-tooltip {

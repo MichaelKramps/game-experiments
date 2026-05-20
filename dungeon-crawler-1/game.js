@@ -177,45 +177,83 @@ const BOSSES = [
 //   'scavenge'       — passive: gain +1 power whenever any other card is removed
 //   'soul-collect'   — in-battle: power equals total of all nullified cards
 //   'heirloom'       — on-remove: give this card's full power to a random other deck card
+//   'duelist'        — in-battle: power equals the number of cards in your deck
+//   'alchemy'        — on-remove: gain gold equal to this card's power
+//   'immune'         — in-battle: never nullified by boss abilities
+//   'colossus'       — in-battle: power equals the total of all other non-nullified cards
+//   'inspire'        — in-battle: all other effective cards gain +1 power for the whole battle
+//   'undying'        — on-remove: return to your deck at power 1
+
+const SPRITES = {
+  'iron-fist': `<svg viewBox="0 0 40 40" fill="none"><rect x="14" y="22" width="12" height="10" rx="2" fill="#8a8a8a"/><rect x="13" y="16" width="14" height="8" rx="1" fill="#9e9e9e"/><rect x="15" y="10" width="4" height="8" rx="1" fill="#7a7a7a"/><rect x="19" y="11" width="4" height="7" rx="1" fill="#7a7a7a"/><rect x="23" y="12" width="3" height="6" rx="1" fill="#7a7a7a"/><rect x="12" y="17" width="3" height="6" rx="1" fill="#7a7a7a"/><rect x="13" y="30" width="14" height="3" rx="1" fill="#c0a060"/><line x1="20" y1="4" x2="20" y2="10" stroke="#c0a060" stroke-width="2"/><polygon points="20,2 22,6 18,6" fill="#c0a060"/></svg>`,
+  'sellsword': `<svg viewBox="0 0 40 40" fill="none"><circle cx="20" cy="7" r="4" fill="#c8a87a"/><rect x="17" y="11" width="6" height="14" rx="1" fill="#8b6914"/><line x1="26" y1="10" x2="32" y2="22" stroke="#b0b0b0" stroke-width="2.5" stroke-linecap="round"/><rect x="24" y="8" width="6" height="2" rx="1" fill="#888"/><line x1="14" y1="25" x2="10" y2="32" stroke="#8b6914" stroke-width="2" stroke-linecap="round"/><line x1="26" y1="25" x2="30" y2="32" stroke="#8b6914" stroke-width="2" stroke-linecap="round"/><circle cx="10" cy="28" r="4" fill="#f0c030" stroke="#c09000" stroke-width="1"/><line x1="8" y1="28" x2="12" y2="28" stroke="#c09000" stroke-width="1"/><line x1="10" y1="26" x2="10" y2="30" stroke="#c09000" stroke-width="1"/></svg>`,
+  'ghost-blade': `<svg viewBox="0 0 40 40" fill="none"><line x1="10" y1="30" x2="28" y2="8" stroke="#ddeeff" stroke-width="3" stroke-linecap="round" opacity="0.9"/><line x1="10" y1="30" x2="28" y2="8" stroke="#aaccff" stroke-width="6" stroke-linecap="round" opacity="0.3"/><rect x="7" y="27" width="8" height="3" rx="1" fill="#99bbdd" transform="rotate(-45 11 28.5)"/><rect x="26" y="5" width="4" height="4" rx="1" fill="#cce0ff"/><ellipse cx="20" cy="20" rx="6" ry="12" fill="#aaccff" opacity="0.15" transform="rotate(-45 20 20)"/><circle cx="18" cy="22" r="2" fill="#cce0ff" opacity="0.5"/><circle cx="22" cy="17" r="1.5" fill="#eef4ff" opacity="0.6"/></svg>`,
+  'eager-recruit': `<svg viewBox="0 0 40 40" fill="none"><circle cx="20" cy="7" r="4" fill="#d4a870"/><rect x="17" y="11" width="6" height="12" rx="1" fill="#6b8c3a"/><line x1="14" y1="23" x2="11" y2="33" stroke="#6b8c3a" stroke-width="2.5" stroke-linecap="round"/><line x1="26" y1="23" x2="29" y2="33" stroke="#6b8c3a" stroke-width="2.5" stroke-linecap="round"/><line x1="26" y1="13" x2="26" y2="2" stroke="#a08040" stroke-width="2" stroke-linecap="round"/><line x1="23" y1="5" x2="29" y2="5" stroke="#a08040" stroke-width="1.5"/><polygon points="26,2 24,6 28,6" fill="#c0a050"/><circle cx="20" cy="6" r="4.5" fill="none" stroke="#7a7a7a" stroke-width="1.5"/></svg>`,
+  'scavenger': `<svg viewBox="0 0 40 40" fill="none"><circle cx="19" cy="7" r="3.5" fill="#b89060"/><path d="M12 12 Q14 10 20 11 Q26 10 26 14 L24 26 L16 26 Z" fill="#4a3d2a"/><path d="M12 12 Q10 14 12 18 L14 26" stroke="#4a3d2a" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M26 14 Q28 16 27 20 L25 26" stroke="#4a3d2a" stroke-width="3" fill="none" stroke-linecap="round"/><line x1="14" y1="26" x2="12" y2="35" stroke="#4a3d2a" stroke-width="2.5" stroke-linecap="round"/><line x1="24" y1="26" x2="22" y2="35" stroke="#4a3d2a" stroke-width="2.5" stroke-linecap="round"/><ellipse cx="29" cy="30" rx="6" ry="5" fill="#6b5030" stroke="#8a6840" stroke-width="1"/><line x1="24" y1="28" x2="26" y2="32" stroke="#8a6840" stroke-width="1.5"/></svg>`,
+  'soul-collector': `<svg viewBox="0 0 40 40" fill="none"><path d="M14 10 Q20 5 26 10 L28 30 Q24 35 20 36 Q16 35 12 30 Z" fill="#2a1a3a"/><path d="M14 10 Q20 5 26 10 L28 30 Q24 35 20 36 Q16 35 12 30 Z" stroke="#6a3a9a" stroke-width="1"/><ellipse cx="17" cy="18" rx="2" ry="3" fill="#22ff88" opacity="0.9"/><ellipse cx="23" cy="18" rx="2" ry="3" fill="#22ff88" opacity="0.9"/><ellipse cx="20" cy="23" rx="1.5" ry="2" fill="#22ff88" opacity="0.7"/><circle cx="17" cy="17" r="1" fill="#aaffcc"/><circle cx="23" cy="17" r="1" fill="#aaffcc"/><ellipse cx="13" cy="17" rx="3" ry="4" fill="#44eeaa" opacity="0.5"/><ellipse cx="27" cy="17" rx="3" ry="4" fill="#8833cc" opacity="0.5"/><path d="M12 30 L10 38 L14 36 L16 38 L18 36 L20 38 L22 36 L24 38 L26 36 L28 38 L28 30" fill="#2a1a3a"/></svg>`,
+  'blood-pact': `<svg viewBox="0 0 40 40" fill="none"><rect x="8" y="6" width="24" height="28" rx="2" fill="#d4c8a0" stroke="#a09060" stroke-width="1"/><rect x="8" y="6" width="24" height="8" rx="2" fill="#c0b48c"/><line x1="12" y1="20" x2="28" y2="20" stroke="#a09060" stroke-width="1" opacity="0.6"/><line x1="12" y1="24" x2="28" y2="24" stroke="#a09060" stroke-width="1" opacity="0.6"/><line x1="12" y1="28" x2="22" y2="28" stroke="#a09060" stroke-width="1" opacity="0.6"/><circle cx="20" cy="30" r="5" fill="#cc1111" opacity="0.9"/><path d="M20 26 L21.5 29 L25 29.5 L22.5 32 L23 35 L20 33.5 L17 35 L17.5 32 L15 29.5 L18.5 29 Z" fill="#ff3333"/><circle cx="20" cy="30" r="2" fill="#880000"/></svg>`,
+  'berserker': `<svg viewBox="0 0 40 40" fill="none"><circle cx="20" cy="6" r="4" fill="#e8a060"/><rect x="17" y="10" width="6" height="11" rx="1" fill="#3a6888"/><line x1="17" y1="21" x2="12" y2="33" stroke="#3a6888" stroke-width="2.5" stroke-linecap="round"/><line x1="23" y1="21" x2="28" y2="33" stroke="#3a6888" stroke-width="2.5" stroke-linecap="round"/><line x1="6" y1="8" x2="17" y2="16" stroke="#88aacc" stroke-width="2.5" stroke-linecap="round"/><rect x="3" y="5" width="5" height="7" rx="1" fill="#6699bb" stroke="#88aacc" stroke-width="1"/><line x1="34" y1="8" x2="23" y2="16" stroke="#88aacc" stroke-width="2.5" stroke-linecap="round"/><rect x="32" y="5" width="5" height="7" rx="1" fill="#6699bb" stroke="#88aacc" stroke-width="1"/><path d="M16 10 Q20 8 24 10" stroke="#cc4444" stroke-width="1.5" fill="none"/></svg>`,
+  'warlord': `<svg viewBox="0 0 40 40" fill="none"><circle cx="20" cy="6" r="4" fill="#d09060"/><rect x="16" y="9" width="8" height="2" rx="1" fill="#667799" stroke="#aabbcc" stroke-width="0.5"/><rect x="14" y="10" width="12" height="12" rx="1" fill="#4a5a7a"/><rect x="10" y="10" width="5" height="9" rx="1" fill="#3a4a6a"/><rect x="25" y="10" width="5" height="9" rx="1" fill="#3a4a6a"/><line x1="16" y1="22" x2="13" y2="34" stroke="#4a5a7a" stroke-width="2.5" stroke-linecap="round"/><line x1="24" y1="22" x2="27" y2="34" stroke="#4a5a7a" stroke-width="2.5" stroke-linecap="round"/><line x1="20" y1="10" x2="20" y2="2" stroke="#ccaa44" stroke-width="2.5" stroke-linecap="round"/><rect x="17" y="1" width="6" height="2" rx="1" fill="#ccaa44"/><polygon points="20,1 18,4 22,4" fill="#ffdd66"/></svg>`,
+  'arms-dealer': `<svg viewBox="0 0 40 40" fill="none"><circle cx="20" cy="6" r="3.5" fill="#c8a870"/><rect x="17" y="9" width="6" height="10" rx="1" fill="#7a5a3a"/><line x1="17" y1="19" x2="14" y2="30" stroke="#7a5a3a" stroke-width="2" stroke-linecap="round"/><line x1="23" y1="19" x2="26" y2="30" stroke="#7a5a3a" stroke-width="2" stroke-linecap="round"/><rect x="8" y="22" width="24" height="14" rx="2" fill="#5a3a1a" stroke="#8a6030" stroke-width="1.5"/><rect x="8" y="22" width="24" height="5" rx="2" fill="#6a4a2a"/><line x1="8" y1="27" x2="32" y2="27" stroke="#8a6030" stroke-width="1"/><line x1="12" y1="29" x2="12" y2="35" stroke="#aaaaaa" stroke-width="2" stroke-linecap="round"/><line x1="16" y1="28" x2="22" y2="28" stroke="#ccaa44" stroke-width="2" stroke-linecap="round"/><line x1="26" y1="29" x2="28" y2="35" stroke="#aaaaaa" stroke-width="1.5" stroke-linecap="round"/></svg>`,
+  'duelist': `<svg viewBox="0 0 40 40" fill="none"><circle cx="20" cy="5" r="3.5" fill="#d4b080"/><rect x="17" y="8" width="5" height="11" rx="1" fill="#3a7a8a" transform="rotate(5 19.5 13.5)"/><line x1="24" y1="19" x2="30" y2="33" stroke="#4a8a9a" stroke-width="2" stroke-linecap="round"/><line x1="16" y1="19" x2="10" y2="30" stroke="#3a7a8a" stroke-width="2" stroke-linecap="round"/><line x1="28" y1="8" x2="36" y2="38" stroke="#c0c8d0" stroke-width="1.5" stroke-linecap="round"/><rect x="25" y="6" width="6" height="2" rx="1" fill="#8899aa" transform="rotate(-10 28 7)"/><rect x="26" y="5" width="4" height="4" rx="0.5" fill="#8899aa" transform="rotate(-10 28 7)"/></svg>`,
+  'alchemist': `<svg viewBox="0 0 40 40" fill="none"><circle cx="20" cy="6" r="3.5" fill="#c0a880"/><rect x="17" y="9" width="6" height="12" rx="1" fill="#5a4a7a"/><line x1="17" y1="21" x2="14" y2="32" stroke="#5a4a7a" stroke-width="2.5" stroke-linecap="round"/><line x1="23" y1="21" x2="26" y2="32" stroke="#5a4a7a" stroke-width="2.5" stroke-linecap="round"/><line x1="28" y1="10" x2="28" y2="24" stroke="#8877aa" stroke-width="2" stroke-linecap="round"/><ellipse cx="28" cy="28" rx="5" ry="6" fill="#44ddaa" opacity="0.85"/><ellipse cx="28" cy="28" rx="5" ry="6" fill="none" stroke="#22ccaa" stroke-width="1.5"/><ellipse cx="28" cy="24" rx="3" ry="2" fill="#7a6a9a"/><circle cx="27" cy="27" r="1.5" fill="#88ffcc" opacity="0.8"/><circle cx="29" cy="30" r="1" fill="#aaffee" opacity="0.7"/></svg>`,
+  'paladin': `<svg viewBox="0 0 40 40" fill="none"><circle cx="20" cy="5" r="3.5" fill="#d4b888"/><rect x="17" y="8" width="6" height="2" rx="1" fill="#8899aa" stroke="#aabbcc" stroke-width="0.5"/><rect x="17" y="10" width="6" height="11" rx="1" fill="#5577aa"/><line x1="17" y1="21" x2="14" y2="33" stroke="#5577aa" stroke-width="2.5" stroke-linecap="round"/><line x1="23" y1="21" x2="26" y2="33" stroke="#5577aa" stroke-width="2.5" stroke-linecap="round"/><rect x="6" y="14" width="12" height="16" rx="2" fill="#4466aa" stroke="#6688cc" stroke-width="1.5"/><line x1="12" y1="16" x2="12" y2="28" stroke="#ffeeaa" stroke-width="1.5"/><line x1="7" y1="22" x2="17" y2="22" stroke="#ffeeaa" stroke-width="1.5"/><circle cx="12" cy="22" r="2" fill="#ffdd88" opacity="0.8"/></svg>`,
+  'juggernaut': `<svg viewBox="0 0 40 40" fill="none"><circle cx="20" cy="5" r="5" fill="#b88060"/><rect x="12" y="10" width="16" height="15" rx="1" fill="#4a3a6a"/><rect x="7" y="9" width="7" height="12" rx="1" fill="#3a2a5a"/><rect x="26" y="9" width="7" height="12" rx="1" fill="#3a2a5a"/><line x1="14" y1="25" x2="10" y2="38" stroke="#4a3a6a" stroke-width="4" stroke-linecap="round"/><line x1="26" y1="25" x2="30" y2="38" stroke="#4a3a6a" stroke-width="4" stroke-linecap="round"/><line x1="4" y1="6" x2="12" y2="14" stroke="#aa8844" stroke-width="3" stroke-linecap="round"/><rect x="1" y="3" width="5" height="8" rx="1" fill="#8866aa" stroke="#aa88cc" stroke-width="1"/><line x1="36" y1="6" x2="28" y2="14" stroke="#cc9944" stroke-width="3" stroke-linecap="round"/><line x1="34" y1="4" x2="38" y2="20" stroke="#99aacc" stroke-width="3" stroke-linecap="round"/></svg>`,
+  'battle-mage': `<svg viewBox="0 0 40 40" fill="none"><circle cx="20" cy="5" r="4" fill="#c09870"/><rect x="16" y="9" width="8" height="12" rx="1" fill="#5a3a7a"/><rect x="13" y="9" width="5" height="10" rx="1" fill="#4a2a6a"/><rect x="22" y="9" width="5" height="10" rx="1" fill="#4a2a6a"/><line x1="16" y1="21" x2="12" y2="34" stroke="#5a3a7a" stroke-width="2.5" stroke-linecap="round"/><line x1="24" y1="21" x2="28" y2="34" stroke="#5a3a7a" stroke-width="2.5" stroke-linecap="round"/><line x1="30" y1="2" x2="30" y2="30" stroke="#8855aa" stroke-width="2.5" stroke-linecap="round"/><circle cx="30" cy="4" r="4" fill="#ff8833" opacity="0.9"/><circle cx="30" cy="4" r="2.5" fill="#ffcc44"/><ellipse cx="30" cy="6" rx="5" ry="4" fill="#ff6622" opacity="0.4"/><circle cx="30" cy="3" r="1.5" fill="#ffffff" opacity="0.7"/></svg>`,
+  'the-chosen': `<svg viewBox="0 0 40 40" fill="none"><circle cx="20" cy="10" r="5" fill="#ffe888"/><rect x="17" y="15" width="6" height="13" rx="1" fill="#ddb844"/><rect x="13" y="15" width="5" height="11" rx="1" fill="#cc9933"/><rect x="22" y="15" width="5" height="11" rx="1" fill="#cc9933"/><line x1="17" y1="28" x2="14" y2="38" stroke="#cc9933" stroke-width="3" stroke-linecap="round"/><line x1="23" y1="28" x2="26" y2="38" stroke="#cc9933" stroke-width="3" stroke-linecap="round"/><line x1="20" y1="5" x2="20" y2="1" stroke="#ffee88" stroke-width="2"/><line x1="15" y1="10" x2="4" y2="8" stroke="#ffee88" stroke-width="1.5" opacity="0.8"/><line x1="25" y1="10" x2="36" y2="8" stroke="#ffee88" stroke-width="1.5" opacity="0.8"/><line x1="15" y1="14" x2="6" y2="18" stroke="#ffee88" stroke-width="1" opacity="0.6"/><line x1="25" y1="14" x2="34" y2="18" stroke="#ffee88" stroke-width="1" opacity="0.6"/><circle cx="20" cy="10" r="7" fill="none" stroke="#ffff88" stroke-width="0.8" opacity="0.5"/></svg>`,
+  'colossus': `<svg viewBox="0 0 40 40" fill="none"><circle cx="20" cy="5" r="6" fill="#7a8a7a"/><rect x="10" y="11" width="20" height="18" rx="2" fill="#6a7a6a"/><rect x="4" y="10" width="8" height="15" rx="2" fill="#5a6a5a"/><rect x="28" y="10" width="8" height="15" rx="2" fill="#5a6a5a"/><rect x="12" y="29" width="7" height="10" rx="1" fill="#6a7a6a"/><rect x="21" y="29" width="7" height="10" rx="1" fill="#6a7a6a"/><line x1="14" y1="14" x2="26" y2="14" stroke="#8a9a8a" stroke-width="1.5"/><circle cx="17" cy="7" r="1.5" fill="#4a5a4a"/><circle cx="23" cy="7" r="1.5" fill="#4a5a4a"/><circle cx="20" cy="19" r="3" fill="#8a9a8a" stroke="#aabbaa" stroke-width="1"/></svg>`,
+  'war-drummer': `<svg viewBox="0 0 40 40" fill="none"><circle cx="20" cy="5" r="3.5" fill="#d0a870"/><rect x="17" y="8" width="6" height="10" rx="1" fill="#8a3a2a"/><line x1="17" y1="18" x2="13" y2="30" stroke="#8a3a2a" stroke-width="2.5" stroke-linecap="round"/><line x1="23" y1="18" x2="27" y2="30" stroke="#8a3a2a" stroke-width="2.5" stroke-linecap="round"/><ellipse cx="20" cy="28" rx="13" ry="8" fill="#6a2a1a" stroke="#aa4422" stroke-width="2"/><ellipse cx="20" cy="28" rx="13" ry="4" fill="#7a3a2a" stroke="#cc5533" stroke-width="1"/><line x1="10" y1="10" x2="13" y2="22" stroke="#cc8844" stroke-width="2" stroke-linecap="round"/><circle cx="10" cy="9" r="2" fill="#aa6633"/><line x1="30" y1="10" x2="27" y2="22" stroke="#cc8844" stroke-width="2" stroke-linecap="round"/><circle cx="30" cy="9" r="2" fill="#aa6633"/></svg>`,
+  'revenant': `<svg viewBox="0 0 40 40" fill="none"><circle cx="20" cy="6" r="4" fill="#c8d8d0" opacity="0.7"/><circle cx="18" cy="5" r="1" fill="#2a2a3a" opacity="0.8"/><circle cx="22" cy="5" r="1" fill="#2a2a3a" opacity="0.8"/><rect x="16" y="10" width="8" height="13" rx="1" fill="#9ab0aa" opacity="0.65"/><rect x="11" y="11" width="6" height="10" rx="1" fill="#8aa09a" opacity="0.6"/><rect x="23" y="11" width="6" height="10" rx="1" fill="#8aa09a" opacity="0.6"/><line x1="17" y1="23" x2="14" y2="36" stroke="#9ab0aa" stroke-width="2.5" stroke-linecap="round" opacity="0.7"/><line x1="23" y1="23" x2="26" y2="36" stroke="#9ab0aa" stroke-width="2.5" stroke-linecap="round" opacity="0.7"/><line x1="28" y1="8" x2="28" y2="28" stroke="#8899aa" stroke-width="2" stroke-linecap="round" opacity="0.8"/><rect x="25" y="6" width="6" height="2" rx="1" fill="#7a8899" opacity="0.8"/><path d="M12 30 Q16 28 20 32 Q24 28 28 30" stroke="#aabbcc" stroke-width="1" fill="none" opacity="0.5"/></svg>`,
+  'gilded-blade': `<svg viewBox="0 0 40 40" fill="none"><line x1="20" y1="2" x2="20" y2="32" stroke="#ffdd44" stroke-width="3" stroke-linecap="round"/><line x1="20" y1="2" x2="20" y2="32" stroke="#ffee88" stroke-width="1.5" stroke-linecap="round" opacity="0.7"/><rect x="13" y="20" width="14" height="4" rx="1" fill="#cc9922" stroke="#ffcc44" stroke-width="1"/><circle cx="13" cy="22" r="2.5" fill="#ee4444" stroke="#ffcc44" stroke-width="1"/><circle cx="27" cy="22" r="2.5" fill="#4444ee" stroke="#ffcc44" stroke-width="1"/><rect x="18" y="30" width="4" height="8" rx="1" fill="#aa7722"/><circle cx="20" cy="4" r="2" fill="#ffffff" opacity="0.6"/><polygon points="20,2 22,5 18,5" fill="#ffee88"/></svg>`,
+  'minion': `<svg viewBox="0 0 40 40" fill="none"><circle cx="20" cy="6" r="3" fill="#a09090"/><line x1="20" y1="9" x2="20" y2="22" stroke="#808080" stroke-width="2.5" stroke-linecap="round"/><line x1="20" y1="13" x2="13" y2="18" stroke="#808080" stroke-width="2" stroke-linecap="round"/><line x1="20" y1="13" x2="27" y2="18" stroke="#808080" stroke-width="2" stroke-linecap="round"/><line x1="20" y1="22" x2="15" y2="32" stroke="#808080" stroke-width="2" stroke-linecap="round"/><line x1="20" y1="22" x2="25" y2="32" stroke="#808080" stroke-width="2" stroke-linecap="round"/><line x1="27" y1="18" x2="32" y2="14" stroke="#888888" stroke-width="1.5" stroke-linecap="round"/><rect x="30" y="12" width="4" height="5" rx="0.5" fill="#7a7a7a"/></svg>`,
+};
 
 const CARD_POOL = [
   // ── Tier 1 — cost 1 gold ──
   { id: 'iron-fist',   name: 'Iron Fist',   tier: 1, power: 3, ability: 'purge',
-    abilityDesc: 'On buy: remove a Minion from your deck' },
+    abilityDesc: 'On buy: remove a Minion from your deck', sprite: SPRITES['iron-fist'] },
   { id: 'sellsword',   name: 'Sellsword',   tier: 1, power: 2, ability: 'severance',
-    abilityDesc: 'On remove: gain 1 gold' },
+    abilityDesc: 'On remove: gain 1 gold', sprite: SPRITES['sellsword'] },
   { id: 'ghost-blade', name: 'Ghost Blade', tier: 1, power: 2, ability: 'redirect',
-    abilityDesc: 'If negated: transfer this power to an active card' },
-  { id: 'footman',     name: 'Footman',     tier: 1, power: 4, ability: 'none', abilityDesc: '' },
-  { id: 'thug',        name: 'Thug',        tier: 1, power: 3, ability: 'none', abilityDesc: '' },
+    abilityDesc: 'If negated: transfer this power to an active card', sprite: SPRITES['ghost-blade'] },
   { id: 'eager-recruit', name: 'Eager Recruit', tier: 1, power: 2, ability: 'recruit',
-    abilityDesc: 'Each time you buy a card, this gains +1 power' },
+    abilityDesc: 'Each time you buy a card, this gains +1 power', sprite: SPRITES['eager-recruit'] },
   { id: 'scavenger',   name: 'Scavenger',   tier: 1, power: 2, ability: 'scavenge',
-    abilityDesc: 'Each time you remove a card, this gains +1 power' },
+    abilityDesc: 'Each time you remove a card, this gains +1 power', sprite: SPRITES['scavenger'] },
   { id: 'soul-collector', name: 'Soul Collector', tier: 1, power: 1, ability: 'soul-collect',
-    abilityDesc: 'In battle: power equals the total of all nullified cards' },
-  { id: 'blood-pact',  name: 'Blood Pact',  tier: 1, power: 4, ability: 'heirloom',
-    abilityDesc: 'On remove: give this card\'s power to a random deck card' },
+    abilityDesc: 'In battle: power equals the total of all nullified cards', sprite: SPRITES['soul-collector'] },
+  { id: 'blood-pact',  name: 'Blood Pact',  tier: 1, power: 3, ability: 'heirloom',
+    abilityDesc: 'On remove: give this card\'s power to a random deck card', sprite: SPRITES['blood-pact'] },
 
   // ── Tier 2 — cost 2 gold ──
   { id: 'berserker',   name: 'Berserker',   tier: 2, power: 3, ability: 'double-strike',
-    abilityDesc: 'Attacks twice in battle' },
+    abilityDesc: 'Attacks twice in battle', sprite: SPRITES['berserker'] },
   { id: 'warlord',     name: 'Warlord',     tier: 2, power: 2, ability: 'empower',
-    abilityDesc: 'On attack: give a random card +1 power permanently' },
+    abilityDesc: 'On attack: give a random card +1 power permanently', sprite: SPRITES['warlord'] },
   { id: 'arms-dealer', name: 'Arms Dealer', tier: 2, power: 2, ability: 'buy-boost',
-    abilityDesc: 'On buy: give a random deck card +2 power' },
-  { id: 'champion',    name: 'Champion',    tier: 2, power: 5, ability: 'none', abilityDesc: '' },
-  { id: 'veteran',     name: 'Veteran',     tier: 2, power: 4, ability: 'none', abilityDesc: '' },
+    abilityDesc: 'On buy: give a random deck card +2 power', sprite: SPRITES['arms-dealer'] },
+  { id: 'duelist',     name: 'Duelist',     tier: 2, power: 4, ability: 'duelist',
+    abilityDesc: 'In battle: power equals the number of cards in your deck', sprite: SPRITES['duelist'] },
+  { id: 'alchemist',   name: 'Alchemist',   tier: 2, power: 2, ability: 'alchemy',
+    abilityDesc: 'On remove: gain gold equal to this card\'s power', sprite: SPRITES['alchemist'] },
+  { id: 'paladin',     name: 'Paladin',     tier: 2, power: 2, ability: 'immune',
+    abilityDesc: 'In battle: never nullified by boss abilities', sprite: SPRITES['paladin'] },
 
   // ── Tier 3 — cost 4 gold ──
   { id: 'juggernaut',  name: 'Juggernaut',  tier: 3, power: 4, ability: 'triple-strike',
-    abilityDesc: 'Attacks 3 times in battle' },
+    abilityDesc: 'Attacks 3 times in battle', sprite: SPRITES['juggernaut'] },
   { id: 'battle-mage', name: 'Battle-Mage', tier: 3, power: 3, ability: 'war-cry',
-    abilityDesc: 'On attack: all subsequent cards gain +1 power this battle' },
+    abilityDesc: 'On attack: all subsequent cards gain +1 power this battle', sprite: SPRITES['battle-mage'] },
   { id: 'the-chosen',  name: 'The Chosen',  tier: 3, power: 5, ability: 'martyr',
-    abilityDesc: 'On remove: all other cards gain +1 power permanently' },
-  { id: 'titan',       name: 'Titan',       tier: 3, power: 7, ability: 'none', abilityDesc: '' },
-  { id: 'warchief',    name: 'Warchief',    tier: 3, power: 6, ability: 'none', abilityDesc: '' },
+    abilityDesc: 'On remove: all other cards gain +1 power permanently', sprite: SPRITES['the-chosen'] },
+  { id: 'colossus',    name: 'Colossus',    tier: 3, power: 1, ability: 'colossus',
+    abilityDesc: 'In battle: power equals the total of all other non-nullified cards', sprite: SPRITES['colossus'] },
+  { id: 'war-drummer', name: 'War Drummer', tier: 3, power: 4, ability: 'inspire',
+    abilityDesc: 'In battle: all other effective cards gain +1 power for the whole battle', sprite: SPRITES['war-drummer'] },
+  { id: 'revenant',    name: 'Revenant',    tier: 3, power: 3, ability: 'undying',
+    abilityDesc: 'On remove: return to your deck at power 1', sprite: SPRITES['revenant'] },
+  { id: 'gilded-blade', name: 'Gilded Blade', tier: 3, power: 1, ability: 'forge',
+    abilityDesc: 'On upgrade: gain 1 gold', sprite: SPRITES['gilded-blade'] },
 ];
 
 const TREASURES = [
@@ -261,9 +299,9 @@ const TREASURES = [
     id: 'war-banner',
     name: 'War Banner',
     type: 'relic',
-    desc: 'Your highest-power card counts twice in every battle.',
+    desc: 'Your highest-power card attacks an extra time in every battle.',
     effect: 'double-highest',
-    relicDesc: 'Highest card doubled',
+    relicDesc: 'Highest card +1 attack',
     sprite: `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
       <line x1="13" y1="4" x2="13" y2="44" stroke="#c9a84c" stroke-width="2.5"/>
       <circle cx="13" cy="4" r="2.5" fill="#c9a84c"/>
@@ -369,12 +407,15 @@ const TREASURES = [
 let state = {};
 let nextId = 10;
 let _battleGeneration = 0;
+let _timerInterval = null;
+let _dragSrcId = null;
 
 function makeMinion(id) {
-  return { id, power: 1, name: 'Minion', tier: 0, ability: 'none', abilityDesc: '', isStarter: true };
+  return { id, power: 1, name: 'Minion', tier: 0, ability: 'none', abilityDesc: '', isStarter: true, sprite: SPRITES['minion'] };
 }
 
 function init() {
+  stopTimer();
   nextId = 10;
   state = {
     gold: 2,
@@ -387,7 +428,42 @@ function init() {
     battleResult: null,
     relics: [],
     treasureChoices: [],
+    timerLeft: 60,
+    timerPaused: false,
   };
+  render();
+}
+
+// ── Timer ─────────────────────────────────────────────────────────────────────
+
+function startRoomTimer() {
+  state.timerLeft = 60;
+  state.timerPaused = false;
+  clearInterval(_timerInterval);
+  _timerInterval = setInterval(tickTimer, 1000);
+}
+
+function tickTimer() {
+  if (state.timerPaused) return;
+  state.timerLeft -= 1;
+  updateTimerDisplay();
+  if (state.timerLeft <= 0) { stopTimer(); enterBattle(); }
+}
+
+function stopTimer() {
+  clearInterval(_timerInterval);
+  _timerInterval = null;
+}
+
+function updateTimerDisplay() {
+  const el = document.getElementById('room-timer');
+  if (!el) return;
+  el.textContent = state.timerLeft + 's';
+  el.classList.toggle('timer-urgent', state.timerLeft <= 10);
+}
+
+function toggleTimerPause() {
+  state.timerPaused = !state.timerPaused;
   render();
 }
 
@@ -403,9 +479,7 @@ function shuffle(arr) {
 }
 
 function cardCost(card) {
-  if (card.tier === 3) return 4;
-  if (card.tier === 2) return 2;
-  return 1;
+  return 2;
 }
 
 function cardAttackCount(card) {
@@ -425,6 +499,7 @@ function generateShop() {
     power: tpl.power,
     ability: tpl.ability,
     abilityDesc: tpl.abilityDesc,
+    sprite: tpl.sprite,
     isStarter: false,
   }));
 }
@@ -466,23 +541,24 @@ function totalPower(deck) {
 }
 
 function buildNulledSet(deck, ability) {
-  const byAsc  = [...deck].sort((a, b) => a.power - b.power);
-  const byDesc = [...deck].sort((a, b) => b.power - a.power);
+  const eligible = deck.filter(c => c.ability !== 'immune');
+  const byAsc  = [...eligible].sort((a, b) => a.power - b.power);
+  const byDesc = [...eligible].sort((a, b) => b.power - a.power);
   const nulled = new Set();
   switch (ability) {
-    case 'thick-hide': nulled.add(byAsc[0].id); break;
+    case 'thick-hide': if (byAsc[0]) nulled.add(byAsc[0].id); break;
     case 'hex':
-      nulled.add(byAsc[0].id);
+      if (byAsc[0]) nulled.add(byAsc[0].id);
       if (byAsc[1]) nulled.add(byAsc[1].id);
       break;
     case 'cull': {
       const keep = new Set(byDesc.slice(0, 5).map(c => c.id));
-      deck.forEach(c => { if (!keep.has(c.id)) nulled.add(c.id); });
+      eligible.forEach(c => { if (!keep.has(c.id)) nulled.add(c.id); });
       break;
     }
     case 'dragons-gaze': {
       const keep = new Set(byDesc.slice(0, 6).map(c => c.id));
-      deck.forEach(c => { if (!keep.has(c.id)) nulled.add(c.id); });
+      eligible.forEach(c => { if (!keep.has(c.id)) nulled.add(c.id); });
       break;
     }
   }
@@ -501,12 +577,16 @@ function resolveNulledSet(deck, ability) {
 
 function effectivePower(deck, ability) {
   const nulled = resolveNulledSet(deck, ability);
-  const nulledPowerSum = deck.filter(c => nulled.has(c.id)).reduce((s, c) => s + c.power, 0);
+  const nulledPowerSum    = deck.filter(c =>  nulled.has(c.id)).reduce((s, c) => s + c.power, 0);
+  const otherEffectiveSum = deck.filter(c => !nulled.has(c.id) && c.ability !== 'colossus').reduce((s, c) => s + c.power, 0);
 
   let ep = 0;
   for (const c of deck) {
     if (!nulled.has(c.id)) {
-      const cp = c.ability === 'soul-collect' ? nulledPowerSum : c.power;
+      const cp = c.ability === 'soul-collect' ? nulledPowerSum
+               : c.ability === 'colossus'     ? otherEffectiveSum
+               : c.ability === 'duelist'      ? deck.length
+               : c.power;
       ep += cp * cardAttackCount(c);
     }
   }
@@ -523,8 +603,9 @@ function effectivePower(deck, ability) {
     }
   }
 
-  // War Cry: each war-cry card gives +1 to every subsequent effective card's attack count
   const effectiveOrder = deck.filter(c => !nulled.has(c.id));
+
+  // War Cry: each war-cry card gives +1 to every subsequent effective card's attack count
   effectiveOrder.forEach((c, i) => {
     if (c.ability === 'war-cry') {
       for (let j = i + 1; j < effectiveOrder.length; j++) {
@@ -533,12 +614,20 @@ function effectivePower(deck, ability) {
     }
   });
 
+  // Inspire: each inspire card gives +1 power to every other effective card
+  effectiveOrder.forEach((c, i) => {
+    if (c.ability === 'inspire') {
+      effectiveOrder.forEach((ci, j) => { if (j !== i) ep += cardAttackCount(ci); });
+    }
+  });
+
   return ep;
 }
 
 function getCardBattleInfo(deck, ability) {
   const nulled = resolveNulledSet(deck, ability);
-  const nulledPowerSum = deck.filter(c => nulled.has(c.id)).reduce((s, c) => s + c.power, 0);
+  const nulledPowerSum    = deck.filter(c =>  nulled.has(c.id)).reduce((s, c) => s + c.power, 0);
+  const otherEffectiveSum = deck.filter(c => !nulled.has(c.id) && c.ability !== 'colossus').reduce((s, c) => s + c.power, 0);
 
   let result = deck.map(c => {
     const eff = !nulled.has(c.id);
@@ -547,7 +636,10 @@ function getCardBattleInfo(deck, ability) {
       effective: eff,
       attacks: cardAttackCount(c),
       doubled: false,
-      displayPower: (eff && c.ability === 'soul-collect') ? nulledPowerSum : c.power,
+      displayPower: (eff && c.ability === 'soul-collect') ? nulledPowerSum
+                  : (eff && c.ability === 'colossus')     ? otherEffectiveSum
+                  : (eff && c.ability === 'duelist')      ? deck.length
+                  : c.power,
     };
   });
 
@@ -594,6 +686,7 @@ function relicChipHTML(effect) {
 // ── Actions ───────────────────────────────────────────────────────────────────
 
 function buyCard(shopCard) {
+  if (state.timerPaused) return;
   const cost = cardCost(shopCard);
   if (state.gold < cost) return;
   state.gold -= cost;
@@ -606,6 +699,7 @@ function buyCard(shopCard) {
     power: shopCard.power,
     ability: shopCard.ability,
     abilityDesc: shopCard.abilityDesc,
+    sprite: shopCard.sprite,
     isStarter: false,
   };
   state.deck.push(deckCard);
@@ -630,6 +724,7 @@ function buyCard(shopCard) {
 }
 
 function removeCard(card) {
+  if (state.timerPaused) return;
   const cost = removeCost();
   if (state.gold < cost || state.deck.length <= 1) return;
   state.gold -= cost;
@@ -645,18 +740,27 @@ function removeCard(card) {
   } else if (card.ability === 'heirloom') {
     const others = state.deck.filter(c => c.id !== card.id);
     if (others.length > 0) others[Math.floor(Math.random() * others.length)].power += card.power;
+  } else if (card.ability === 'alchemy') {
+    state.gold += card.power;
   }
 
   state.deck = state.deck.filter(c => c.id !== card.id);
+
+  if (card.ability === 'undying') {
+    state.deck.push({ ...card, id: nextId++, power: 1 });
+  }
+
   state.mode = null;
   render();
 }
 
 function upgradeCard(card) {
+  if (state.timerPaused) return;
   const cost = upgradeCost();
   if (state.gold < cost) return;
   state.gold -= cost;
   card.power += 1;
+  if (card.ability === 'forge') state.gold += 1;
   state.mode = null;
   render();
 }
@@ -671,13 +775,25 @@ function setMode(mode) {
   render();
 }
 
+function refreshShop() {
+  if (state.timerPaused) return;
+  if (state.gold < 1) return;
+  state.gold -= 1;
+  state.shopCards = generateShop();
+  state.mode = null;
+  render();
+}
+
 function startGame() {
   state.shopCards = generateShop();
   state.phase = 'room';
   render();
+  startRoomTimer();
 }
 
 function enterBattle() {
+  if (state.timerPaused) return;
+  stopTimer();
   const boss = BOSSES[state.roomIndex];
   let effectiveAbility = boss.ability;
   let abilityNegated = false;
@@ -765,6 +881,9 @@ function chooseTreasure(treasure) {
     state.shopCards = generateShop();
     state.phase = 'room';
     state.mode = null;
+    render();
+    startRoomTimer();
+    return;
   }
   render();
 }
@@ -778,6 +897,7 @@ function cardHTML(card, selectable) {
     : hasAbility ? card.ability.replace(/-/g, ' ') : 'power';
   return `<div class="card${selectable ? ' selectable' : ''}${tierClass}" data-id="${card.id}" data-tip-name="${card.name}" data-tip-power="${card.power}" data-tip-tier="${card.tier}" data-tip-desc="${card.abilityDesc}">
     <div class="card-power">${card.power}</div>
+    <div class="card-sprite">${card.sprite || ''}</div>
     <div class="card-sub">${subLabel}</div>
   </div>`;
 }
@@ -794,8 +914,9 @@ function shopCardHTML(card) {
         <span class="sc-power">${card.power}</span>
       </div>
       <div class="sc-name">${card.name}</div>
+      <div class="sc-sprite">${card.sprite || ''}</div>
       <div class="sc-ability${card.abilityDesc ? '' : ' sc-none'}">${card.abilityDesc || '—'}</div>
-      <button class="btn-buy" data-id="${card.id}" ${!canAfford ? 'disabled' : ''}>${cost} gold</button>
+      <button class="btn-buy" data-id="${card.id}" ${!canAfford || state.timerPaused ? 'disabled' : ''}>Buy</button>
     </div>`;
 }
 
@@ -818,11 +939,11 @@ function renderRoom() {
   const boss = BOSSES[state.roomIndex];
   const roomNum = state.roomIndex + 1;
   const tp = totalPower(state.deck);
-  const deckSelectable = state.mode === 'remove' || state.mode === 'upgrade';
+  const deckSelectable = (state.mode === 'remove' || state.mode === 'upgrade') && !state.timerPaused;
   const upCost = upgradeCost();
   const rmCost = removeCost();
-  const canRemove  = state.gold >= rmCost && state.deck.length > 1;
-  const canUpgrade = state.gold >= upCost;
+  const canRemove  = state.gold >= rmCost && state.deck.length > 1 && !state.timerPaused;
+  const canUpgrade = state.gold >= upCost && !state.timerPaused;
 
   const modeHint = state.mode === 'remove'
     ? '<div class="mode-hint">Click a card to remove it.</div>'
@@ -848,6 +969,11 @@ function renderRoom() {
     <div>
       <div class="top-bar">
         <span class="phase-label">Room ${roomNum} of 5</span>
+        <div class="timer-wrap">
+          <span id="room-timer" class="room-timer${state.timerLeft <= 10 ? ' timer-urgent' : ''}">${state.timerLeft}s</span>
+          <button id="btn-timer-pause" class="btn-timer-pause">${state.timerPaused ? 'Resume' : 'Pause'}</button>
+          <span id="timer-pause-tip" class="timer-pause-tip"${state.timerPaused ? '' : ' style="display:none"'}>You may not complete actions while the timer is paused, but you may still plan your strategy.</span>
+        </div>
         <span class="gold-badge">${state.gold} gold</span>
       </div>
 
@@ -871,6 +997,10 @@ function renderRoom() {
               <button class="btn-secondary ${state.mode === 'upgrade' ? 'active' : ''}"
                 id="btn-upgrade-mode" ${!canUpgrade ? 'disabled' : ''}>
                 Upgrade Card (${upCost}g)
+              </button>
+              <button class="btn-secondary" id="btn-refresh-shop"
+                ${state.gold < 1 || state.timerPaused ? 'disabled' : ''}>
+                Refresh Shop (1g)
               </button>
             </div>
           </div>
@@ -897,7 +1027,7 @@ function renderRoom() {
         <div class="shop-items">${shopHTML}</div>
       </div>
 
-      <button class="proceed-btn" id="btn-enter-battle">Enter Battle →</button>
+      <button class="proceed-btn" id="btn-enter-battle" ${state.timerPaused ? 'disabled' : ''}>Enter Battle →</button>
     </div>
   `;
 }
@@ -911,6 +1041,7 @@ function renderBattle() {
     const sub = attacks > 1 ? `×${attacks}` : doubled ? 'banner' : (card.ability !== 'none' ? card.ability.split('-')[0] : 'power');
     return `<div class="battle-card ${effective ? 'effective' : 'nullified'}${doubled ? ' doubled' : ''}" data-idx="${i}" data-tip-name="${card.name}" data-tip-power="${displayPower}" data-tip-tier="${card.tier}" data-tip-desc="${card.abilityDesc}" data-tip-nullified="${!effective}">
       <div class="card-power">${displayPower}</div>
+      <div class="card-sprite">${card.sprite || ''}</div>
       <div class="card-sub">${sub}</div>
     </div>`;
   }).join('');
@@ -1079,8 +1210,9 @@ function animateBattle(isReplay = false) {
   const HIT_MS    = 200;  // ms between successive hits (multi-strike)
   const GAP_MS    = 90;   // ms gap between one card finishing and next starting
 
-  let runningHp   = bossPower;
-  let warCryBonus = 0;    // accumulates as war-cry cards fire
+  let runningHp    = bossPower;
+  let warCryBonus  = 0;   // accumulates as war-cry cards fire
+  let inspireBonus = 0;   // set before attacks start (inspire is a pre-battle aura)
 
   // Precompute redirect: nulled redirect card → target effective card index
   const redirectBonus = new Map();  // targetIdx → extra power
@@ -1108,6 +1240,23 @@ function animateBattle(isReplay = false) {
   const ATTACK_START = CARDS_START + cardInfo.length * STAGGER + 380;
   let t = ATTACK_START;
 
+  // Inspire: passive aura fires once before the first attack, buffing all other effective cards
+  const inspireIdxs = cardInfo
+    .map((info, i) => ({ ...info, idx: i }))
+    .filter(({ card, effective }) => effective && card.ability === 'inspire');
+  inspireBonus = inspireIdxs.length;
+  if (inspireBonus > 0) {
+    safeTick(() => {
+      inspireIdxs.forEach(({ idx }) => showCardPop(idx, 'INSPIRE!', 'inspire-pop'));
+      cardInfo.forEach((ci, j) => {
+        if (!ci.effective) return;
+        // Inspire cards only benefit from other inspire cards, not themselves
+        const bonus = ci.card.ability === 'inspire' ? Math.max(0, inspireBonus - 1) : inspireBonus;
+        if (bonus > 0) updateBattleCardPower(j, ci.displayPower + bonus);
+      });
+    }, ATTACK_START - 300);
+  }
+
   cardInfo.forEach(({ card, effective, doubled, attacks, displayPower }, i) => {
     const cardStart = t;
     // Total hits: normal attacks + 1 bonus hit if War Banner (doubled)
@@ -1116,13 +1265,15 @@ function animateBattle(isReplay = false) {
     // Charge phase (or fizzle for nulled cards)
     safeTick(() => {
       document.querySelectorAll('.battle-card')[i]?.classList.add(effective ? 'attacking' : 'fizzling');
-      // War Cry activates at charge start, before hits
+      // War Cry activates at charge start, buffing all subsequent effective cards
       if (effective && card.ability === 'war-cry') {
         warCryBonus += 1;
         showCardPop(i, 'WAR CRY!', 'warcry-pop');
-        // Update power display on all subsequent effective cards
         cardInfo.forEach((ci, j) => {
-          if (j > i && ci.effective) updateBattleCardPower(j, ci.displayPower + warCryBonus);
+          if (j > i && ci.effective) {
+            const iBonus = ci.card.ability === 'inspire' ? Math.max(0, inspireBonus - 1) : inspireBonus;
+            updateBattleCardPower(j, ci.displayPower + warCryBonus + iBonus);
+          }
         });
       }
     }, cardStart);
@@ -1133,7 +1284,8 @@ function animateBattle(isReplay = false) {
       for (let hit = 0; hit < totalHits; hit++) {
         const hitT        = cardStart + CHARGE_MS + hit * HIT_MS;
         const isBannerHit = doubled && hit === attacks;  // last hit = War Banner bonus
-        const hitDmg      = displayPower + warCryBonus + (hit === 0 ? rdBonus : 0);
+        const myInspireBonus = card.ability === 'inspire' ? Math.max(0, inspireBonus - 1) : inspireBonus;
+        const hitDmg      = displayPower + warCryBonus + myInspireBonus + (hit === 0 ? rdBonus : 0);
 
         safeTick(() => {
           runningHp -= hitDmg;
@@ -1307,6 +1459,8 @@ function render() {
   document.getElementById('btn-replay-battle')?.addEventListener('click', replayBattle);
   document.getElementById('btn-restart')?.addEventListener('click', init);
 
+  document.getElementById('btn-timer-pause')?.addEventListener('click', toggleTimerPause);
+  document.getElementById('btn-refresh-shop')?.addEventListener('click', refreshShop);
   document.getElementById('btn-remove-mode')?.addEventListener('click', () => setMode('remove'));
   document.getElementById('btn-upgrade-mode')?.addEventListener('click', () => setMode('upgrade'));
 
@@ -1328,6 +1482,61 @@ function render() {
     el.addEventListener('click', () => {
       const treasure = state.treasureChoices.find(t => t.id === el.dataset.id);
       if (treasure) chooseTreasure(treasure);
+    });
+  });
+
+  if (state.phase === 'room') setupDeckDrag();
+}
+
+// ── Deck drag reorder ────────────────────────────────────────────────────────
+
+function setupDeckDrag() {
+  const deckRow = document.querySelector('.card-row');
+  if (!deckRow) return;
+
+  deckRow.querySelectorAll('.card').forEach(el => {
+    el.setAttribute('draggable', 'true');
+
+    el.addEventListener('dragstart', e => {
+      _dragSrcId = parseInt(el.dataset.id);
+      requestAnimationFrame(() => el.classList.add('dragging'));
+      e.dataTransfer.effectAllowed = 'move';
+      document.getElementById('card-tooltip')?.classList.remove('visible');
+    });
+
+    el.addEventListener('dragend', () => {
+      el.classList.remove('dragging');
+      deckRow.querySelectorAll('.drag-over').forEach(c => c.classList.remove('drag-over'));
+      _dragSrcId = null;
+    });
+
+    el.addEventListener('dragover', e => { e.preventDefault(); });
+
+    el.addEventListener('dragenter', e => {
+      e.preventDefault();
+      if (_dragSrcId && parseInt(el.dataset.id) !== _dragSrcId) {
+        el.classList.add('drag-over');
+      }
+    });
+
+    el.addEventListener('dragleave', e => {
+      if (!el.contains(e.relatedTarget)) el.classList.remove('drag-over');
+    });
+
+    el.addEventListener('drop', e => {
+      e.preventDefault();
+      e.stopPropagation();
+      el.classList.remove('drag-over');
+      const srcId = _dragSrcId;
+      const dstId = parseInt(el.dataset.id);
+      if (!srcId || srcId === dstId) return;
+      const srcIdx = state.deck.findIndex(c => c.id === srcId);
+      const dstIdx = state.deck.findIndex(c => c.id === dstId);
+      if (srcIdx < 0 || dstIdx < 0) return;
+      const [moved] = state.deck.splice(srcIdx, 1);
+      state.deck.splice(dstIdx, 0, moved);
+      _dragSrcId = null;
+      render();
     });
   });
 }
