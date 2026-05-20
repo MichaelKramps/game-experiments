@@ -5,6 +5,10 @@ const COLS = WIDTH / CELL;   // 40
 const ROWS = HEIGHT / CELL;  // 30
 const TICK = 120; // ms per move
 
+const FOOD_SIZES  = [1, 4, 9];
+const FOOD_SCORES = { 1: 1, 4: 3, 9: 6 };
+const FOOD_COLORS = { 1: 0xff4455, 4: 0xff8800, 9: 0xffcc00 };
+
 class GameScene extends Phaser.Scene {
   constructor() {
     super({ key: 'GameScene' });
@@ -56,30 +60,47 @@ class GameScene extends Phaser.Scene {
     this.spawnFood();
   }
 
-  isFree(pos) {
-    if (this.snake.some(s => s.x === pos.x && s.y === pos.y)) return false;
-    if (this.hazards.some(h => h.x === pos.x && h.y === pos.y)) return false;
-    if (this.food && this.food.x === pos.x && this.food.y === pos.y) return false;
+  isFree(x, y) {
+    if (this.snake.some(s => s.x === x && s.y === y)) return false;
+    if (this.hazards.some(h => {
+      const dim = Math.sqrt(h.size);
+      return x >= h.x && x < h.x + dim && y >= h.y && y < h.y + dim;
+    })) return false;
+    if (this.food) {
+      const dim = Math.sqrt(this.food.size);
+      if (x >= this.food.x && x < this.food.x + dim && y >= this.food.y && y < this.food.y + dim) return false;
+    }
     return true;
   }
 
-  randomFreeCell() {
-    let pos;
+  isBlockFree(x, y, dim) {
+    for (let dy = 0; dy < dim; dy++) {
+      for (let dx = 0; dx < dim; dx++) {
+        if (!this.isFree(x + dx, y + dy)) return false;
+      }
+    }
+    return true;
+  }
+
+  randomFreeBlock(size) {
+    const dim = Math.sqrt(size);
+    let x, y, tries = 0;
     do {
-      pos = {
-        x: Phaser.Math.Between(0, COLS - 1),
-        y: Phaser.Math.Between(0, ROWS - 1),
-      };
-    } while (!this.isFree(pos));
-    return pos;
+      x = Phaser.Math.Between(0, COLS - dim);
+      y = Phaser.Math.Between(0, ROWS - dim);
+      tries++;
+    } while (tries < 2000 && !this.isBlockFree(x, y, dim));
+    return { x, y };
   }
 
   spawnFood() {
-    this.food = this.randomFreeCell();
+    this.food = null; // clear first so old cells don't block new spawn
+    const size = FOOD_SIZES[Phaser.Math.Between(0, 2)];
+    this.food = { ...this.randomFreeBlock(size), size };
   }
 
-  spawnHazard() {
-    this.hazards.push(this.randomFreeCell());
+  spawnHazard(size) {
+    this.hazards.push({ ...this.randomFreeBlock(size), size });
   }
 
   readInput() {
@@ -115,18 +136,26 @@ class GameScene extends Phaser.Scene {
     }
 
     // Hazard collision
-    if (this.hazards.some(h => h.x === head.x && h.y === head.y)) {
+    if (this.hazards.some(h => {
+      const dim = Math.sqrt(h.size);
+      return head.x >= h.x && head.x < h.x + dim && head.y >= h.y && head.y < h.y + dim;
+    })) {
       this.die();
       return;
     }
 
     this.snake.unshift(head);
 
-    if (head.x === this.food.x && head.y === this.food.y) {
-      this.score++;
+    const foodDim = Math.sqrt(this.food.size);
+    const ateFood = head.x >= this.food.x && head.x < this.food.x + foodDim &&
+                    head.y >= this.food.y && head.y < this.food.y + foodDim;
+
+    if (ateFood) {
+      const eatenSize = this.food.size;
+      this.score += FOOD_SCORES[eatenSize];
       this.scoreTxt.setText('Score: ' + this.score);
       this.spawnFood();
-      this.spawnHazard();
+      this.spawnHazard(eatenSize);
     } else {
       this.snake.pop();
     }
@@ -163,19 +192,24 @@ class GameScene extends Phaser.Scene {
 
     // Hazards
     this.hazards.forEach(h => {
+      const dim = Math.sqrt(h.size);
+      const sz = dim * CELL;
       this.gfx.fillStyle(0xffffff, 1);
-      this.gfx.fillRect(h.x * CELL + 1, h.y * CELL + 1, CELL - 2, CELL - 2);
+      this.gfx.fillRect(h.x * CELL + 1, h.y * CELL + 1, sz - 2, sz - 2);
     });
 
     // Food
     this.foodGfx.clear();
-    this.foodGfx.fillStyle(0xff4455, 1);
-    const fx = this.food.x * CELL + CELL / 2;
-    const fy = this.food.y * CELL + CELL / 2;
-    this.foodGfx.fillCircle(fx, fy, CELL / 2 - 2);
+    const foodDim = Math.sqrt(this.food.size);
+    const fw = foodDim * CELL;
+    const cx = this.food.x * CELL + fw / 2;
+    const cy = this.food.y * CELL + fw / 2;
+    const r = fw / 2 - 3;
+    this.foodGfx.fillStyle(FOOD_COLORS[this.food.size], 1);
+    this.foodGfx.fillCircle(cx, cy, r);
     // shine
     this.foodGfx.fillStyle(0xffffff, 0.5);
-    this.foodGfx.fillCircle(fx - 3, fy - 3, 3);
+    this.foodGfx.fillCircle(cx - r * 0.3, cy - r * 0.3, r * 0.25);
   }
 
   eyePositions() {

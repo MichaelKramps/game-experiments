@@ -92,7 +92,7 @@
       width: 58px;
       height: 76px;
       background: #1e1030;
-      border: 2px solid #4a2a6a;
+      border: 2px solid #3a2a5a;
       border-radius: 7px;
       display: flex;
       flex-direction: column;
@@ -101,13 +101,14 @@
       flex-shrink: 0;
       transition: border-color 0.15s, transform 0.1s;
     }
-    .card.selectable {
-      cursor: pointer;
-      border-color: #c9a84c;
-    }
+    .card.selectable { cursor: pointer; border-color: #c9a84c; }
     .card.selectable:hover { border-color: #e0bf6a; transform: translateY(-3px); }
+    .card.tier-2 { border-color: #1a3060; }
+    .card.tier-3 { border-color: #4a1a6a; }
+    .card.selectable.tier-2 { border-color: #c9a84c; }
+    .card.selectable.tier-3 { border-color: #c9a84c; }
     .card-power { font-size: 1.7rem; font-weight: bold; color: #fff; line-height: 1; }
-    .card-sub { font-size: 0.5rem; text-transform: uppercase; color: #666; letter-spacing: 0.06em; margin-top: 4px; }
+    .card-sub { font-size: 0.44rem; text-transform: uppercase; color: #555; letter-spacing: 0.04em; margin-top: 4px; text-align: center; }
 
     .card-row { display: flex; flex-wrap: wrap; gap: 8px; }
 
@@ -136,7 +137,42 @@
     }
     .room-grid .full-width { grid-column: 1 / -1; }
 
-    .shop-items { display: flex; gap: 14px; flex-wrap: wrap; }
+    /* ── Shop cards ── */
+    .shop-panel { margin-top: 14px; }
+    .shop-tier-badge { color: #c9a84c; margin-left: 8px; font-size: 0.8rem; }
+    .shop-items { display: flex; gap: 9px; flex-wrap: wrap; }
+    .shop-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      background: #0e0e22;
+      border: 1px solid #2a2a4a;
+      border-radius: 9px;
+      padding: 10px 10px 8px;
+      width: 96px;
+      flex-shrink: 0;
+      transition: border-color 0.15s;
+    }
+    .shop-card:hover { border-color: #5a5a8a; }
+    .sc-header { display: flex; justify-content: space-between; align-items: baseline; width: 100%; }
+    .sc-tier { font-size: 0.62rem; font-weight: bold; letter-spacing: 0.05em; }
+    .sc-tier-1 { color: #888; }
+    .sc-tier-2 { color: #4488ff; }
+    .sc-tier-3 { color: #cc44ff; }
+    .sc-power { font-size: 1.45rem; font-weight: bold; color: #fff; }
+    .sc-name { font-size: 0.72rem; color: #c8b060; font-weight: bold; text-align: center; width: 100%; }
+    .sc-ability {
+      font-size: 0.62rem;
+      color: #666;
+      font-style: italic;
+      text-align: center;
+      line-height: 1.35;
+      flex: 1;
+      min-height: 28px;
+    }
+    .sc-none { color: #333; }
+
     .shop-item { display: flex; flex-direction: column; align-items: center; gap: 8px; }
 
     .action-buttons { display: flex; gap: 10px; flex-wrap: wrap; }
@@ -148,9 +184,17 @@
       font-style: italic;
     }
 
+    .boss-preview-sprite { width: 60px; height: 72px; margin: 0 auto 8px; display: block; }
+    .boss-preview-sprite svg { width: 100%; height: 100%; }
+    .boss-sprite { width: 110px; height: 132px; margin: 0 auto 10px; display: block; }
+    .boss-sprite svg { width: 100%; height: 100%; }
     .boss-preview .boss-name { color: #cc4444; font-size: 1.1rem; display: block; margin-bottom: 4px; }
-    .boss-preview .boss-stat { color: #888; font-size: 0.85rem; display: block; margin-bottom: 3px; }
+    .boss-preview .boss-stat { color: #888; font-size: 0.85rem; display: block; margin-bottom: 2px; }
+    .boss-preview .boss-per-card { color: #cc6644; font-size: 0.78rem; margin-left: 5px; }
+    .boss-preview .boss-threat { color: #cc4444; font-size: 0.9rem; font-weight: bold; display: block; margin-bottom: 4px; }
+    .boss-preview .boss-threat-note { color: #774444; font-size: 0.75rem; font-weight: normal; }
     .boss-preview .boss-ability-text { color: #666; font-size: 0.82rem; font-style: italic; }
+    .boss-scaling-line { font-size: 0.72rem; color: #664433; margin-top: 2px; margin-bottom: 4px; }
 
     /* ── Battle ── */
     .battle-boss-card {
@@ -240,6 +284,15 @@
 
     .proceed-btn { width: 100%; padding: 15px; font-size: 1.05rem; margin-top: 6px; }
 
+    .battle-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 6px;
+      align-items: stretch;
+    }
+    .battle-actions .proceed-btn { flex: 1; width: auto; margin-top: 0; }
+    .battle-actions #btn-replay-battle { padding: 15px 20px; font-size: 1.0rem; white-space: nowrap; }
+
     /* ── Battle animations ── */
     @keyframes bossShake {
       0%, 100% { transform: translateX(0); }
@@ -255,54 +308,145 @@
       40%  { transform: scale(1.08) rotate(-4deg); opacity: 0.6; }
       100% { transform: scale(0.15) rotate(20deg); opacity: 0; }
     }
-    @keyframes projLaunch {
-      0%   { transform: scale(1) translateY(0); opacity: 1; }
-      100% { transform: scale(0.05) translateY(-160px); opacity: 0; }
+    @keyframes cardCharge {
+      0%   { transform: translateY(0) scale(1); box-shadow: none; }
+      100% { transform: translateY(-13px) scale(1.15); box-shadow: 0 0 22px #44ff88cc; }
+    }
+    @keyframes cardFizzle {
+      0%, 100% { transform: translateX(0); filter: brightness(1); }
+      20%  { transform: translateX(-5px); filter: brightness(1.6); }
+      50%  { transform: translateX(5px); }
+      70%  { transform: translateX(-3px); }
+      90%  { transform: translateX(3px); filter: brightness(0.7); }
+    }
+    @keyframes dmgFloat {
+      0%   { transform: translate(-50%, 0) scale(0.5); opacity: 1; }
+      15%  { transform: translate(-50%, -10px) scale(1.3); opacity: 1; }
+      100% { transform: translate(-50%, -58px) scale(0.9); opacity: 0; }
     }
 
     .battle-screen { display: flex; flex-direction: column; }
 
-    .boss-section { display: flex; justify-content: center; padding: 16px 0; }
+    .boss-section { display: flex; justify-content: center; padding: 16px 0 8px; }
+
+    .boss-battle-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: min(300px, 92%);
+    }
 
     .boss-card {
-      width: min(300px, 92%);
+      width: 100%;
       text-align: center;
       background: #120808;
       border: 2px solid #5a1010;
       border-radius: 12px;
-      padding: 22px 28px;
+      padding: 18px 24px;
       opacity: 0;
       transform: translateY(-50px);
       transition: opacity 0.5s ease, transform 0.5s ease, border-color 0.3s, box-shadow 0.3s;
+      position: relative;
+      overflow: visible;
     }
     .boss-card.enter    { opacity: 1; transform: translateY(0); }
     .boss-card.impact   { animation: bossShake 0.5s ease; }
     .boss-card.defeated { animation: bossDie 0.65s ease 0.1s forwards; }
     .boss-card.survived { border-color: #cc2222; box-shadow: 0 0 30px #ff000055; }
 
-    .boss-name-display  { font-size: 1.6rem; color: #cc4444; margin-bottom: 6px; }
-    .boss-power-label   { font-size: 0.95rem; color: #888; }
-    .boss-ability-label { font-size: 0.78rem; color: #555; font-style: italic; margin-top: 5px; }
+    .boss-name-display  { font-size: 1.5rem; color: #cc4444; margin-bottom: 4px; }
+    .boss-ability-label { font-size: 0.78rem; color: #555; font-style: italic; margin-top: 4px; }
 
-    .projectile-zone {
-      height: 80px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+    /* HP bar */
+    .boss-hp-bar-wrap {
+      width: 100%;
+      height: 11px;
+      background: #2a0808;
+      border-radius: 6px;
+      overflow: hidden;
+      margin-top: 10px;
+      border: 1px solid #4a1010;
     }
-    .power-proj {
-      font-size: 3rem;
+    .boss-hp-fill {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg, #991a1a, #dd3333);
+      border-radius: 6px;
+      transition: width 0.35s ease;
+    }
+    .boss-hp-text {
+      font-size: 0.76rem;
+      color: #774444;
+      margin-top: 4px;
+      font-variant-numeric: tabular-nums;
+      align-self: flex-end;
+    }
+
+    /* Damage floating numbers */
+    .damage-number {
+      position: absolute;
+      top: 25%;
+      left: 50%;
+      font-size: 2.2rem;
       font-weight: bold;
       color: #ffdd44;
-      text-shadow: 0 0 30px #ffdd44bb;
-      opacity: 0;
-      transform: scale(0.3);
-      transition: opacity 0.3s ease, transform 0.35s ease;
+      text-shadow: 0 0 14px #ffdd44aa;
       pointer-events: none;
-      line-height: 1;
+      animation: dmgFloat 1.15s ease-out forwards;
+      z-index: 20;
+      white-space: nowrap;
     }
-    .power-proj.appear { opacity: 1; transform: scale(1); }
-    .power-proj.launch { animation: projLaunch 0.55s ease-in forwards; }
+    .damage-number.damage-banner   { color: #c9a84c; }
+    .damage-number.damage-redirect { color: #88aaff; font-size: 1.6rem; }
+    .damage-number.damage-null     { color: #664444; font-size: 0.95rem; top: 38%; }
+
+    /* Card pop labels (war-cry, empower, redirect) — appended to body, position:fixed */
+    @keyframes cardPopFloat {
+      0%   { transform: translateX(-50%) translateY(0) scale(0.8); opacity: 1; }
+      100% { transform: translateX(-50%) translateY(-48px) scale(1.05); opacity: 0; }
+    }
+    .warcry-pop, .empower-pop, .redirect-pop {
+      position: fixed;
+      font-size: 0.62rem;
+      font-weight: bold;
+      white-space: nowrap;
+      pointer-events: none;
+      animation: cardPopFloat 1.0s ease-out forwards;
+      z-index: 9999;
+      border-radius: 3px;
+      padding: 2px 6px;
+    }
+    .warcry-pop   { color: #ff8844; background: #2a1500; border: 1px solid #ff6622; }
+    .empower-pop  { color: #44ffaa; background: #002a1a; border: 1px solid #22cc88; }
+    .redirect-pop { color: #88aaff; background: #001a2a; border: 1px solid #4466cc; }
+
+    /* Persistent redirect badge — stays for the rest of the battle */
+    @keyframes redirectBadgeIn {
+      0%   { transform: translateX(-50%) scale(0.5); opacity: 0; }
+      60%  { transform: translateX(-50%) scale(1.15); opacity: 1; }
+      100% { transform: translateX(-50%) scale(1.0); opacity: 1; }
+    }
+    .redirect-badge {
+      position: fixed;
+      color: #88aaff;
+      background: #001a2a;
+      border: 1px solid #4466cc;
+      border-radius: 4px;
+      padding: 2px 7px;
+      font-size: 0.6rem;
+      font-weight: bold;
+      pointer-events: none;
+      z-index: 9999;
+      transform: translateX(-50%);
+      animation: redirectBadgeIn 0.35s ease forwards;
+    }
+
+    /* Redirect target flash */
+    @keyframes redirectFlash {
+      0%, 100% { box-shadow: none; }
+      50% { box-shadow: 0 0 20px #88aaffcc; border-color: #88aaff !important; }
+    }
+    .battle-card.redirect-target { animation: redirectFlash 0.55s ease; }
 
     .cards-section {
       display: flex;
@@ -327,9 +471,9 @@
       transform: translateY(20px);
       transition: opacity 0.3s ease, transform 0.3s ease;
     }
-    .battle-card.enter { opacity: var(--card-opacity, 1); transform: translateY(0); }
+    .battle-card.enter     { opacity: var(--card-opacity, 1); transform: translateY(0); }
     .battle-card.effective { --card-opacity: 1; background: #0e1e18; border: 2px solid #44ff88; }
-    .battle-card.nullified { --card-opacity: 0.25; background: #111; border: 2px solid #1e1e1e; }
+    .battle-card.nullified { --card-opacity: 0.28; background: #111; border: 2px solid #1e1e1e; }
     .battle-card.nullified .card-power { color: #444; }
     .battle-card.nullified::after {
       content: '✕';
@@ -338,11 +482,10 @@
       color: #cc2222;
       opacity: 0.85;
     }
-    .battle-card.effective.lost {
-      opacity: 0.3;
-      border-color: #224422;
-      transition: opacity 0.5s ease, border-color 0.5s ease;
-    }
+    .battle-card.attacking { animation: cardCharge 0.28s ease forwards; }
+    .battle-card.fizzling  { animation: cardFizzle 0.32s ease forwards; border-color: #cc3333 !important; }
+    .battle-card.used      { opacity: 0.22 !important; transition: opacity 0.4s ease; }
+    .battle-card.nullified.used { opacity: 0.12 !important; }
 
     .ability-note {
       font-size: 0.8rem;
@@ -357,6 +500,117 @@
     .battle-outcome { opacity: 0; transition: opacity 0.5s; padding-bottom: 10px; }
     .battle-outcome.visible { opacity: 1; }
 
+    /* ── Treasure screen ── */
+    .treasure-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 10px 0;
+    }
+    .treasure-reward { text-align: center; margin-bottom: 6px; }
+    .treasure-deck-panel { width: 100%; margin-bottom: 10px; }
+    .treasure-prompt {
+      color: #888;
+      font-size: 0.9rem;
+      margin: 14px 0 20px;
+      text-align: center;
+    }
+    .treasure-final-note {
+      color: #444;
+      font-size: 0.8rem;
+      font-style: italic;
+      margin-top: 20px;
+      text-align: center;
+    }
+    .treasure-grid {
+      display: flex;
+      gap: 14px;
+      justify-content: center;
+      flex-wrap: wrap;
+      width: 100%;
+    }
+    .treasure-card {
+      flex: 1;
+      min-width: 150px;
+      max-width: 210px;
+      background: #111128;
+      border: 2px solid #3a2a5a;
+      border-radius: 10px;
+      padding: 18px 14px;
+      cursor: pointer;
+      transition: border-color 0.15s, transform 0.15s, background 0.15s;
+      text-align: center;
+    }
+    .treasure-card:hover {
+      border-color: #c9a84c;
+      background: #1a1525;
+      transform: translateY(-5px);
+    }
+    .treasure-card .t-sprite {
+      width: 52px;
+      height: 52px;
+      margin: 0 auto 10px;
+    }
+    .treasure-card .t-sprite svg { width: 100%; height: 100%; }
+    .treasure-card .t-name {
+      font-weight: bold;
+      color: #d0a0ff;
+      font-size: 1rem;
+      margin-bottom: 5px;
+    }
+    .treasure-card .t-type {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #554466;
+      margin-bottom: 10px;
+    }
+    .treasure-card .t-desc {
+      color: #888;
+      font-size: 0.8rem;
+      line-height: 1.55;
+    }
+
+    /* ── Relics ── */
+    .relics-row { display: flex; flex-wrap: wrap; gap: 7px; }
+    .relic-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: #1a1030;
+      border: 1px solid #5a3a8a;
+      border-radius: 20px;
+      padding: 3px 10px 3px 5px;
+      font-size: 0.75rem;
+      color: #d0a0ff;
+      cursor: default;
+    }
+    .relic-chip-sprite {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+    }
+    .relic-chip-sprite svg { width: 100%; height: 100%; }
+
+    /* ── Battle card: War Banner doubled ── */
+    .battle-card.doubled { border-color: #ffaa00 !important; }
+    .battle-card.doubled .card-sub { color: #ffaa00; font-weight: bold; }
+
+    /* ── Boss ability negated tag ── */
+    .negated-tag {
+      display: inline-block;
+      background: #1a2a1a;
+      border: 1px solid #44ff88;
+      color: #44ff88;
+      font-size: 0.65rem;
+      font-style: normal;
+      border-radius: 4px;
+      padding: 1px 5px;
+      margin-left: 5px;
+      vertical-align: middle;
+      letter-spacing: 0.05em;
+    }
+
     #home-link {
       position: fixed;
       top: 12px;
@@ -366,11 +620,60 @@
       text-decoration: none;
     }
     #home-link:hover { color: #888; }
+
+    #btn-mute {
+      position: fixed;
+      top: 8px;
+      right: 14px;
+      background: transparent;
+      color: #444;
+      border: 1px solid #2a2a3a;
+      border-radius: 4px;
+      padding: 4px 10px;
+      font-size: 0.72rem;
+      font-family: Georgia, serif;
+      font-weight: normal;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      z-index: 100;
+    }
+    #btn-mute:hover { color: #888; border-color: #4a4a6a; }
+
+    /* ── Card tooltip ── */
+    #card-tooltip {
+      position: fixed;
+      z-index: 10000;
+      pointer-events: none;
+      background: #130d24;
+      border: 1px solid #5a3a8a;
+      border-radius: 10px;
+      padding: 12px 14px;
+      width: 190px;
+      box-shadow: 0 6px 28px rgba(0,0,0,0.75);
+      display: none;
+    }
+    #card-tooltip.visible { display: block; }
+    .ct-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+    .ct-name { font-weight: bold; color: #e0e0e0; font-size: 0.9rem; }
+    .ct-tier-starter { color: #555; font-size: 0.65rem; }
+    .ct-tier-t1 { color: #888; font-size: 0.65rem; font-weight: bold; }
+    .ct-tier-t2 { color: #4488ff; font-size: 0.65rem; font-weight: bold; }
+    .ct-tier-t3 { color: #cc44ff; font-size: 0.65rem; font-weight: bold; }
+    .ct-power-row { display: flex; align-items: baseline; gap: 6px; margin-bottom: 2px; }
+    .ct-power { font-size: 2rem; font-weight: bold; color: #fff; line-height: 1; }
+    .ct-power-label { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.1em; color: #555; }
+    .ct-divider { border: none; border-top: 1px solid #2a1a4a; margin: 8px 0 6px; }
+    .ct-desc { color: #aaa; font-size: 0.78rem; font-style: italic; line-height: 1.45; }
+    .ct-cost { color: #c9a84c; font-size: 0.78rem; font-weight: bold; margin-top: 8px; }
+    .ct-nullified-tag { display: inline-block; color: #cc4444; font-size: 0.68rem; border: 1px solid #cc4444; border-radius: 3px; padding: 1px 5px; margin-top: 8px; letter-spacing: 0.05em; }
   </style>
 </head>
 <body>
   <a id="home-link" href="../index.html">← Home</a>
+  <button id="btn-mute">Music: On</button>
   <div id="app"></div>
+  <div id="card-tooltip"></div>
+  <script src="music.js"></script>
   <script src="game.js"></script>
 </body>
 </html>
