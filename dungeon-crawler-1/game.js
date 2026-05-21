@@ -7,6 +7,7 @@ const BOSSES = [
     perCard: 0,
     ability: 'none',
     abilityDesc: 'No tricks. Just brute force.',
+    minLevel: 1,
     sprite: `<svg viewBox="0 0 100 120" fill="none" xmlns="http://www.w3.org/2000/svg">
       <ellipse cx="50" cy="116" rx="22" ry="4" fill="#000" opacity="0.35"/>
       <path d="M36 88 L30 112" stroke="#1e4010" stroke-width="10" stroke-linecap="round"/>
@@ -38,6 +39,7 @@ const BOSSES = [
     perCard: 1,
     ability: 'thick-hide',
     abilityDesc: 'Thick Hide — Your lowest-power card is nullified.',
+    minLevel: 2,
     sprite: `<svg viewBox="0 0 100 120" fill="none" xmlns="http://www.w3.org/2000/svg">
       <ellipse cx="50" cy="116" rx="30" ry="4" fill="#000" opacity="0.4"/>
       <path d="M30 96 L22 114" stroke="#3a3028" stroke-width="13" stroke-linecap="round"/>
@@ -68,6 +70,7 @@ const BOSSES = [
     perCard: 1,
     ability: 'hex',
     abilityDesc: 'Hex — Your 2 lowest-power cards are nullified.',
+    minLevel: 2,
     sprite: `<svg viewBox="0 0 100 120" fill="none" xmlns="http://www.w3.org/2000/svg">
       <ellipse cx="50" cy="116" rx="20" ry="4" fill="#000" opacity="0.35"/>
       <path d="M38 95 Q34 108 30 116" stroke="#2a1a3a" stroke-width="7" stroke-linecap="round"/>
@@ -101,6 +104,7 @@ const BOSSES = [
     perCard: 2,
     ability: 'cull',
     abilityDesc: 'Cull — Only your 5 highest-power cards count.',
+    minLevel: 5,
     sprite: `<svg viewBox="0 0 100 120" fill="none" xmlns="http://www.w3.org/2000/svg">
       <ellipse cx="50" cy="116" rx="26" ry="4" fill="#000" opacity="0.4"/>
       <rect x="32" y="86" width="14" height="28" rx="4" fill="#2a3a4a"/>
@@ -131,6 +135,7 @@ const BOSSES = [
     perCard: 3,
     ability: 'dragons-gaze',
     abilityDesc: "Dragon's Gaze — Only your 6 highest-power cards count.",
+    minLevel: 5,
     sprite: `<svg viewBox="0 0 100 120" fill="none" xmlns="http://www.w3.org/2000/svg">
       <ellipse cx="50" cy="116" rx="28" ry="4" fill="#000" opacity="0.4"/>
       <path d="M8 30 Q2 18 10 14 Q14 28 22 36 Q10 32 8 30 Z" fill="#6a1010"/>
@@ -158,6 +163,295 @@ const BOSSES = [
       <circle cx="50" cy="80" r="3" fill="#ffaa00" opacity="0.4"/>
     </svg>`,
   },
+  {
+    name: 'Shadow Wraith',
+    power: 10,
+    perCard: 4,
+    ability: 'tier-scorn',
+    abilityDesc: 'Tier Scorn — All Tier 1 cards are nullified.',
+    minLevel: 5,
+    sprite: `<svg viewBox="0 0 100 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M30 90 Q20 100 25 115 Q35 105 40 115 Q50 100 50 115 Q60 100 60 115 Q65 105 75 115 Q80 100 70 90" fill="#2a0a4a" opacity="0.8"/>
+      <path d="M24 40 Q20 60 22 80 Q30 95 50 96 Q70 95 78 80 Q80 60 76 40 Q66 26 50 24 Q34 26 24 40 Z" fill="#2a0a4a"/>
+      <path d="M28 42 Q30 24 50 20 Q70 24 72 42 Q66 30 50 28 Q34 30 28 42 Z" fill="#3a1060"/>
+      <ellipse cx="50" cy="52" rx="16" ry="12" fill="#1a0530"/>
+      <circle cx="43" cy="50" r="5" fill="#6600aa" opacity="0.5"/>
+      <circle cx="57" cy="50" r="5" fill="#6600aa" opacity="0.5"/>
+      <circle cx="43" cy="50" r="3" fill="#cc44ff"/>
+      <circle cx="57" cy="50" r="3" fill="#cc44ff"/>
+      <circle cx="43" cy="49" r="1.5" fill="#eeccff"/>
+      <circle cx="57" cy="49" r="1.5" fill="#eeccff"/>
+      <path d="M24 60 Q10 55 8 70 Q12 80 22 75" fill="#2a0a4a"/>
+      <path d="M76 60 Q90 55 92 70 Q88 80 78 75" fill="#2a0a4a"/>
+      <line x1="8" y1="68" x2="2" y2="64" stroke="#4a1a6a" stroke-width="2" stroke-linecap="round"/>
+      <line x1="8" y1="72" x2="2" y2="74" stroke="#4a1a6a" stroke-width="2" stroke-linecap="round"/>
+      <line x1="92" y1="68" x2="98" y2="64" stroke="#4a1a6a" stroke-width="2" stroke-linecap="round"/>
+      <line x1="92" y1="72" x2="98" y2="74" stroke="#4a1a6a" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="50" cy="60" r="36" fill="none" stroke="#6600aa" stroke-width="1" opacity="0.3"/>
+    </svg>`,
+  },
+  {
+    name: 'Lava Colossus',
+    power: 12,
+    perCard: 5,
+    ability: 'threshold',
+    abilityDesc: 'Threshold — Cards with power less than 3 are nullified.',
+    minLevel: 5,
+    sprite: `<svg viewBox="0 0 100 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="50" cy="116" rx="32" ry="4" fill="#000" opacity="0.4"/>
+      <rect x="28" y="88" width="18" height="26" rx="3" fill="#2a1a0a"/>
+      <rect x="54" y="88" width="18" height="26" rx="3" fill="#2a1a0a"/>
+      <line x1="34" y1="92" x2="38" y2="108" stroke="#ff6600" stroke-width="1.5" opacity="0.8"/>
+      <line x1="60" y1="92" x2="64" y2="108" stroke="#ff8800" stroke-width="1.5" opacity="0.8"/>
+      <rect x="16" y="48" width="68" height="46" rx="8" fill="#3a2010"/>
+      <rect x="18" y="50" width="64" height="42" rx="6" fill="#2a1808" stroke="#4a2810" stroke-width="1"/>
+      <path d="M26 58 Q34 64 28 74 Q36 72 40 80" stroke="#ff6600" stroke-width="2" fill="none" opacity="0.9"/>
+      <path d="M60 56 Q68 62 66 72 Q72 68 76 78" stroke="#ff8800" stroke-width="2" fill="none" opacity="0.9"/>
+      <path d="M44 62 L50 70 L56 62" stroke="#ffaa00" stroke-width="2" fill="none" opacity="0.7"/>
+      <rect x="2" y="50" width="16" height="36" rx="5" fill="#3a2010"/>
+      <rect x="82" y="50" width="16" height="36" rx="5" fill="#3a2010"/>
+      <ellipse cx="10" cy="88" rx="10" ry="8" fill="#2a1808"/>
+      <ellipse cx="90" cy="88" rx="10" ry="8" fill="#2a1808"/>
+      <circle cx="10" cy="88" r="5" fill="#ff6600" opacity="0.6"/>
+      <circle cx="90" cy="88" r="5" fill="#ff8800" opacity="0.6"/>
+      <ellipse cx="50" cy="36" rx="24" ry="20" fill="#3a2010"/>
+      <ellipse cx="50" cy="34" rx="20" ry="16" fill="#2a1808" stroke="#4a2810" stroke-width="1"/>
+      <circle cx="40" cy="32" r="6" fill="#1a0800"/>
+      <circle cx="60" cy="32" r="6" fill="#1a0800"/>
+      <circle cx="40" cy="32" r="4" fill="#ff4400" opacity="0.9"/>
+      <circle cx="60" cy="32" r="4" fill="#ff4400" opacity="0.9"/>
+      <circle cx="40" cy="31" r="2" fill="#ffcc44"/>
+      <circle cx="60" cy="31" r="2" fill="#ffcc44"/>
+      <polygon points="34,20 28,4 40,18" fill="#2a1808"/>
+      <polygon points="66,20 72,4 60,18" fill="#2a1808"/>
+      <path d="M38 44 Q44 48 50 44 Q56 48 62 44" stroke="#ff6600" stroke-width="2" fill="none" opacity="0.8"/>
+    </svg>`,
+  },
+  {
+    name: 'Void Tyrant',
+    power: 16,
+    perCard: 6,
+    ability: 'dread',
+    abilityDesc: 'Void Dread — Your 3 lowest-power cards are nullified.',
+    minLevel: 5,
+    sprite: `<svg viewBox="0 0 100 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="50" cy="55" r="48" fill="#050010" opacity="0.6"/>
+      <path d="M50 80 Q20 90 10 108" stroke="#3a0a5a" stroke-width="4" stroke-linecap="round"/>
+      <path d="M50 80 Q46 98 42 115" stroke="#3a0a5a" stroke-width="3" stroke-linecap="round"/>
+      <path d="M50 80 Q54 98 58 115" stroke="#3a0a5a" stroke-width="3" stroke-linecap="round"/>
+      <path d="M50 80 Q80 90 90 108" stroke="#3a0a5a" stroke-width="4" stroke-linecap="round"/>
+      <ellipse cx="50" cy="55" rx="36" ry="38" fill="#0a0020"/>
+      <ellipse cx="50" cy="55" rx="30" ry="32" fill="#120030" stroke="#5a1a8a" stroke-width="1"/>
+      <path d="M16 50 Q4 38 2 24 Q8 28 12 36 Q6 22 14 16 Q16 26 18 34 Q16 20 26 18 Q24 28 22 40" fill="#1a0040" stroke="#4a0a7a" stroke-width="1"/>
+      <path d="M84 50 Q96 38 98 24 Q92 28 88 36 Q94 22 86 16 Q84 26 82 34 Q84 20 74 18 Q76 28 78 40" fill="#1a0040" stroke="#4a0a7a" stroke-width="1"/>
+      <circle cx="50" cy="50" r="18" fill="#050010"/>
+      <circle cx="50" cy="50" r="14" fill="#0a0025"/>
+      <circle cx="50" cy="50" r="10" fill="#1a0040" stroke="#8800cc" stroke-width="1.5"/>
+      <circle cx="50" cy="50" r="7" fill="#3300aa" opacity="0.8"/>
+      <circle cx="50" cy="50" r="4" fill="#8800ff"/>
+      <circle cx="50" cy="50" r="2" fill="#cc88ff"/>
+      <circle cx="48" cy="48" r="1.5" fill="#ffffff" opacity="0.8"/>
+      <circle cx="28" cy="38" r="4" fill="#1a0040" stroke="#6600aa" stroke-width="1"/>
+      <circle cx="28" cy="38" r="2.5" fill="#6600cc"/>
+      <circle cx="72" cy="38" r="4" fill="#1a0040" stroke="#6600aa" stroke-width="1"/>
+      <circle cx="72" cy="38" r="2.5" fill="#6600cc"/>
+      <circle cx="30" cy="65" r="3" fill="#1a0040" stroke="#6600aa" stroke-width="1"/>
+      <circle cx="30" cy="65" r="1.5" fill="#8800ff"/>
+      <circle cx="70" cy="65" r="3" fill="#1a0040" stroke="#6600aa" stroke-width="1"/>
+      <circle cx="70" cy="65" r="1.5" fill="#8800ff"/>
+      <circle cx="20" cy="25" r="1" fill="#cc88ff" opacity="0.6"/>
+      <circle cx="80" cy="20" r="1.5" fill="#aa66ff" opacity="0.7"/>
+      <circle cx="15" cy="75" r="1" fill="#9944ff" opacity="0.5"/>
+      <circle cx="85" cy="78" r="1" fill="#cc88ff" opacity="0.6"/>
+    </svg>`,
+  },
+  {
+    name: 'Bandit King',
+    power: 5,
+    perCard: 0,
+    ability: 'none',
+    abilityDesc: 'No tricks. Just stolen gold.',
+    minLevel: 1,
+    sprite: `<svg viewBox="0 0 100 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="50" cy="116" rx="20" ry="4" fill="#000" opacity="0.35"/>
+      <line x1="40" y1="88" x2="36" y2="114" stroke="#3a2810" stroke-width="8" stroke-linecap="round"/>
+      <line x1="60" y1="88" x2="64" y2="114" stroke="#3a2810" stroke-width="8" stroke-linecap="round"/>
+      <path d="M30 54 Q26 70 28 90 Q38 98 50 98 Q62 98 72 90 Q74 70 70 54 Z" fill="#2a1a08"/>
+      <path d="M30 54 Q22 62 24 78" stroke="#1a0a04" stroke-width="6" stroke-linecap="round"/>
+      <path d="M70 54 Q78 62 76 78" stroke="#1a0a04" stroke-width="6" stroke-linecap="round"/>
+      <line x1="30" y1="62" x2="12" y2="74" stroke="#2a1a08" stroke-width="8" stroke-linecap="round"/>
+      <line x1="70" y1="62" x2="88" y2="74" stroke="#2a1a08" stroke-width="8" stroke-linecap="round"/>
+      <line x1="10" y1="72" x2="2" y2="58" stroke="#c0c0b0" stroke-width="3" stroke-linecap="round"/>
+      <rect x="7" y="70" width="7" height="2" rx="1" fill="#8a7a50" transform="rotate(-35 10 71)"/>
+      <line x1="90" y1="72" x2="98" y2="58" stroke="#c0c0b0" stroke-width="3" stroke-linecap="round"/>
+      <rect x="86" y="70" width="7" height="2" rx="1" fill="#8a7a50" transform="rotate(35 90 71)"/>
+      <ellipse cx="50" cy="42" rx="17" ry="19" fill="#c8a870"/>
+      <path d="M36 46 Q40 54 50 54 Q60 54 64 46 Q56 50 50 50 Q44 50 36 46" fill="#3a1808" opacity="0.5"/>
+      <ellipse cx="42" cy="42" rx="3" ry="2.5" fill="#1a0a04"/>
+      <ellipse cx="58" cy="42" rx="3" ry="2.5" fill="#1a0a04"/>
+      <circle cx="43" cy="41" r="1" fill="#dd2200"/>
+      <circle cx="59" cy="41" r="1" fill="#dd2200"/>
+      <path d="M33 30 L30 16 L37 26 L44 14 L50 26 L56 14 L63 26 L70 16 L67 30 Z" fill="#c9a84c"/>
+      <rect x="33" y="28" width="34" height="5" rx="1" fill="#a08030"/>
+      <circle cx="44" cy="24" r="2" fill="#cc3333"/>
+      <circle cx="56" cy="24" r="2" fill="#3366cc"/>
+    </svg>`,
+  },
+  {
+    name: 'Ogre Chief',
+    power: 5,
+    perCard: 1,
+    ability: 'decapitate',
+    abilityDesc: 'Decapitate — Your highest-power card is nullified.',
+    minLevel: 5,
+    sprite: `<svg viewBox="0 0 100 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="50" cy="116" rx="28" ry="4" fill="#000" opacity="0.4"/>
+      <rect x="28" y="90" width="16" height="24" rx="3" fill="#4a3a20"/>
+      <rect x="56" y="90" width="16" height="24" rx="3" fill="#4a3a20"/>
+      <ellipse cx="50" cy="72" rx="28" ry="26" fill="#7a5a30"/>
+      <ellipse cx="50" cy="80" rx="20" ry="14" fill="#6a4a20"/>
+      <path d="M22 62 L6 80" stroke="#7a5a30" stroke-width="14" stroke-linecap="round"/>
+      <path d="M78 62 L94 80" stroke="#7a5a30" stroke-width="14" stroke-linecap="round"/>
+      <ellipse cx="4" cy="82" rx="8" ry="6" fill="#6a4a20"/>
+      <ellipse cx="96" cy="82" rx="8" ry="6" fill="#6a4a20"/>
+      <ellipse cx="50" cy="38" rx="24" ry="22" fill="#7a5a30"/>
+      <ellipse cx="50" cy="44" rx="6" ry="4" fill="#6a4a20"/>
+      <circle cx="48" cy="44" r="2" fill="#3a2010"/>
+      <circle cx="52" cy="44" r="2" fill="#3a2010"/>
+      <circle cx="39" cy="34" r="5" fill="#2a1808"/>
+      <circle cx="61" cy="34" r="5" fill="#2a1808"/>
+      <circle cx="39" cy="34" r="3" fill="#cc4400"/>
+      <circle cx="61" cy="34" r="3" fill="#cc4400"/>
+      <path d="M42 52 L38 62" stroke="#e8e0c0" stroke-width="3" stroke-linecap="round"/>
+      <path d="M58 52 L62 62" stroke="#e8e0c0" stroke-width="3" stroke-linecap="round"/>
+      <rect x="80" y="6" width="14" height="44" rx="2" fill="#8a8a8a"/>
+      <rect x="78" y="4" width="18" height="10" rx="1" fill="#aaaaaa"/>
+      <rect x="88" y="46" width="6" height="22" rx="1" fill="#6a5030"/>
+      <line x1="78" y1="10" x2="96" y2="10" stroke="#cccccc" stroke-width="1.5"/>
+    </svg>`,
+  },
+  {
+    name: 'Hex Knight',
+    power: 4,
+    perCard: 2,
+    ability: 'fatigue',
+    abilityDesc: 'Exhaustion — Cards with multiple attacks are nullified.',
+    minLevel: 2,
+    sprite: `<svg viewBox="0 0 100 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="50" cy="116" rx="24" ry="4" fill="#000" opacity="0.4"/>
+      <rect x="30" y="90" width="14" height="26" rx="3" fill="#2a2a3a"/>
+      <rect x="56" y="90" width="14" height="26" rx="3" fill="#2a2a3a"/>
+      <rect x="26" y="52" width="48" height="44" rx="6" fill="#3a3a4a"/>
+      <rect x="28" y="54" width="44" height="40" rx="4" fill="#2a2a3a" stroke="#5a5a7a" stroke-width="1"/>
+      <circle cx="50" cy="74" r="10" fill="#0a0a1a" stroke="#6644aa" stroke-width="1.5"/>
+      <path d="M50 65 L53 70 L60 70 L55 75 L57 82 L50 78 L43 82 L45 75 L40 70 L47 70 Z" fill="#4422aa" opacity="0.8"/>
+      <circle cx="50" cy="74" r="4" fill="#8844ff" opacity="0.6"/>
+      <rect x="14" y="50" width="14" height="20" rx="4" fill="#3a3a4a" stroke="#5a5a7a" stroke-width="1"/>
+      <rect x="72" y="50" width="14" height="20" rx="4" fill="#3a3a4a" stroke="#5a5a7a" stroke-width="1"/>
+      <rect x="14" y="68" width="14" height="18" rx="3" fill="#2a2a3a"/>
+      <rect x="72" y="68" width="14" height="18" rx="3" fill="#2a2a3a"/>
+      <ellipse cx="21" cy="88" rx="8" ry="6" fill="#2a2a3a" stroke="#5a5a7a" stroke-width="1"/>
+      <circle cx="21" cy="84" r="5" fill="#1a0a2a" stroke="#6644aa" stroke-width="1"/>
+      <circle cx="21" cy="84" r="3" fill="#8844ff" opacity="0.8"/>
+      <rect x="28" y="30" width="44" height="28" rx="8" fill="#3a3a4a"/>
+      <rect x="30" y="32" width="40" height="24" rx="6" fill="#2a2a3a" stroke="#5a5a7a" stroke-width="1"/>
+      <rect x="32" y="44" width="36" height="6" rx="2" fill="#0a0a1a"/>
+      <rect x="34" y="45" width="32" height="4" rx="1" fill="#4422aa" opacity="0.5"/>
+      <rect x="46" y="22" width="8" height="12" rx="2" fill="#3a3a4a"/>
+      <rect x="44" y="20" width="12" height="4" rx="1" fill="#5a5a7a"/>
+    </svg>`,
+  },
+  {
+    name: 'Dungeon Warden',
+    power: 6,
+    perCard: 1,
+    ability: 'toll',
+    abilityDesc: 'Toll — You lose 3 gold when the battle begins.',
+    minLevel: 2,
+    sprite: `<svg viewBox="0 0 100 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="50" cy="116" rx="22" ry="4" fill="#000" opacity="0.4"/>
+      <rect x="32" y="90" width="14" height="26" rx="2" fill="#3a2a1a"/>
+      <rect x="54" y="90" width="14" height="26" rx="2" fill="#3a2a1a"/>
+      <rect x="24" y="54" width="52" height="42" rx="5" fill="#4a3a2a"/>
+      <rect x="26" y="56" width="48" height="38" rx="3" fill="#3a2a1a" stroke="#6a5a3a" stroke-width="1"/>
+      <rect x="24" y="78" width="52" height="10" rx="2" fill="#2a1a0a" stroke="#c9a84c" stroke-width="1.5"/>
+      <circle cx="38" cy="83" r="4" fill="#c9a84c" stroke="#a08030" stroke-width="1"/>
+      <circle cx="50" cy="83" r="4" fill="#c9a84c" stroke="#a08030" stroke-width="1"/>
+      <circle cx="62" cy="83" r="4" fill="#c9a84c" stroke="#a08030" stroke-width="1"/>
+      <path d="M24 64 L8 76" stroke="#4a3a2a" stroke-width="10" stroke-linecap="round"/>
+      <circle cx="6" cy="76" r="5" fill="#c9a84c" stroke="#a08030" stroke-width="1.5"/>
+      <line x1="6" y1="81" x2="6" y2="93" stroke="#8a7a50" stroke-width="2"/>
+      <circle cx="6" cy="95" r="3" fill="#c9a84c"/>
+      <line x1="3" y1="95" x2="9" y2="95" stroke="#8a7a50" stroke-width="2"/>
+      <line x1="6" y1="97" x2="6" y2="101" stroke="#8a7a50" stroke-width="2"/>
+      <path d="M76 64 L90 72" stroke="#4a3a2a" stroke-width="10" stroke-linecap="round"/>
+      <rect x="86" y="58" width="10" height="20" rx="3" fill="#5a4a3a" stroke="#8a7a5a" stroke-width="1"/>
+      <rect x="84" y="54" width="14" height="8" rx="2" fill="#6a5a4a"/>
+      <rect x="30" y="28" width="40" height="30" rx="8" fill="#4a3a2a"/>
+      <rect x="32" y="30" width="36" height="26" rx="6" fill="#3a2a1a" stroke="#6a5a3a" stroke-width="1"/>
+      <rect x="47" y="40" width="6" height="16" rx="2" fill="#2a1a0a"/>
+      <rect x="33" y="38" width="12" height="6" rx="2" fill="#0a0a0a"/>
+      <rect x="55" y="38" width="12" height="6" rx="2" fill="#0a0a0a"/>
+      <rect x="34" y="39" width="10" height="4" rx="1" fill="#cc4400" opacity="0.7"/>
+      <rect x="56" y="39" width="10" height="4" rx="1" fill="#cc4400" opacity="0.7"/>
+      <rect x="46" y="20" width="8" height="12" rx="2" fill="#4a3a2a"/>
+      <path d="M42 20 L50 12 L58 20" fill="#5a4a2a"/>
+    </svg>`,
+  },
+  {
+    name: 'Swarm Queen',
+    power: 5,
+    perCard: 2,
+    ability: 'vanguard',
+    abilityDesc: 'Vanguard Lock — Only your first 5 cards count.',
+    minLevel: 2,
+    sprite: `<svg viewBox="0 0 100 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="50" cy="100" rx="16" ry="20" fill="#2a1a08"/>
+      <ellipse cx="50" cy="106" rx="12" ry="14" fill="#1a0a04"/>
+      <ellipse cx="50" cy="98" rx="14" ry="6" fill="#4a3a10" stroke="#6a5a20" stroke-width="1"/>
+      <ellipse cx="50" cy="108" rx="12" ry="5" fill="#3a2a08" stroke="#5a4a18" stroke-width="1"/>
+      <ellipse cx="50" cy="70" rx="18" ry="22" fill="#3a2808"/>
+      <ellipse cx="50" cy="68" rx="14" ry="16" fill="#2a1a04" stroke="#5a4010" stroke-width="1"/>
+      <line x1="50" y1="56" x2="50" y2="84" stroke="#6a5820" stroke-width="1.5" opacity="0.7"/>
+      <line x1="42" y1="60" x2="58" y2="60" stroke="#6a5820" stroke-width="1" opacity="0.5"/>
+      <line x1="40" y1="70" x2="60" y2="70" stroke="#6a5820" stroke-width="1" opacity="0.5"/>
+      <path d="M34 64 L14 52" stroke="#3a2808" stroke-width="6" stroke-linecap="round"/>
+      <path d="M34 72 L10 78" stroke="#3a2808" stroke-width="5" stroke-linecap="round"/>
+      <path d="M66 64 L86 52" stroke="#3a2808" stroke-width="6" stroke-linecap="round"/>
+      <path d="M66 72 L90 78" stroke="#3a2808" stroke-width="5" stroke-linecap="round"/>
+      <path d="M14 52 L6 46 M14 52 L8 56" stroke="#5a4810" stroke-width="3" stroke-linecap="round"/>
+      <path d="M10 78 L2 72 M10 78 L4 84" stroke="#5a4810" stroke-width="3" stroke-linecap="round"/>
+      <path d="M86 52 L94 46 M86 52 L92 56" stroke="#5a4810" stroke-width="3" stroke-linecap="round"/>
+      <path d="M90 78 L98 72 M90 78 L96 84" stroke="#5a4810" stroke-width="3" stroke-linecap="round"/>
+      <ellipse cx="50" cy="42" rx="18" ry="16" fill="#3a2808"/>
+      <ellipse cx="50" cy="40" rx="14" ry="12" fill="#2a1a04" stroke="#5a4010" stroke-width="1"/>
+      <ellipse cx="38" cy="38" rx="7" ry="6" fill="#0a0a04"/>
+      <ellipse cx="62" cy="38" rx="7" ry="6" fill="#0a0a04"/>
+      <ellipse cx="38" cy="38" rx="5" ry="4" fill="#44aa00" opacity="0.8"/>
+      <ellipse cx="62" cy="38" rx="5" ry="4" fill="#44aa00" opacity="0.8"/>
+      <circle cx="36" cy="37" r="2" fill="#88ff44" opacity="0.6"/>
+      <circle cx="60" cy="37" r="2" fill="#88ff44" opacity="0.6"/>
+      <path d="M42 50 L36 58" stroke="#5a4010" stroke-width="3" stroke-linecap="round"/>
+      <path d="M58 50 L64 58" stroke="#5a4010" stroke-width="3" stroke-linecap="round"/>
+      <path d="M44 28 Q36 16 28 10" stroke="#5a4010" stroke-width="2" stroke-linecap="round"/>
+      <path d="M56 28 Q64 16 72 10" stroke="#5a4010" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="28" cy="10" r="3" fill="#88ff44" opacity="0.7"/>
+      <circle cx="72" cy="10" r="3" fill="#88ff44" opacity="0.7"/>
+      <path d="M40 30 L44 24 L50 28 L56 24 L60 30" stroke="#c9a84c" stroke-width="1.5" fill="none" opacity="0.8"/>
+    </svg>`,
+  },
+];
+
+// Base power and per-card multiplier by room (index = roomIndex 0–7)
+const LEVEL_STATS = [
+  { base:  4, perCard:  0 },
+  { base:  4, perCard:  1 },
+  { base:  8, perCard:  1 },
+  { base: 17, perCard:  2 },
+  { base: 25, perCard:  3 },
+  { base: 38, perCard:  5 },
+  { base: 56, perCard:  7 },
+  { base: 80, perCard: 10 },
 ];
 
 // ── Card pool ────────────────────────────────────────────────────────────────
@@ -414,6 +708,41 @@ function makeMinion(id) {
   return { id, power: 1, name: 'Minion', tier: 0, ability: 'none', abilityDesc: '', isStarter: true, sprite: SPRITES['minion'] };
 }
 
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function generateBossSequence() {
+  const seq = [];
+  const used = new Set();
+
+  // Room 1: one of the level-1 bosses
+  const pool1 = BOSSES.filter(b => b.minLevel === 1);
+  const b1 = pool1[Math.floor(Math.random() * pool1.length)];
+  seq.push(b1);
+  used.add(b1.name);
+
+  // Rooms 2-4: random from minLevel-2 bosses only, no repeats
+  const pool2 = shuffle(BOSSES.filter(b => b.minLevel === 2));
+  for (let i = 0; i < 3 && i < pool2.length; i++) {
+    seq.push(pool2[i]);
+    used.add(pool2[i].name);
+  }
+
+  // Rooms 5-8: any remaining non-level-1 boss, no repeats
+  const pool5 = shuffle(BOSSES.filter(b => b.minLevel >= 2 && !used.has(b.name)));
+  for (let i = 0; i < 4 && i < pool5.length; i++) {
+    seq.push(pool5[i]);
+  }
+
+  return seq;
+}
+
 function init() {
   stopTimer();
   nextId = 10;
@@ -422,6 +751,7 @@ function init() {
     deck: [makeMinion(1), makeMinion(2), makeMinion(3)],
     phase: 'title',
     roomIndex: 0,
+    bossSequence: [],
     shopCards: [],
     shopTier: 1,
     mode: null,
@@ -561,6 +891,28 @@ function buildNulledSet(deck, ability) {
       eligible.forEach(c => { if (!keep.has(c.id)) nulled.add(c.id); });
       break;
     }
+    case 'decapitate':
+      if (byDesc[0]) nulled.add(byDesc[0].id);
+      break;
+    case 'fatigue':
+      eligible.forEach(c => {
+        if (c.ability === 'double-strike' || c.ability === 'triple-strike') nulled.add(c.id);
+      });
+      break;
+    case 'vanguard':
+      eligible.slice(5).forEach(c => nulled.add(c.id));
+      break;
+    case 'tier-scorn':
+      eligible.forEach(c => { if (c.tier === 1) nulled.add(c.id); });
+      break;
+    case 'threshold':
+      eligible.forEach(c => { if (c.power < 3) nulled.add(c.id); });
+      break;
+    case 'dread':
+      if (byAsc[0]) nulled.add(byAsc[0].id);
+      if (byAsc[1]) nulled.add(byAsc[1].id);
+      if (byAsc[2]) nulled.add(byAsc[2].id);
+      break;
   }
   return nulled;
 }
@@ -670,6 +1022,28 @@ function abilityExplanation(deck, ability) {
       return `Only top ${Math.min(5, deck.length)} cards count`;
     case 'dragons-gaze':
       return `Only top ${Math.min(6, deck.length)} cards count`;
+    case 'decapitate':
+      return `Highest card (power ${asc[asc.length - 1]}) nullified`;
+    case 'fatigue': {
+      const n = deck.filter(c => c.ability === 'double-strike' || c.ability === 'triple-strike').length;
+      return n > 0 ? `${n} multi-attack card${n > 1 ? 's' : ''} nullified` : 'No multi-attack cards to nullify';
+    }
+    case 'vanguard': {
+      const elig = deck.filter(c => c.ability !== 'immune');
+      return elig.length > 5 ? `Cards 6–${elig.length} in deck order nullified` : 'All cards count (≤5 in deck)';
+    }
+    case 'tier-scorn': {
+      const n = deck.filter(c => c.tier === 1).length;
+      return n > 0 ? `${n} Tier 1 card${n > 1 ? 's' : ''} nullified` : 'No Tier 1 cards to nullify';
+    }
+    case 'threshold': {
+      const n = deck.filter(c => c.power < 3).length;
+      return n > 0 ? `${n} card${n > 1 ? 's' : ''} with power < 3 nullified` : 'No cards below power 3';
+    }
+    case 'dread':
+      return `3 lowest cards (power ${asc[0]}, ${asc[1] ?? 0}, ${asc[2] ?? 0}) nullified`;
+    case 'toll':
+      return 'Toll: 3 gold lost at battle start';
     default:
       return null;
   }
@@ -785,6 +1159,7 @@ function refreshShop() {
 }
 
 function startGame() {
+  state.bossSequence = generateBossSequence();
   state.shopCards = generateShop();
   state.phase = 'room';
   render();
@@ -794,7 +1169,7 @@ function startGame() {
 function enterBattle() {
   if (state.timerPaused) return;
   stopTimer();
-  const boss = BOSSES[state.roomIndex];
+  const boss = state.bossSequence[state.roomIndex];
   let effectiveAbility = boss.ability;
   let abilityNegated = false;
 
@@ -804,11 +1179,19 @@ function enterBattle() {
     abilityNegated = true;
   }
 
-  const bossPower = boss.power + boss.perCard * state.deck.length;
+  let goldLost = 0;
+  if (effectiveAbility === 'toll') {
+    goldLost = Math.min(3, state.gold);
+    state.gold -= goldLost;
+  }
+
+  const { base: bossBase, perCard: bossPerCard } = LEVEL_STATS[state.roomIndex];
+  const bossPower = bossBase + bossPerCard * state.deck.length;
   const tp = totalPower(state.deck);
   const ep = effectivePower(state.deck, effectiveAbility);
 
   let explanation = abilityExplanation(state.deck, effectiveAbility);
+  if (effectiveAbility === 'toll') explanation = `Toll: lost ${goldLost} gold`;
   if (abilityNegated) {
     explanation = `Shadow Cloak negated: ${boss.abilityDesc.split(' — ')[0]}`;
   }
@@ -821,6 +1204,8 @@ function enterBattle() {
   state.battleResult = {
     boss,
     bossPower,
+    bossBase,
+    bossPerCard,
     effectiveAbility,
     abilityNegated,
     totalPower: tp,
@@ -840,11 +1225,16 @@ function afterBattle() {
     return;
   }
   const bonusGold = state.relics.includes('bonus-gold-per-win') ? 1 : 0;
-  const goldReward = 3 + bonusGold;
+  const goldReward = 2 + (state.roomIndex + 1) + bonusGold;
   state.gold += goldReward;
   state.battleResult.goldReward = goldReward;
-  state.treasureChoices = pickTreasures();
-  state.phase = 'treasure';
+  if (state.roomIndex >= 7) {
+    state.roomIndex++;
+    state.phase = 'win';
+  } else {
+    state.treasureChoices = pickTreasures();
+    state.phase = 'treasure';
+  }
   render();
 }
 
@@ -875,7 +1265,7 @@ function applyTreasure(treasure) {
 function chooseTreasure(treasure) {
   applyTreasure(treasure);
   state.roomIndex++;
-  if (state.roomIndex >= 5) {
+  if (state.roomIndex >= 8) {
     state.phase = 'win';
   } else {
     state.shopCards = generateShop();
@@ -936,8 +1326,9 @@ function renderTitle() {
 }
 
 function renderRoom() {
-  const boss = BOSSES[state.roomIndex];
+  const boss = state.bossSequence[state.roomIndex];
   const roomNum = state.roomIndex + 1;
+  const { base: lvBase, perCard: lvPerCard } = LEVEL_STATS[state.roomIndex];
   const tp = totalPower(state.deck);
   const deckSelectable = (state.mode === 'remove' || state.mode === 'upgrade') && !state.timerPaused;
   const upCost = upgradeCost();
@@ -968,7 +1359,7 @@ function renderRoom() {
   return `
     <div>
       <div class="top-bar">
-        <span class="phase-label">Room ${roomNum} of 5</span>
+        <span class="phase-label">Room ${roomNum} of 8</span>
         <div class="timer-wrap">
           <span id="room-timer" class="room-timer${state.timerLeft <= 10 ? ' timer-urgent' : ''}">${state.timerLeft}s</span>
           <button id="btn-timer-pause" class="btn-timer-pause">${state.timerPaused ? 'Resume' : 'Pause'}</button>
@@ -1012,13 +1403,14 @@ function renderRoom() {
           <div class="panel-title">Next Battle</div>
           <div class="boss-preview-sprite">${boss.sprite}</div>
           <span class="boss-name">${boss.name}</span>
-          ${boss.perCard > 0
-            ? `<span class="boss-stat">Power: ${boss.power}<span class="boss-per-card"> +${boss.perCard}/card</span></span>
-               <span class="boss-threat">Threat: ${boss.power + boss.perCard * state.deck.length}
-                 <span class="boss-threat-note">(${boss.power} + ${boss.perCard}×${state.deck.length})</span></span>`
-            : `<span class="boss-stat">Power: ${boss.power}</span>`
+          ${lvPerCard > 0
+            ? `<span class="boss-stat">Power: ${lvBase}<span class="boss-per-card"> +${lvPerCard}/card</span></span>
+               <span class="boss-threat">Threat: ${lvBase + lvPerCard * state.deck.length}
+                 <span class="boss-threat-note">(${lvBase} + ${lvPerCard}×${state.deck.length})</span></span>`
+            : `<span class="boss-stat">Power: ${lvBase}</span>`
           }
           <span class="boss-ability-text">${boss.abilityDesc}</span>
+          <button class="proceed-btn" id="btn-enter-battle" ${state.timerPaused ? 'disabled' : ''}>Enter Battle →</button>
         </div>
       </div>
 
@@ -1026,14 +1418,12 @@ function renderRoom() {
         <div class="panel-title">Shop <span class="shop-tier-badge">${tierLabel}</span></div>
         <div class="shop-items">${shopHTML}</div>
       </div>
-
-      <button class="proceed-btn" id="btn-enter-battle" ${state.timerPaused ? 'disabled' : ''}>Enter Battle →</button>
     </div>
   `;
 }
 
 function renderBattle() {
-  const { boss, bossPower, effectiveAbility, abilityNegated, effectivePower: ep, won, explanation } = state.battleResult;
+  const { boss, bossPower, bossBase, bossPerCard, effectiveAbility, abilityNegated, effectivePower: ep, won, explanation } = state.battleResult;
   const battleNum = state.roomIndex + 1;
   const cardInfo = getCardBattleInfo(state.deck, effectiveAbility);
 
@@ -1050,14 +1440,14 @@ function renderBattle() {
     ? `<div class="boss-ability-label">${boss.abilityDesc}${abilityNegated ? ' <span class="negated-tag">Negated</span>' : ''}</div>`
     : '';
 
-  const bossScalingLine = boss.perCard > 0
-    ? `<div class="boss-scaling-line">${boss.power} + ${boss.perCard}×${state.deck.length} cards</div>`
+  const bossScalingLine = bossPerCard > 0
+    ? `<div class="boss-scaling-line">${bossBase} + ${bossPerCard}×${state.deck.length} cards</div>`
     : '';
 
   return `
     <div class="battle-screen">
       <div class="top-bar">
-        <span class="phase-label">Battle ${battleNum} of 5</span>
+        <span class="phase-label">Battle ${battleNum} of 8</span>
         <span class="gold-badge">${state.gold} gold</span>
       </div>
 
@@ -1095,7 +1485,7 @@ function renderBattle() {
 
 function renderTreasure() {
   const { boss, goldReward } = state.battleResult;
-  const isLast = state.roomIndex >= 4;
+  const isLast = state.roomIndex >= 7;
   const tp = totalPower(state.deck);
 
   const deckHTML = `
@@ -1415,7 +1805,7 @@ function renderWin() {
   return `
     <div class="end-screen">
       <h1 style="color:#c9a84c">Victory!</h1>
-      <p>You slew the Ancient Dragon.</p>
+      <p>You slew the ${state.bossSequence[7]?.name ?? 'final boss'}.</p>
       <p>Final gold: ${state.gold} &nbsp;|&nbsp; Final deck power: ${totalPower(state.deck)}</p>
       <div class="final-deck card-row">
         ${state.deck.map(c => cardHTML(c, false)).join('')}
