@@ -40,6 +40,7 @@ const BOSSES = [
     ability: 'thick-hide',
     abilityDesc: 'Thick Hide — Your lowest-power card is nullified.',
     minLevel: 2,
+    maxLevel: 3,
     sprite: `<svg viewBox="0 0 100 120" fill="none" xmlns="http://www.w3.org/2000/svg">
       <ellipse cx="50" cy="116" rx="30" ry="4" fill="#000" opacity="0.4"/>
       <path d="M30 96 L22 114" stroke="#3a3028" stroke-width="13" stroke-linecap="round"/>
@@ -70,7 +71,7 @@ const BOSSES = [
     perCard: 1,
     ability: 'hex',
     abilityDesc: 'Hex — Your 2 lowest-power cards are nullified.',
-    minLevel: 2,
+    minLevel: 3,
     sprite: `<svg viewBox="0 0 100 120" fill="none" xmlns="http://www.w3.org/2000/svg">
       <ellipse cx="50" cy="116" rx="20" ry="4" fill="#000" opacity="0.35"/>
       <path d="M38 95 Q34 108 30 116" stroke="#2a1a3a" stroke-width="7" stroke-linecap="round"/>
@@ -404,7 +405,7 @@ const BOSSES = [
     perCard: 2,
     ability: 'vanguard',
     abilityDesc: 'Vanguard Lock — Only your first 5 cards count.',
-    minLevel: 2,
+    minLevel: 4,
     sprite: `<svg viewBox="0 0 100 120" fill="none" xmlns="http://www.w3.org/2000/svg">
       <ellipse cx="50" cy="100" rx="16" ry="20" fill="#2a1a08"/>
       <ellipse cx="50" cy="106" rx="12" ry="14" fill="#1a0a04"/>
@@ -727,11 +728,12 @@ function generateBossSequence() {
   seq.push(b1);
   used.add(b1.name);
 
-  // Rooms 2-4: random from minLevel-2 bosses only, no repeats
-  const pool2 = shuffle(BOSSES.filter(b => b.minLevel === 2));
-  for (let i = 0; i < 3 && i < pool2.length; i++) {
-    seq.push(pool2[i]);
-    used.add(pool2[i].name);
+  // Rooms 2-4: from minLevel-2 pool, respecting maxLevel — expiring bosses consumed first
+  const pool2base = shuffle(BOSSES.filter(b => b.minLevel === 2));
+  for (let room = 2; room <= 4; room++) {
+    const eligible = pool2base.filter(b => !used.has(b.name) && (!b.maxLevel || b.maxLevel >= room));
+    eligible.sort((a, b) => (a.maxLevel || 99) - (b.maxLevel || 99));
+    if (eligible.length > 0) { seq.push(eligible[0]); used.add(eligible[0].name); }
   }
 
   // Rooms 5-8: any remaining non-level-1 boss, no repeats
@@ -790,6 +792,10 @@ function updateTimerDisplay() {
   if (!el) return;
   el.textContent = state.timerLeft + 's';
   el.classList.toggle('timer-urgent', state.timerLeft <= 10);
+  const bar = document.getElementById('timer-bar-fill');
+  if (!bar) return;
+  bar.style.width = (state.timerLeft / 60) * 100 + '%';
+  bar.classList.toggle('timer-bar-urgent', state.timerLeft <= 10);
 }
 
 function toggleTimerPause() {
@@ -872,8 +878,11 @@ function totalPower(deck) {
 
 function buildNulledSet(deck, ability) {
   const eligible = deck.filter(c => c.ability !== 'immune');
-  const byAsc  = [...eligible].sort((a, b) => a.power - b.power);
-  const byDesc = [...eligible].sort((a, b) => b.power - a.power);
+  // Colossus's effective power = sum of all other eligible cards (its base power of 1 would otherwise hide it)
+  const colossusEffPower = eligible.filter(c => c.ability !== 'colossus').reduce((s, c) => s + c.power, 0);
+  const sortPower = c => c.ability === 'colossus' ? colossusEffPower : c.power;
+  const byAsc  = [...eligible].sort((a, b) => sortPower(a) - sortPower(b));
+  const byDesc = [...eligible].sort((a, b) => sortPower(b) - sortPower(a));
   const nulled = new Set();
   switch (ability) {
     case 'thick-hide': if (byAsc[0]) nulled.add(byAsc[0].id); break;
@@ -988,9 +997,9 @@ function getCardBattleInfo(deck, ability) {
       effective: eff,
       attacks: cardAttackCount(c),
       doubled: false,
-      displayPower: (eff && c.ability === 'soul-collect') ? nulledPowerSum
-                  : (eff && c.ability === 'colossus')     ? otherEffectiveSum
-                  : (eff && c.ability === 'duelist')      ? deck.length
+      displayPower: (c.ability === 'colossus')     ? otherEffectiveSum
+                  : (c.ability === 'soul-collect') ? nulledPowerSum
+                  : (c.ability === 'duelist')      ? deck.length
                   : c.power,
     };
   });
@@ -1169,7 +1178,7 @@ function startGame() {
 function enterBattle() {
   if (state.timerPaused) return;
   stopTimer();
-  const boss = state.bossSequence[state.roomIndex];
+  const boss = state.testMode ? BOSSES[state.testBossIndex] : state.bossSequence[state.roomIndex];
   let effectiveAbility = boss.ability;
   let abilityNegated = false;
 
@@ -1219,6 +1228,11 @@ function enterBattle() {
 }
 
 function afterBattle() {
+  if (state.testMode) {
+    state.phase = 'test-setup';
+    render();
+    return;
+  }
   if (!state.battleResult.won) {
     state.phase = 'gameover';
     render();
@@ -1321,6 +1335,7 @@ function renderTitle() {
         <div>Battle reward: <strong>3 gold + 1 treasure per win</strong></div>
       </div>
       <button id="btn-start">Begin Your Descent</button>
+      <button class="btn-secondary" id="btn-test-setup">Test Battle</button>
     </div>
   `;
 }
@@ -1366,6 +1381,9 @@ function renderRoom() {
           <span id="timer-pause-tip" class="timer-pause-tip"${state.timerPaused ? '' : ' style="display:none"'}>You may not complete actions while the timer is paused, but you may still plan your strategy.</span>
         </div>
         <span class="gold-badge">${state.gold} gold</span>
+      </div>
+      <div class="timer-bar-wrap">
+        <div id="timer-bar-fill" class="timer-bar-fill${state.timerLeft <= 10 ? ' timer-bar-urgent' : ''}" style="width:${(state.timerLeft / 60) * 100}%"></div>
       </div>
 
       <div class="room-grid">
@@ -1447,7 +1465,7 @@ function renderBattle() {
   return `
     <div class="battle-screen">
       <div class="top-bar">
-        <span class="phase-label">Battle ${battleNum} of 8</span>
+        <span class="phase-label">${state.testMode ? 'Test Battle' : `Battle ${battleNum} of 8`}</span>
         <span class="gold-badge">${state.gold} gold</span>
       </div>
 
@@ -1476,7 +1494,7 @@ function renderBattle() {
       <div class="battle-actions">
         <button class="btn-secondary" id="btn-replay-battle" style="opacity:0;pointer-events:none">↺ Replay</button>
         <button class="proceed-btn" id="btn-after-battle" style="opacity:0;pointer-events:none">
-          ${won ? 'Choose Treasure →' : 'Continue'}
+          ${state.testMode ? '← Back to Setup' : won ? 'Choose Treasure →' : 'Continue'}
         </button>
       </div>
     </div>
@@ -1674,10 +1692,10 @@ function animateBattle(isReplay = false) {
       for (let hit = 0; hit < totalHits; hit++) {
         const hitT        = cardStart + CHARGE_MS + hit * HIT_MS;
         const isBannerHit = doubled && hit === attacks;  // last hit = War Banner bonus
-        const myInspireBonus = card.ability === 'inspire' ? Math.max(0, inspireBonus - 1) : inspireBonus;
-        const hitDmg      = displayPower + warCryBonus + myInspireBonus + (hit === 0 ? rdBonus : 0);
 
         safeTick(() => {
+          const myInspireBonus = card.ability === 'inspire' ? Math.max(0, inspireBonus - 1) : inspireBonus;
+          const hitDmg = displayPower + warCryBonus + myInspireBonus + (hit === 0 ? rdBonus : 0);
           runningHp -= hitDmg;
           updateHpBar(runningHp, bossPower);
           showDamageNumber(hitDmg, isBannerHit ? 'banner' : (hit === 0 && rdBonus > 0 ? 'redirect' : false));
@@ -1816,13 +1834,145 @@ function renderWin() {
   `;
 }
 
+// ── Test Battle ───────────────────────────────────────────────────────────────
+
+const TEST_MINION_TEMPLATE = { id: 'test-minion', name: 'Minion', tier: 0, power: 1, ability: 'none', abilityDesc: '', isStarter: true, sprite: SPRITES['minion'] };
+
+function startTestSetup() {
+  stopTimer();
+  nextId = 100;
+  state = {
+    phase: 'test-setup',
+    testMode: true,
+    testBossIndex: null,
+    testRoomLevel: 0,
+    deck: [],
+    relics: [],
+    gold: 0,
+    roomIndex: 0,
+    bossSequence: [],
+    shopCards: [],
+    shopTier: 1,
+    mode: null,
+    battleResult: null,
+    timerLeft: 60,
+    timerPaused: false,
+    treasureChoices: [],
+  };
+  render();
+}
+
+function renderTestSetup() {
+  const bossesHTML = BOSSES.map((b, i) => {
+    const abilityLine = b.abilityDesc.includes(' — ') ? b.abilityDesc.split(' — ')[1] : b.abilityDesc;
+    return `<div class="test-boss-opt${state.testBossIndex === i ? ' selected' : ''}" data-bidx="${i}">
+      <div class="tbo-sprite">${b.sprite}</div>
+      <div class="tbo-name">${b.name}</div>
+      <div class="tbo-ability">${abilityLine}</div>
+    </div>`;
+  }).join('');
+
+  const levelBtns = Array.from({ length: 8 }, (_, i) =>
+    `<button class="btn-secondary${state.testRoomLevel === i ? ' active' : ''}" data-lvl="${i}">Room ${i + 1}</button>`
+  ).join('');
+
+  const ls = LEVEL_STATS[state.testRoomLevel];
+  const bossHp = ls.base + ls.perCard * state.deck.length;
+  const yourPower = state.testBossIndex !== null
+    ? `<div class="test-power-note">Boss HP: <strong style="color:#cc4444">${bossHp}</strong> &nbsp;·&nbsp; Your power: <strong style="color:#44ff88">${totalPower(state.deck)}</strong></div>`
+    : '';
+
+  const tierGroups = [
+    { label: 'Minion', cards: [TEST_MINION_TEMPLATE] },
+    { label: 'Tier 1', cards: CARD_POOL.filter(c => c.tier === 1) },
+    { label: 'Tier 2', cards: CARD_POOL.filter(c => c.tier === 2) },
+    { label: 'Tier 3', cards: CARD_POOL.filter(c => c.tier === 3) },
+  ];
+
+  const cardPickerHTML = tierGroups.map(({ label, cards }) =>
+    `<div class="test-tier-sep">${label}</div>` +
+    cards.map(c => `
+      <div class="test-card-row">
+        <div class="tcr-sprite">${c.sprite || ''}</div>
+        <div class="tcr-info">
+          <div class="tcr-name">${c.name}<span class="tcr-power">pow ${c.power}</span></div>
+          <div class="tcr-desc">${c.abilityDesc || 'No ability'}</div>
+        </div>
+        <button class="btn-buy" data-test-card="${c.id}">Add</button>
+      </div>`).join('')
+  ).join('');
+
+  const deckHTML = state.deck.length === 0
+    ? '<span class="empty-text">No cards yet — add some from the list on the right</span>'
+    : `<div class="test-deck-wrap">${state.deck.map(c =>
+        `<div class="test-deck-entry">
+          ${cardHTML(c, false)}
+          <button class="btn-danger test-rm" data-id="${c.id}">✕ Remove</button>
+        </div>`).join('')}</div>`;
+
+  const canStart = state.testBossIndex !== null && state.deck.length > 0;
+
+  return `
+    <div>
+      <div class="top-bar">
+        <span class="phase-label">Test Battle Setup</span>
+        <button id="btn-test-back" class="btn-secondary">← Home</button>
+      </div>
+
+      <div class="test-layout">
+        <div>
+          <div class="panel">
+            <div class="panel-title">Boss</div>
+            <div class="test-boss-grid">${bossesHTML}</div>
+          </div>
+          <div class="panel">
+            <div class="panel-title">Room Level</div>
+            <div class="test-level-row">${levelBtns}</div>
+            ${yourPower}
+          </div>
+        </div>
+        <div class="panel" style="margin-bottom:0">
+          <div class="panel-title">Cards</div>
+          <div class="test-card-picker">${cardPickerHTML}</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Deck <span>${state.deck.length} card${state.deck.length !== 1 ? 's' : ''}</span></div>
+        ${deckHTML}
+      </div>
+
+      <button class="proceed-btn" id="btn-test-go" ${canStart ? '' : 'disabled'}>Start Battle →</button>
+    </div>
+  `;
+}
+
+function testAddCard(cardId) {
+  const template = cardId === 'test-minion' ? TEST_MINION_TEMPLATE : CARD_POOL.find(c => c.id === cardId);
+  if (!template) return;
+  state.deck.push({ ...template, id: nextId++ });
+  render();
+}
+
+function testRemoveCard(deckId) {
+  state.deck = state.deck.filter(c => c.id !== deckId);
+  render();
+}
+
+function enterTestBattle() {
+  if (state.testBossIndex === null || state.deck.length === 0) return;
+  state.roomIndex = state.testRoomLevel;
+  enterBattle();
+}
+
 // ── Event wiring ──────────────────────────────────────────────────────────────
 
 function render() {
   document.querySelectorAll('.battle-pop').forEach(el => el.remove());
   const app = document.getElementById('app');
   switch (state.phase) {
-    case 'title':    app.innerHTML = renderTitle();    Music.play('title');    break;
+    case 'title':      app.innerHTML = renderTitle();      Music.play('title'); break;
+    case 'test-setup': app.innerHTML = renderTestSetup(); Music.play('title'); break;
     case 'room':     app.innerHTML = renderRoom();     Music.play('room');     break;
     case 'battle':
       app.innerHTML = renderBattle();
@@ -1843,7 +1993,32 @@ function render() {
     };
   }
 
+  const sfxBtn = document.getElementById('btn-sfx');
+  if (sfxBtn) {
+    sfxBtn.textContent = Music.sfxMuted ? 'Sound: Off' : 'Sound: On';
+    sfxBtn.onclick = () => {
+      const on = Music.toggleSfx();
+      sfxBtn.textContent = on ? 'Sound: On' : 'Sound: Off';
+    };
+  }
+
   document.getElementById('btn-start')?.addEventListener('click', startGame);
+  document.getElementById('btn-test-setup')?.addEventListener('click', startTestSetup);
+  document.getElementById('btn-test-back')?.addEventListener('click', init);
+  document.getElementById('btn-test-go')?.addEventListener('click', enterTestBattle);
+
+  document.querySelectorAll('.test-boss-opt').forEach(el => {
+    el.addEventListener('click', () => { state.testBossIndex = parseInt(el.dataset.bidx); render(); });
+  });
+  document.querySelectorAll('[data-lvl]').forEach(el => {
+    el.addEventListener('click', () => { state.testRoomLevel = parseInt(el.dataset.lvl); render(); });
+  });
+  document.querySelectorAll('[data-test-card]').forEach(el => {
+    el.addEventListener('click', () => testAddCard(el.dataset.testCard));
+  });
+  document.querySelectorAll('.test-rm').forEach(el => {
+    el.addEventListener('click', () => testRemoveCard(parseInt(el.dataset.id)));
+  });
   document.getElementById('btn-enter-battle')?.addEventListener('click', enterBattle);
   document.getElementById('btn-after-battle')?.addEventListener('click', afterBattle);
   document.getElementById('btn-replay-battle')?.addEventListener('click', replayBattle);

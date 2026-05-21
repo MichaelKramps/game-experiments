@@ -14,6 +14,7 @@ const Music = (() => {
   let currentBeatDur = 0;
   let currentPhase = null;
   let muted = false;
+  let sfxMuted = false;
 
   // ── Frequency table ────────────────────────────────────────────────────────
   const N = {
@@ -244,7 +245,7 @@ const Music = (() => {
   // ── SFX ────────────────────────────────────────────────────────────────────
 
   function sfxTone(freq, when, dur, vol, type = 'triangle') {
-    if (!ctx || muted) return;
+    if (!ctx || sfxMuted) return;
     const osc = ctx.createOscillator();
     const env = ctx.createGain();
     osc.type = type;
@@ -262,7 +263,7 @@ const Music = (() => {
   }
 
   function sfxSweep(f0, f1, when, dur, vol, type = 'sine') {
-    if (!ctx || muted) return;
+    if (!ctx || sfxMuted) return;
     const osc = ctx.createOscillator();
     const env = ctx.createGain();
     osc.type = type;
@@ -364,5 +365,10 @@ const Music = (() => {
     return !muted;
   }
 
-  return { play, toggle, sfx, get muted() { return muted; } };
+  function toggleSfx() {
+    sfxMuted = !sfxMuted;
+    return !sfxMuted;
+  }
+
+  return { play, toggle, toggleSfx, sfx, get muted() { return muted; }, get sfxMuted() { return sfxMuted; } };
 })();
