@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Experiments</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0d0d1a;
+      color: #ffffff;
+      font-family: monospace;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 60px 20px;
+    }
+    nav {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+    }
+    nav a {
+      color: #666;
+      text-decoration: none;
+      font-size: 0.85rem;
+      letter-spacing: 0.05em;
+    }
+    nav a:hover { color: #44ff88; }
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 8px;
+      letter-spacing: 0.1em;
+    }
+    p.subtitle {
+      color: #666;
+      margin-bottom: 48px;
+      font-size: 0.9rem;
+    }
+    .games {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 20px;
+      width: 100%;
+      max-width: 900px;
+    }
+    .game-card {
+      background: #1a1a2e;
+      border: 1px solid #2a2a4a;
+      border-radius: 8px;
+      padding: 24px;
+      text-decoration: none;
+      color: inherit;
+      transition: border-color 0.2s, transform 0.1s;
+    }
+    .game-card:hover {
+      border-color: #44ff88;
+      transform: translateY(-2px);
+    }
+    .game-card h2 {
+      font-size: 1.2rem;
+      margin-bottom: 6px;
+      color: #44ff88;
+    }
+    .game-card p {
+      font-size: 0.8rem;
+      color: #888;
+    }
+  </style>
+</head>
+<body>
+  <nav><a href="index.html">← back</a></nav>
+  <h1>Experiments</h1>
+  <p class="subtitle">quick prototypes</p>
+  <div class="games">
+    <a class="game-card" href="snakey/index.html">
+      <h2>Snakey</h2>
+      <p>Like classic Snake, eat apples to grow, but when Snakey eats an apple it adds a permanent hazard to the grid.</p>
+    </a>
+    <a class="game-card" href="dungeon-crawler-1/index.html">
+      <h2>Dungeon Crawler 1</h2>
+      <p>Build a deck across 5 rooms, then watch it fight 5 escalating bosses.</p>
+    </a>
+  </div>
+</body>
+</html>
