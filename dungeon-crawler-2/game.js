@@ -302,6 +302,7 @@ function combatTick() {
       animateAttack(side, col, targetCol, () => {
         doAttack(side, col, targetCol);
         render();
+        applyStatBuffAnimations();
         if (isBattleOver()) endBattle();
         else setTimeout(combatTick, ATTACK_MS);
       });
@@ -416,9 +417,11 @@ function triggerEnemyFailsafe(card) {
     const pick = targets[Math.floor(Math.random() * targets.length)];
     if (pick === 'boss') {
       state.battle.bossAttack += card.attack;
+      state.battle.pendingStatBuffs.push({ id: 'boss', stat: 'attack', side: 'enemy' });
       state.battle.log.push(`${card.name}'s Failsafe triggers — ${boss.name} gains +${card.attack} Attack!`);
     } else {
       pick.attack += card.attack;
+      state.battle.pendingStatBuffs.push({ id: pick.id, stat: 'attack', side: 'enemy' });
       state.battle.log.push(`${card.name}'s Failsafe triggers — ${pick.name} gains +${card.attack} Attack!`);
     }
   }
@@ -445,6 +448,7 @@ function triggerFailsafe(card) {
     if (others.length === 0) return;
     const target = others[Math.floor(Math.random() * others.length)];
     target.attack += card.attack;
+    state.battle.pendingStatBuffs.push({ id: target.id, stat: 'attack', side: 'player' });
     state.battle.log.push(`${card.name}'s Failsafe triggers — ${target.name} gains +${card.attack} Attack!`);
   }
 }
@@ -528,7 +532,10 @@ function triggerDeploy(card) {
   if (!card.deploy) return;
   if (card.deploy === 'hero_attack_plus_1') {
     [...state.battle.playerSlots, ...state.battle.hand].forEach(c => {
-      if (c && c.isHero) c.attack++;
+      if (c && c.isHero) {
+        c.attack++;
+        state.battle.pendingStatBuffs.push({ id: c.id, stat: 'attack', side: 'player' });
+      }
     });
     const deckHero = state.deck.find(c => c.isHero);
     if (deckHero) deckHero.attack++;
@@ -552,6 +559,7 @@ function playCard(cardId, slotIndex) {
 
   triggerDeploy(card);
   render();
+  applyStatBuffAnimations();
 }
 
 function rerollShop() {
@@ -583,11 +591,50 @@ function proceedToBoss() {
     seqPos:        0,
     log:           [],
     heroSlain:     false,
+    pendingStatBuffs: [],
   };
   render();
 }
 
 // ── render ────────────────────────────────────────────────────────────────────
+
+function applyStatBuffAnimations() {
+  const buffs = state.battle?.pendingStatBuffs;
+  if (!buffs || buffs.length === 0) return;
+  state.battle.pendingStatBuffs = [];
+
+  const enemySlots = [
+    state.battle.bossMinions[0],
+    state.battle.bossMinions[1],
+    'boss',
+    state.battle.bossMinions[2],
+    state.battle.bossMinions[3],
+  ];
+
+  buffs.forEach(({ id, stat }) => {
+    let slotEl = null;
+
+    if (id === 'boss') {
+      slotEl = document.getElementById('es-2');
+    } else {
+      state.battle.playerSlots.forEach((card, i) => {
+        if (card && card.id === id) slotEl = document.getElementById(`ps-${i}`);
+      });
+      if (!slotEl) {
+        enemySlots.forEach((card, i) => {
+          if (card && card !== 'boss' && card.id === id) slotEl = document.getElementById(`es-${i}`);
+        });
+      }
+    }
+
+    if (!slotEl) return;
+    const statEl = slotEl.querySelector(stat === 'attack' ? '.battle-atk' : '.battle-hp');
+    if (!statEl) return;
+    statEl.classList.remove('stat-buff-anim');
+    void statEl.offsetWidth;
+    statEl.classList.add('stat-buff-anim');
+  });
+}
 
 function render() {
   const app = document.getElementById('app');
@@ -651,14 +698,21 @@ function shopHTML() {
           <div class="pool-debug">
             Pool (${state.pool.length})
             <div class="pool-tooltip">
-              ${state.pool.map(c => `
-                <div class="pool-tooltip-row">
-                  <span>${c.name}</span>
-                  <span class="pool-tooltip-stats">⚔${c.attack} ♥${c.health}</span>
-                  ${c.deploy   ? `<span class="pool-tooltip-kw">Deploy</span>`   : ''}
-                  ${c.failsafe ? `<span class="pool-tooltip-kw">Failsafe</span>` : ''}
-                </div>
-              `).join('')}
+              ${(() => {
+                const seen = new Map();
+                for (const c of state.pool) {
+                  if (seen.has(c.name)) seen.get(c.name).count++;
+                  else seen.set(c.name, { c, count: 1 });
+                }
+                return [...seen.values()].map(({ c, count }) => `
+                  <div class="pool-tooltip-row">
+                    <span>${count > 1 ? `${count}x ` : ''}${c.name}</span>
+                    <span class="pool-tooltip-stats">⚔${c.attack} ♥${c.health}</span>
+                    ${c.deploy   ? `<span class="pool-tooltip-kw">Deploy</span>`   : ''}
+                    ${c.failsafe ? `<span class="pool-tooltip-kw">Failsafe</span>` : ''}
+                  </div>
+                `).join('');
+              })()}
             </div>
           </div>
         </div>
@@ -924,6 +978,7 @@ function enemySlotHTML(slot, boss, i) {
         <div class="card battle-card enemy-card">
           <div class="battle-stats">
             <span class="battle-atk">${slot.attack}</span>
+            ${slot.failsafe ? `<span class="battle-failsafe">💀</span>` : ''}
             <span class="battle-hp">${hp}</span>
           </div>
         </div>
@@ -978,6 +1033,7 @@ function playerSlotHTML(card, i) {
         <div class="card battle-card ${card.isHero ? 'hero-card' : ''}">
           <div class="battle-stats">
             <span class="battle-atk">${card.attack}</span>
+            ${card.failsafe ? `<span class="battle-failsafe">💀</span>` : ''}
             <span class="battle-hp">${hp}</span>
           </div>
         </div>
