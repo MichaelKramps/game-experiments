@@ -98,7 +98,10 @@
 
     /* ── base card ── */
     .card {
-      background: #111122;
+      background:
+        radial-gradient(ellipse 70% 50% at 50% 75%, rgba(140, 80, 220, 0.35) 0%, transparent 100%),
+        radial-gradient(ellipse 30% 25% at 50% 90%, rgba(220, 160, 60, 0.25) 0%, transparent 100%),
+        linear-gradient(180deg, #0c0618 0%, #080412 50%, #060210 100%);
       border: 1px solid #2a2a55;
       border-radius: 8px;
       padding: 18px 14px;
@@ -118,7 +121,61 @@
     /* ── hero card ── */
     .hero-card {
       border-color: #c9a84c;
-      background: #131208;
+      background:
+        radial-gradient(ellipse 60% 50% at 50% 65%, rgba(190, 145, 35, 0.45) 0%, transparent 100%),
+        radial-gradient(ellipse 40% 30% at 50% 15%, rgba(50, 110, 220, 0.25) 0%, transparent 100%),
+        linear-gradient(180deg, #0c0a02 0%, #120e04 60%, #0a0802 100%);
+    }
+
+    /* ── per-boss art ── */
+    .boss-art-0 { /* Slime King */
+      background:
+        radial-gradient(ellipse 70% 45% at 50% 80%, rgba(50, 180, 30, 0.55) 0%, transparent 100%),
+        radial-gradient(ellipse 40% 30% at 25% 50%, rgba(80, 200, 40, 0.2) 0%, transparent 100%),
+        linear-gradient(180deg, #030c01 0%, #061202 60%, #030c01 100%);
+    }
+    .boss-art-1 { /* Cave Troll */
+      background:
+        radial-gradient(ellipse 65% 45% at 50% 75%, rgba(130, 80, 30, 0.55) 0%, transparent 100%),
+        radial-gradient(ellipse 50% 35% at 70% 40%, rgba(80, 50, 20, 0.3) 0%, transparent 100%),
+        linear-gradient(180deg, #0c0602 0%, #140802 60%, #0a0502 100%);
+    }
+    .boss-art-2 { /* Bone Witch */
+      background:
+        radial-gradient(ellipse 55% 55% at 50% 55%, rgba(200, 170, 230, 0.3) 0%, transparent 100%),
+        radial-gradient(ellipse 40% 30% at 70% 25%, rgba(150, 80, 210, 0.35) 0%, transparent 100%),
+        linear-gradient(180deg, #0c0810 0%, #100c18 60%, #0a0812 100%);
+    }
+    .boss-art-3 { /* Iron Golem */
+      background:
+        radial-gradient(ellipse 60% 40% at 50% 60%, rgba(150, 155, 175, 0.4) 0%, transparent 100%),
+        radial-gradient(ellipse 30% 25% at 80% 80%, rgba(80, 90, 110, 0.25) 0%, transparent 100%),
+        linear-gradient(180deg, #07070e 0%, #0c0c14 60%, #08080e 100%);
+    }
+    .boss-art-4 { /* Shadow Drake */
+      background:
+        radial-gradient(ellipse 65% 50% at 50% 65%, rgba(30, 50, 200, 0.5) 0%, transparent 100%),
+        radial-gradient(ellipse 35% 30% at 20% 30%, rgba(100, 40, 180, 0.3) 0%, transparent 100%),
+        linear-gradient(180deg, #020412 0%, #030614 60%, #020310 100%);
+    }
+    .boss-art-5 { /* Lich Lord */
+      background:
+        radial-gradient(ellipse 55% 55% at 50% 65%, rgba(60, 210, 70, 0.35) 0%, transparent 100%),
+        radial-gradient(ellipse 45% 35% at 30% 30%, rgba(130, 50, 190, 0.35) 0%, transparent 100%),
+        linear-gradient(180deg, #040c04 0%, #060e06 60%, #040c04 100%);
+    }
+    .boss-art-6 { /* Void Titan */
+      background:
+        radial-gradient(ellipse 45% 45% at 50% 50%, rgba(90, 15, 160, 0.6) 0%, transparent 100%),
+        radial-gradient(ellipse 15% 15% at 35% 35%, rgba(220, 220, 255, 0.12) 0%, transparent 100%),
+        radial-gradient(ellipse 15% 15% at 65% 65%, rgba(220, 220, 255, 0.08) 0%, transparent 100%),
+        linear-gradient(180deg, #010108 0%, #030110 60%, #010108 100%);
+    }
+    .boss-art-7 { /* The Dungeon God */
+      background:
+        radial-gradient(ellipse 75% 65% at 50% 75%, rgba(220, 60, 10, 0.6) 0%, transparent 100%),
+        radial-gradient(ellipse 40% 30% at 50% 95%, rgba(240, 180, 20, 0.45) 0%, transparent 100%),
+        linear-gradient(180deg, #0e0302 0%, #160402 60%, #0e0302 100%);
     }
     .hero-name { color: #c9a84c; }
     .card-ability {
@@ -132,7 +189,7 @@
       width: 100%;
     }
 
-    .card-name      { font-size: 0.95rem; text-align: center; }
+    .card-name      { font-size: 0.95rem; text-align: center; text-shadow: 0 1px 4px rgba(0,0,0,0.9); }
     .card-stats-row { display: flex; gap: 14px; font-size: 0.9rem; }
     .card-cost      { font-size: 0.85rem; color: #c9a84c; }
     .sold-label     { font-size: 0.78rem; color: #555; font-style: italic; }
@@ -233,11 +290,22 @@
       cursor: not-allowed;
     }
 
-    .boss-card  { border-color: #7a1818; background: #110606; }
-    .enemy-card { border-color: #5a1818; background: #0f0606; }
+    .boss-card  { border-color: #7a1818; }
+    .enemy-card { border-color: #5a1818; }
 
     .card[draggable="true"] { cursor: grab; }
     .card[draggable="true"]:active { cursor: grabbing; }
+
+    /* ── field card (big stats only, pushed to bottom) ── */
+    .battle-stats {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      margin-top: auto;
+    }
+    .battle-atk { font-size: 1.7rem; color: #5599dd; font-weight: bold; line-height: 1; }
+    .battle-hp  { font-size: 1.7rem; color: #e05555; font-weight: bold; line-height: 1; }
 
     .card.selected {
       outline: 2px solid #c9a84c;

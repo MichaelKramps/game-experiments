@@ -85,7 +85,7 @@ function cardCost(attack, health) {
 }
 
 function makeHero() {
-  return { id: nextId(), name: 'Hero', attack: 2, health: 10, isHero: true };
+  return { id: nextId(), name: 'Hero', attack: 2, health: 10, maxHealth: 10, isHero: true };
 }
 
 function makeMinion(tmpl) {
@@ -177,7 +177,7 @@ function applyRelicToAll(relic) {
     state.deck.filter(c => !c.isHero).forEach(c => c.health++);
   } else if (relic.id === 'stone_heart') {
     const hero = state.deck.find(c => c.isHero);
-    if (hero) hero.health += 8;
+    if (hero) { hero.health += 8; hero.maxHealth += 8; }
   } else if (relic.id === 'berserker_axe') {
     const hero = state.deck.find(c => c.isHero);
     if (hero) hero.attack += 2;
@@ -207,10 +207,7 @@ function applyEffect(effectId) {
     state.deck.filter(c => !c.isHero).forEach(c => { c.attack++; c.health++; });
   } else if (effectId === 'divine_blessing') {
     const hero = state.deck.find(c => c.isHero);
-    if (hero) {
-      const maxHp = 10 + (state.relics.some(r => r.id === 'stone_heart') ? 8 : 0);
-      hero.health = maxHp;
-    }
+    if (hero) hero.health = hero.maxHealth;
   } else if (effectId === 'soul_capture') {
     const boss = state.lastDefeatedBoss;
     if (boss) {
@@ -405,20 +402,23 @@ function damagePlayer(col, amount) {
   const c = state.battle.playerSlots[col];
   if (!c) return;
   c.currentHp -= amount;
-  if (c.currentHp <= 0) state.battle.playerSlots[col] = null;
+  if (c.currentHp <= 0) {
+    state.battle.playerSlots[col] = null;
+    if (c.isHero) state.battle.heroSlain = true;
+  }
 }
 
 function isBattleOver() {
   const playerDead = state.battle.playerSlots.every(s => s === null);
   const bossDead   = state.battle.bossHp <= 0 && state.battle.bossMinions.every(m => m === null);
-  return playerDead || bossDead;
+  return playerDead || bossDead || state.battle.heroSlain;
 }
 
 function endBattle() {
   const b = state.battle;
   b.fighting = false;
   b.over = true;
-  const bossDead = b.bossHp <= 0;
+  const bossDead = b.bossHp <= 0 && !b.heroSlain;
 
   if (bossDead) {
     const fortuneBonus = state.relics.filter(r => r.id === 'fortune_coin').length * 2;
@@ -426,6 +426,11 @@ function endBattle() {
     b.log.push(`Victory! You earned ${reward} gold.`);
     render();
     setTimeout(() => {
+      const heroOnField = b.playerSlots.find(c => c && c.isHero);
+      if (heroOnField) {
+        const deckHero = state.deck.find(c => c.isHero);
+        if (deckHero) deckHero.health = heroOnField.currentHp;
+      }
       state.gold += reward;
       state.lastDefeatedBoss = BOSS_DATA[state.bossIndex];
       state.bossIndex++;
@@ -438,7 +443,9 @@ function endBattle() {
       render();
     }, 2500);
   } else {
-    b.log.push('Defeat! Your forces have been destroyed.');
+    b.log.push(b.heroSlain
+      ? 'Your Hero has fallen! The dungeon run is over.'
+      : 'Defeat! Your forces have been destroyed.');
     render();
     setTimeout(() => { state.phase = 'lose'; render(); }, 2500);
   }
@@ -452,7 +459,10 @@ function playCard(cardId, slotIndex) {
   const displaced = state.battle.playerSlots[slotIndex];
 
   state.battle.hand.splice(handIndex, 1);
-  if (displaced) state.battle.hand.push(displaced);
+  if (displaced) {
+    card.attack += displaced.attack;
+    state.battle.remainingDeck.push(displaced);
+  }
   state.battle.playerSlots[slotIndex] = card;
   state.battle.selectedCard = null;
 
@@ -486,6 +496,7 @@ function proceedToBoss() {
     fighting:      false,
     seqPos:        0,
     log:           [],
+    heroSlain:     false,
   };
   render();
 }
@@ -755,11 +766,10 @@ function enemySlotHTML(slot, boss, i) {
   if (i === 2) {
     return `
       <div class="slot" id="es-${i}">
-        <div class="card battle-card boss-card">
-          <div class="card-name red">${boss.name}</div>
-          <div class="card-stats-row">
-            <span class="atk-stat">⚔ ${boss.attack}</span>
-            <span class="hp-stat">♥ ${state.battle.bossHp}</span>
+        <div class="card battle-card boss-card boss-art-${state.bossIndex}">
+          <div class="battle-stats">
+            <span class="battle-atk">${boss.attack}</span>
+            <span class="battle-hp">${state.battle.bossHp}</span>
           </div>
         </div>
       </div>`;
@@ -769,10 +779,9 @@ function enemySlotHTML(slot, boss, i) {
     return `
       <div class="slot" id="es-${i}">
         <div class="card battle-card enemy-card">
-          <div class="card-name">${slot.name}</div>
-          <div class="card-stats-row">
-            <span class="atk-stat">⚔ ${slot.attack}</span>
-            <span class="hp-stat">♥ ${hp}</span>
+          <div class="battle-stats">
+            <span class="battle-atk">${slot.attack}</span>
+            <span class="battle-hp">${hp}</span>
           </div>
         </div>
       </div>`;
@@ -822,12 +831,10 @@ function playerSlotHTML(card, i) {
     return `
       <div class="slot" id="ps-${i}" ${dropAttrs}>
         <div class="card battle-card ${card.isHero ? 'hero-card' : ''}">
-          <div class="card-name ${card.isHero ? 'hero-name' : ''}">${card.name}</div>
-          <div class="card-stats-row">
-            <span class="atk-stat">⚔ ${card.attack}</span>
-            <span class="hp-stat">♥ ${hp}</span>
+          <div class="battle-stats">
+            <span class="battle-atk">${card.attack}</span>
+            <span class="battle-hp">${hp}</span>
           </div>
-          ${card.isHero ? `<div class="card-ability">Always draw first in battle</div>` : ''}
         </div>
       </div>`;
   }
