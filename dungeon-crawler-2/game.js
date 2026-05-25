@@ -3,10 +3,11 @@
 const BOSS_DATA = [
   { name: 'Corrupted Node',     hp: 8,  attack: 1, minions: [
     { name: 'Volatile Drone', attack: 2, health: 1, failsafe: 'transfer_attack' },
+    { name: 'Relay Unit',     attack: 1, health: 3, deploy: 'draw_a_card', cost: 2 },
   ]},
   { name: 'Security Drone',     hp: 12, attack: 2, minions: [
-    { name: 'Patrol Drone', attack: 1, health: 1 },
-    { name: 'Patrol Drone', attack: 1, health: 1 },
+    { name: 'Amp Unit',      attack: 1, health: 1, extract: 'share_attack',         cost: 2 },
+    { name: 'Bulwark Unit',  attack: 2, health: 3, extract: 'give_stats_to_replacer', cost: 3 },
   ]},
   { name: 'Hive Controller',    hp: 15, attack: 3, minions: [
     { name: 'Combat Unit', attack: 1, health: 2 },
@@ -35,7 +36,14 @@ const ATTACK_SEQ = [
 const ATTACK_MS = 250;
 
 const DEPLOY_EFFECTS = {
-  hero_attack_plus_1: '<b>Deploy:</b> Give your Commander +1 Attack.',
+  hero_attack_plus_1:  '<b>Deploy:</b> Give your Commander +1 Attack.',
+  hero_health_plus_1:  '<b>Deploy:</b> Give your Commander +1 Health.',
+  draw_a_card:         '<b>Deploy:</b> Draw a card.',
+};
+
+const EXTRACT_EFFECTS = {
+  share_attack:        '<b>Extract:</b> Give this unit\'s Attack to all friendly units.',
+  give_stats_to_replacer: '<b>Extract:</b> Give this unit\'s Attack and Health to the unit that replaces it.',
 };
 
 const FAILSAFE_EFFECTS = {
@@ -49,6 +57,9 @@ const MINION_POOL = [
   { name: 'Scout Drone', attack: 1, health: 1, deploy: 'hero_attack_plus_1', cost: 2 },
   { name: 'Scout Drone', attack: 1, health: 1, deploy: 'hero_attack_plus_1', cost: 2 },
   { name: 'Scout Drone', attack: 1, health: 1, deploy: 'hero_attack_plus_1', cost: 2 },
+  { name: 'Field Medic', attack: 1, health: 2, deploy: 'hero_health_plus_1', cost: 2 },
+  { name: 'Field Medic', attack: 1, health: 2, deploy: 'hero_health_plus_1', cost: 2 },
+  { name: 'Field Medic', attack: 1, health: 2, deploy: 'hero_health_plus_1', cost: 2 },
 ];
 
 const RELIC_POOL = [
@@ -95,8 +106,9 @@ function makeHero() {
 function makeMinion(tmpl) {
   const base = tmpl || { name: 'Minion', attack: 1, health: 1 };
   const card = { id: nextId(), name: base.name, attack: base.attack, health: base.health };
-  if (base.deploy) card.deploy = base.deploy;
+  if (base.deploy)   card.deploy   = base.deploy;
   if (base.failsafe) card.failsafe = base.failsafe;
+  if (base.extract)  card.extract  = base.extract;
   return card;
 }
 
@@ -124,6 +136,7 @@ function makePoolCard(tmpl) {
   };
   if (tmpl.deploy)   card.deploy   = tmpl.deploy;
   if (tmpl.failsafe) card.failsafe = tmpl.failsafe;
+  if (tmpl.extract)  card.extract  = tmpl.extract;
   return card;
 }
 
@@ -530,7 +543,22 @@ function endBattle() {
 
 function triggerDeploy(card) {
   if (!card.deploy) return;
-  if (card.deploy === 'hero_attack_plus_1') {
+  if (card.deploy === 'hero_health_plus_1') {
+    [...state.battle.playerSlots, ...state.battle.hand].forEach(c => {
+      if (c && c.isHero) {
+        c.currentHp = (c.currentHp ?? c.health) + 1;
+        c.health++;
+        state.battle.pendingStatBuffs.push({ id: c.id, stat: 'health', side: 'player' });
+      }
+    });
+    const deckHero = state.deck.find(c => c.isHero);
+    if (deckHero) { deckHero.health++; deckHero.maxHealth++; }
+  } else if (card.deploy === 'draw_a_card') {
+    if (state.battle.remainingDeck.length > 0) {
+      const drawn = state.battle.remainingDeck.shift();
+      state.battle.hand.push(drawn);
+    }
+  } else if (card.deploy === 'hero_attack_plus_1') {
     [...state.battle.playerSlots, ...state.battle.hand].forEach(c => {
       if (c && c.isHero) {
         c.attack++;
@@ -539,6 +567,26 @@ function triggerDeploy(card) {
     });
     const deckHero = state.deck.find(c => c.isHero);
     if (deckHero) deckHero.attack++;
+  }
+}
+
+function triggerExtract(displaced, replacer) {
+  if (!displaced.extract) return;
+  if (displaced.extract === 'share_attack') {
+    state.battle.playerSlots.forEach(c => {
+      if (c && c.id !== displaced.id) {
+        c.attack += displaced.attack;
+        state.battle.pendingStatBuffs.push({ id: c.id, stat: 'attack', side: 'player' });
+      }
+    });
+    state.battle.log.push(`${displaced.name}'s Extract triggers — all friendly units gain +${displaced.attack} Attack!`);
+  }
+  if (displaced.extract === 'give_stats_to_replacer' && replacer) {
+    replacer.health += displaced.health;
+    replacer.currentHp = (replacer.currentHp ?? replacer.health - displaced.health) + displaced.health;
+    state.battle.pendingStatBuffs.push({ id: replacer.id, stat: 'attack', side: 'player' });
+    state.battle.pendingStatBuffs.push({ id: replacer.id, stat: 'health', side: 'player' });
+    state.battle.log.push(`${displaced.name}'s Extract triggers — ${replacer.name} gains +${displaced.attack} Attack and +${displaced.health} Health!`);
   }
 }
 
@@ -551,7 +599,9 @@ function playCard(cardId, slotIndex) {
 
   state.battle.hand.splice(handIndex, 1);
   if (displaced) {
+    triggerExtract(displaced, card);
     card.attack += displaced.attack;
+    state.battle.pendingStatBuffs.push({ id: card.id, stat: 'attack', side: 'player' });
     state.battle.remainingDeck.push(displaced);
   }
   state.battle.playerSlots[slotIndex] = card;
@@ -710,6 +760,7 @@ function shopHTML() {
                     <span class="pool-tooltip-stats">⚔${c.attack} ♥${c.health}</span>
                     ${c.deploy   ? `<span class="pool-tooltip-kw">Deploy</span>`   : ''}
                     ${c.failsafe ? `<span class="pool-tooltip-kw">Failsafe</span>` : ''}
+                    ${c.extract  ? `<span class="pool-tooltip-kw">Extract</span>`  : ''}
                   </div>
                 `).join('');
               })()}
@@ -764,6 +815,7 @@ function shopCardHTML(item) {
       </div>
       ${item.deploy   ? `<div class="card-ability">${DEPLOY_EFFECTS[item.deploy]}</div>`     : ''}
       ${item.failsafe ? `<div class="card-ability">${FAILSAFE_EFFECTS[item.failsafe]}</div>` : ''}
+      ${item.extract  ? `<div class="card-ability">${EXTRACT_EFFECTS[item.extract]}</div>`   : ''}
       <button class="btn-buy" onclick="buyCard(${item.id})" ${canBuy ? '' : 'disabled'}>Buy <span class="coin"></span> ${item.cost}</button>
     </div>
   `;
@@ -792,6 +844,7 @@ function deckCardHTML(card) {
       </div>
       ${card.deploy   ? `<div class="card-ability">${DEPLOY_EFFECTS[card.deploy]}</div>`     : ''}
       ${card.failsafe ? `<div class="card-ability">${FAILSAFE_EFFECTS[card.failsafe]}</div>` : ''}
+      ${card.extract  ? `<div class="card-ability">${EXTRACT_EFFECTS[card.extract]}</div>`   : ''}
     </div>
   `;
 }
@@ -831,6 +884,7 @@ function unlockHTML() {
               </div>
               ${card.deploy   ? `<div class="card-ability">${DEPLOY_EFFECTS[card.deploy]}</div>`     : ''}
               ${card.failsafe ? `<div class="card-ability">${FAILSAFE_EFFECTS[card.failsafe]}</div>` : ''}
+              ${card.extract  ? `<div class="card-ability">${EXTRACT_EFFECTS[card.extract]}</div>`   : ''}
             </div>
             <div class="unlock-count">×${counts[card.name]} added to pool</div>
           </div>
@@ -1017,7 +1071,8 @@ function handCardHTML(card) {
          <span class="hp-stat">♥ ${card.health}</span>
        </div>
        ${card.deploy   ? `<div class="card-ability">${DEPLOY_EFFECTS[card.deploy]}</div>`     : ''}
-       ${card.failsafe ? `<div class="card-ability">${FAILSAFE_EFFECTS[card.failsafe]}</div>` : ''}`;
+       ${card.failsafe ? `<div class="card-ability">${FAILSAFE_EFFECTS[card.failsafe]}</div>` : ''}
+       ${card.extract  ? `<div class="card-ability">${EXTRACT_EFFECTS[card.extract]}</div>`   : ''}`;
   return `<div class="${cls}" ${interact}>${inner}</div>`;
 }
 
