@@ -10,16 +10,22 @@ const BOSS_DATA = [
     { name: 'Bulwark Unit',  attack: 2, health: 3, extract: 'give_stats_to_replacer', cost: 3 },
   ]},
   { name: 'Hive Controller',    hp: 15, attack: 3, minions: [
-    { name: 'Combat Unit', attack: 1, health: 2 },
-    { name: 'Combat Unit', attack: 1, health: 2 },
-    { name: 'Combat Unit', attack: 1, health: 2 },
-    { name: 'Combat Unit', attack: 1, health: 2 },
+    { name: 'Mender Unit', attack: 1, health: 4, deploy: 'hero_heal_5', cost: 2 },
+    { name: 'Pulse Node',  attack: 2, health: 2, failsafe: 'heal_friendlies_2', cost: 2 },
+    { name: 'Surge Unit',  attack: 1, health: 1, failsafe: 'buff_all_friendlies', cost: 2 },
   ]},
   { name: 'Combat Mech',        hp: 18, attack: 3, minions: [
-    { name: 'Volatile Drone', attack: 2, health: 1, failsafe: 'transfer_attack' },
-    { name: 'Volatile Drone', attack: 2, health: 1, failsafe: 'transfer_attack' },
+    { name: 'Chain Unit',  attack: 3, health: 3, deploy: 'trigger_random_failsafe', cost: 2 },
+    { name: 'Blast Drone', attack: 4, health: 1, failsafe: 'deal_4_damage', cost: 2 },
+    { name: 'Echo Unit',   attack: 1, health: 1, react: 'failsafe', cost: 2 },
+    { name: 'Trigger Unit',attack: 1, health: 1, react: 'deploy',   cost: 2 },
   ]},
-  { name: 'Stealth Cruiser',    hp: 22, attack: 4, minions: [] },
+  { name: 'Stealth Cruiser',    hp: 22, attack: 4, minions: [
+    { name: 'Scatter Drone', attack: 1, health: 1, failsafe: 'deal_1_to_all',   cost: 2 },
+    { name: 'Recon Unit',    attack: 2, health: 3, extract: 'draw_2_cards',     cost: 2 },
+    { name: 'Supply Drone',  attack: 3, health: 1, deploy:  'gain_1_gold',      cost: 2 },
+    { name: 'Power Core',    attack: 1, health: 1, failsafe: 'buff_random_4_4', cost: 2 },
+  ]},
   { name: 'Synthetic Overlord', hp: 26, attack: 5, minions: [] },
   { name: 'Quantum Titan',      hp: 30, attack: 6, minions: [] },
   { name: 'The Architect',      hp: 36, attack: 7, minions: [] },
@@ -36,18 +42,32 @@ const ATTACK_SEQ = [
 const ATTACK_MS = 250;
 
 const DEPLOY_EFFECTS = {
-  hero_attack_plus_1:  '<b>Deploy:</b> Give your Commander +1 Attack.',
-  hero_health_plus_1:  '<b>Deploy:</b> Give your Commander +1 Health.',
-  draw_a_card:         '<b>Deploy:</b> Draw a card.',
+  hero_attack_plus_1:       '<b>Deploy:</b> Give your Commander +1 Attack.',
+  hero_health_plus_1:       '<b>Deploy:</b> Give your Commander +1 Health.',
+  draw_a_card:              '<b>Deploy:</b> Draw a card.',
+  hero_heal_5:              '<b>Deploy:</b> Restore 5 health to your Commander.',
+  trigger_random_failsafe:  '<b>Deploy:</b> Activate the Failsafe of a random friendly unit.',
+  gain_1_gold:              '<b>Deploy:</b> Gain 1 credit.',
 };
 
 const EXTRACT_EFFECTS = {
-  share_attack:        '<b>Extract:</b> Give this unit\'s Attack to all friendly units.',
+  share_attack:           '<b>Extract:</b> Give this unit\'s Attack to all friendly units.',
   give_stats_to_replacer: '<b>Extract:</b> Give this unit\'s Attack and Health to the unit that replaces it.',
+  draw_2_cards:           '<b>Extract:</b> Draw 2 cards.',
 };
 
 const FAILSAFE_EFFECTS = {
-  transfer_attack: '<b>Failsafe:</b> Give another random friendly unit this card\'s Attack.',
+  transfer_attack:    '<b>Failsafe:</b> Give another random friendly unit this card\'s Attack.',
+  heal_friendlies_2:  '<b>Failsafe:</b> Restore 2 health to all friendly units.',
+  buff_all_friendlies:'<b>Failsafe:</b> Give all friendly units +1 Attack and +1 Health.',
+  deal_4_damage:      '<b>Failsafe:</b> Deal 4 damage to a random enemy unit.',
+  deal_1_to_all:      '<b>Failsafe:</b> Deal 1 damage to all opposing units.',
+  buff_random_4_4:    '<b>Failsafe:</b> Give a random friendly unit +4 Attack and +4 Health.',
+};
+
+const REACT_EFFECTS = {
+  failsafe: 'When a friendly Failsafe triggers, this gains +1 Attack and +1 Health.',
+  deploy:   'When a friendly Deploy triggers, this gains +1 Attack and +1 Health.',
 };
 
 const MINION_POOL = [
@@ -109,6 +129,7 @@ function makeMinion(tmpl) {
   if (base.deploy)   card.deploy   = base.deploy;
   if (base.failsafe) card.failsafe = base.failsafe;
   if (base.extract)  card.extract  = base.extract;
+  if (base.react)    card.react    = base.react;
   return card;
 }
 
@@ -120,6 +141,10 @@ function buildBossMinions(boss) {
   } else if (tmpl.length === 2) {
     slots[1] = makeMinion(tmpl[0]);
     slots[2] = makeMinion(tmpl[1]);
+  } else if (tmpl.length === 3) {
+    slots[0] = makeMinion(tmpl[0]);
+    slots[1] = makeMinion(tmpl[1]);
+    slots[2] = makeMinion(tmpl[2]);
   } else if (tmpl.length === 4) {
     for (let i = 0; i < 4; i++) slots[i] = makeMinion(tmpl[i]);
   }
@@ -137,6 +162,7 @@ function makePoolCard(tmpl) {
   if (tmpl.deploy)   card.deploy   = tmpl.deploy;
   if (tmpl.failsafe) card.failsafe = tmpl.failsafe;
   if (tmpl.extract)  card.extract  = tmpl.extract;
+  if (tmpl.react)    card.react    = tmpl.react;
   return card;
 }
 
@@ -419,6 +445,18 @@ function animateAttack(side, col, targetCol, callback) {
   }, 200);
 }
 
+function applyReactBuffs(triggerType) {
+  state.battle.playerSlots.forEach(c => {
+    if (c && c.react === triggerType) {
+      c.attack++;
+      c.health++;
+      if (c.currentHp !== undefined) c.currentHp++;
+      if (c.maxHealth !== undefined) c.maxHealth++;
+      state.battle.pendingStatBuffs.push({ id: c.id, stat: 'attack', side: 'player' });
+    }
+  });
+}
+
 function triggerEnemyFailsafe(card) {
   if (!card.failsafe) return;
   if (card.failsafe === 'transfer_attack') {
@@ -437,6 +475,53 @@ function triggerEnemyFailsafe(card) {
       state.battle.pendingStatBuffs.push({ id: pick.id, stat: 'attack', side: 'enemy' });
       state.battle.log.push(`${card.name}'s Failsafe triggers — ${pick.name} gains +${card.attack} Attack!`);
     }
+  } else if (card.failsafe === 'heal_friendlies_2') {
+    state.battle.bossMinions.forEach(m => {
+      if (m && m.id !== card.id) m.currentHp = Math.min(m.health, (m.currentHp ?? m.health) + 2);
+    });
+    state.battle.log.push(`${card.name}'s Failsafe triggers — enemy units restore 2 health!`);
+  } else if (card.failsafe === 'buff_all_friendlies') {
+    state.battle.bossMinions.forEach(m => {
+      if (m && m.id !== card.id) {
+        m.attack++; m.health++; if (m.currentHp !== undefined) m.currentHp++;
+        state.battle.pendingStatBuffs.push({ id: m.id, stat: 'attack', side: 'enemy' });
+      }
+    });
+    if (state.battle.bossHp > 0) {
+      state.battle.bossAttack++;
+      state.battle.pendingStatBuffs.push({ id: 'boss', stat: 'attack', side: 'enemy' });
+    }
+    state.battle.log.push(`${card.name}'s Failsafe triggers — all enemy units gain +1/+1!`);
+  } else if (card.failsafe === 'deal_4_damage') {
+    const targetCol = randomPlayer();
+    if (targetCol !== -1) {
+      const targetName = state.battle.playerSlots[targetCol]?.name;
+      damagePlayer(targetCol, 4);
+      state.battle.log.push(`${card.name}'s Failsafe triggers — deals 4 damage to your ${targetName}!`);
+    }
+  } else if (card.failsafe === 'deal_1_to_all') {
+    for (let col = 0; col < 5; col++) {
+      if (state.battle.playerSlots[col]) damagePlayer(col, 1);
+    }
+    state.battle.log.push(`${card.name}'s Failsafe triggers — deals 1 damage to all your units!`);
+  } else if (card.failsafe === 'buff_random_4_4') {
+    const boss = BOSS_DATA[state.bossIndex];
+    const otherMinions = state.battle.bossMinions.filter(m => m && m.id !== card.id);
+    const targets = [...otherMinions];
+    if (state.battle.bossHp > 0) targets.push('boss');
+    if (targets.length > 0) {
+      const pick = targets[Math.floor(Math.random() * targets.length)];
+      if (pick === 'boss') {
+        state.battle.bossAttack += 4; state.battle.bossHp += 4;
+        state.battle.pendingStatBuffs.push({ id: 'boss', stat: 'attack', side: 'enemy' });
+        state.battle.log.push(`${card.name}'s Failsafe triggers — ${boss.name} gains +4/+4!`);
+      } else {
+        pick.attack += 4; pick.health += 4;
+        if (pick.currentHp !== undefined) pick.currentHp += 4;
+        state.battle.pendingStatBuffs.push({ id: pick.id, stat: 'attack', side: 'enemy' });
+        state.battle.log.push(`${card.name}'s Failsafe triggers — ${pick.name} gains +4/+4!`);
+      }
+    }
   }
 }
 
@@ -448,8 +533,8 @@ function damageEnemy(col, amount) {
     if (!m) return;
     m.currentHp -= amount;
     if (m.currentHp <= 0) {
-      triggerEnemyFailsafe(m);
       state.battle.bossMinions[minionIdx(col)] = null;
+      triggerEnemyFailsafe(m);
     }
   }
 }
@@ -463,7 +548,48 @@ function triggerFailsafe(card) {
     target.attack += card.attack;
     state.battle.pendingStatBuffs.push({ id: target.id, stat: 'attack', side: 'player' });
     state.battle.log.push(`${card.name}'s Failsafe triggers — ${target.name} gains +${card.attack} Attack!`);
+  } else if (card.failsafe === 'heal_friendlies_2') {
+    state.battle.playerSlots.forEach(c => {
+      if (c) {
+        const cap = c.maxHealth ?? c.health;
+        c.currentHp = Math.min(cap, (c.currentHp ?? c.health) + 2);
+      }
+    });
+    state.battle.log.push(`${card.name}'s Failsafe triggers — all friendly units restore 2 health!`);
+  } else if (card.failsafe === 'buff_all_friendlies') {
+    state.battle.playerSlots.forEach(c => {
+      if (c) {
+        c.attack++; c.health++; if (c.currentHp !== undefined) c.currentHp++;
+        if (c.maxHealth !== undefined) c.maxHealth++;
+        state.battle.pendingStatBuffs.push({ id: c.id, stat: 'attack', side: 'player' });
+      }
+    });
+    state.battle.log.push(`${card.name}'s Failsafe triggers — all friendly units gain +1/+1!`);
+  } else if (card.failsafe === 'deal_4_damage') {
+    const targetCol = randomEnemy();
+    if (targetCol !== -1) {
+      const boss = BOSS_DATA[state.bossIndex];
+      const targetName = targetCol === 2 ? boss.name : state.battle.bossMinions[minionIdx(targetCol)]?.name;
+      damageEnemy(targetCol, 4);
+      state.battle.log.push(`${card.name}'s Failsafe triggers — deals 4 damage to ${targetName}!`);
+    }
+  } else if (card.failsafe === 'deal_1_to_all') {
+    for (let col = 0; col < 5; col++) {
+      if (enemyOccupied(col)) damageEnemy(col, 1);
+    }
+    state.battle.log.push(`${card.name}'s Failsafe triggers — deals 1 damage to all enemies!`);
+  } else if (card.failsafe === 'buff_random_4_4') {
+    const others = state.battle.playerSlots.filter(c => c && c.id !== card.id);
+    if (others.length > 0) {
+      const target = others[Math.floor(Math.random() * others.length)];
+      target.attack += 4; target.health += 4;
+      if (target.currentHp !== undefined) target.currentHp += 4;
+      if (target.maxHealth !== undefined) target.maxHealth += 4;
+      state.battle.pendingStatBuffs.push({ id: target.id, stat: 'attack', side: 'player' });
+      state.battle.log.push(`${card.name}'s Failsafe triggers — ${target.name} gains +4/+4!`);
+    }
   }
+  applyReactBuffs('failsafe');
 }
 
 function damagePlayer(col, amount) {
@@ -471,9 +597,9 @@ function damagePlayer(col, amount) {
   if (!c) return;
   c.currentHp -= amount;
   if (c.currentHp <= 0) {
-    triggerFailsafe(c);
     state.battle.playerSlots[col] = null;
     if (c.isHero) state.battle.heroSlain = true;
+    triggerFailsafe(c);
   }
 }
 
@@ -558,6 +684,12 @@ function triggerDeploy(card) {
       const drawn = state.battle.remainingDeck.shift();
       state.battle.hand.push(drawn);
     }
+  } else if (card.deploy === 'hero_heal_5') {
+    const heroInPlay = [...state.battle.playerSlots, ...state.battle.hand].find(c => c && c.isHero);
+    if (heroInPlay) {
+      heroInPlay.currentHp = Math.min(heroInPlay.maxHealth, (heroInPlay.currentHp ?? heroInPlay.health) + 5);
+      state.battle.pendingStatBuffs.push({ id: heroInPlay.id, stat: 'health', side: 'player' });
+    }
   } else if (card.deploy === 'hero_attack_plus_1') {
     [...state.battle.playerSlots, ...state.battle.hand].forEach(c => {
       if (c && c.isHero) {
@@ -567,7 +699,18 @@ function triggerDeploy(card) {
     });
     const deckHero = state.deck.find(c => c.isHero);
     if (deckHero) deckHero.attack++;
+  } else if (card.deploy === 'gain_1_gold') {
+    state.gold += 1;
+    state.battle.log.push(`${card.name}'s Deploy triggers — gained 1 credit!`);
+  } else if (card.deploy === 'trigger_random_failsafe') {
+    const eligible = state.battle.playerSlots.filter(c => c && c.failsafe && c.id !== card.id);
+    if (eligible.length > 0) {
+      const target = eligible[Math.floor(Math.random() * eligible.length)];
+      triggerFailsafe(target);
+      state.battle.log.push(`${card.name}'s Deploy triggers — ${target.name}'s Failsafe activates!`);
+    }
   }
+  applyReactBuffs('deploy');
 }
 
 function triggerExtract(displaced, replacer) {
@@ -580,6 +723,12 @@ function triggerExtract(displaced, replacer) {
       }
     });
     state.battle.log.push(`${displaced.name}'s Extract triggers — all friendly units gain +${displaced.attack} Attack!`);
+  }
+  if (displaced.extract === 'draw_2_cards') {
+    for (let i = 0; i < 2; i++) {
+      if (state.battle.remainingDeck.length > 0) state.battle.hand.push(state.battle.remainingDeck.shift());
+    }
+    state.battle.log.push(`${displaced.name}'s Extract triggers — drew 2 cards!`);
   }
   if (displaced.extract === 'give_stats_to_replacer' && replacer) {
     replacer.health += displaced.health;
@@ -761,6 +910,7 @@ function shopHTML() {
                     ${c.deploy   ? `<span class="pool-tooltip-kw">Deploy</span>`   : ''}
                     ${c.failsafe ? `<span class="pool-tooltip-kw">Failsafe</span>` : ''}
                     ${c.extract  ? `<span class="pool-tooltip-kw">Extract</span>`  : ''}
+                    ${c.react    ? `<span class="pool-tooltip-kw">React</span>`    : ''}
                   </div>
                 `).join('');
               })()}
@@ -816,6 +966,7 @@ function shopCardHTML(item) {
       ${item.deploy   ? `<div class="card-ability">${DEPLOY_EFFECTS[item.deploy]}</div>`     : ''}
       ${item.failsafe ? `<div class="card-ability">${FAILSAFE_EFFECTS[item.failsafe]}</div>` : ''}
       ${item.extract  ? `<div class="card-ability">${EXTRACT_EFFECTS[item.extract]}</div>`   : ''}
+      ${item.react    ? `<div class="card-ability">${REACT_EFFECTS[item.react]}</div>`       : ''}
       <button class="btn-buy" onclick="buyCard(${item.id})" ${canBuy ? '' : 'disabled'}>Buy <span class="coin"></span> ${item.cost}</button>
     </div>
   `;
@@ -845,6 +996,7 @@ function deckCardHTML(card) {
       ${card.deploy   ? `<div class="card-ability">${DEPLOY_EFFECTS[card.deploy]}</div>`     : ''}
       ${card.failsafe ? `<div class="card-ability">${FAILSAFE_EFFECTS[card.failsafe]}</div>` : ''}
       ${card.extract  ? `<div class="card-ability">${EXTRACT_EFFECTS[card.extract]}</div>`   : ''}
+      ${card.react    ? `<div class="card-ability">${REACT_EFFECTS[card.react]}</div>`       : ''}
     </div>
   `;
 }
@@ -885,6 +1037,7 @@ function unlockHTML() {
               ${card.deploy   ? `<div class="card-ability">${DEPLOY_EFFECTS[card.deploy]}</div>`     : ''}
               ${card.failsafe ? `<div class="card-ability">${FAILSAFE_EFFECTS[card.failsafe]}</div>` : ''}
               ${card.extract  ? `<div class="card-ability">${EXTRACT_EFFECTS[card.extract]}</div>`   : ''}
+              ${card.react    ? `<div class="card-ability">${REACT_EFFECTS[card.react]}</div>`       : ''}
             </div>
             <div class="unlock-count">×${counts[card.name]} added to pool</div>
           </div>
@@ -1072,7 +1225,8 @@ function handCardHTML(card) {
        </div>
        ${card.deploy   ? `<div class="card-ability">${DEPLOY_EFFECTS[card.deploy]}</div>`     : ''}
        ${card.failsafe ? `<div class="card-ability">${FAILSAFE_EFFECTS[card.failsafe]}</div>` : ''}
-       ${card.extract  ? `<div class="card-ability">${EXTRACT_EFFECTS[card.extract]}</div>`   : ''}`;
+       ${card.extract  ? `<div class="card-ability">${EXTRACT_EFFECTS[card.extract]}</div>`   : ''}
+       ${card.react    ? `<div class="card-ability">${REACT_EFFECTS[card.react]}</div>`       : ''}`;
   return `<div class="${cls}" ${interact}>${inner}</div>`;
 }
 
