@@ -1050,6 +1050,27 @@ function applyStatBuffAnimations() {
   });
 }
 
+function keywordTooltipHTML(card) {
+  const lines = [];
+  if (card.deploy)   lines.push('<b>Deploy</b> — Triggers when this unit is played onto the field.');
+  if (card.failsafe) lines.push('<b>Failsafe</b> — Triggers when this unit is destroyed in combat.');
+  if (card.extract)  lines.push('<b>Extract</b> — Triggers when this unit is displaced by another unit.');
+  if (card.react)    lines.push('<b>React</b> — Triggers when a friendly ability of the matching type activates.');
+  if (card.passive)  lines.push('<b>Passive</b> — A constant effect that is always active.');
+  if (!lines.length) return '';
+  return `<div class="card-tooltip">${lines.join('<br><br>')}</div>`;
+}
+
+function slotTooltipHTML(card) {
+  const parts = [`<span class="tooltip-name">${card.name}</span>`];
+  if (card.deploy)   parts.push(`<span class="tooltip-effect">${DEPLOY_EFFECTS[card.deploy]}</span>`);
+  if (card.failsafe) parts.push(`<span class="tooltip-effect">${FAILSAFE_EFFECTS[card.failsafe]}</span>`);
+  if (card.extract)  parts.push(`<span class="tooltip-effect">${EXTRACT_EFFECTS[card.extract]}</span>`);
+  if (card.react)    parts.push(`<span class="tooltip-effect">${REACT_EFFECTS[card.react]}</span>`);
+  if (card.passive)  parts.push(`<span class="tooltip-effect">${PASSIVE_EFFECTS[card.passive]}</span>`);
+  return `<div class="card-tooltip">${parts.join('<br>')}</div>`;
+}
+
 function artImgHTML(art) {
   if (!art) return '';
   return `<img class="card-art" src="https://game-icons.net/icons/ffffff/transparent/1x1/lorc/${art}.svg" alt="">`;
@@ -1194,6 +1215,7 @@ function shopCardHTML(item) {
         ${item.passive  ? `<div class="card-ability">${PASSIVE_EFFECTS[item.passive]}</div>`  : ''}
         <button class="btn-buy" onclick="buyCard(${item.id})" ${canBuy ? '' : 'disabled'}>Buy <span class="coin"></span> ${item.cost}</button>
       </div>
+      ${keywordTooltipHTML(item)}
     </div>
   `;
 }
@@ -1464,6 +1486,7 @@ function enemySlotHTML(slot, boss, i) {
     return `<div class="slot empty-slot" id="es-${i}"></div>`;
   }
   if (i === 2) {
+    const bossTooltip = `<div class="card-tooltip"><span class="tooltip-name">${boss.name}</span></div>`;
     return `
       <div class="slot" id="es-${i}">
         <div class="card battle-card boss-card boss-art-${state.bossIndex}">
@@ -1473,6 +1496,7 @@ function enemySlotHTML(slot, boss, i) {
               <span class="battle-hp">${state.battle.bossHp}</span>
             </div>
           </div>
+          ${bossTooltip}
         </div>
       </div>`;
   }
@@ -1485,10 +1509,11 @@ function enemySlotHTML(slot, boss, i) {
           <div class="card-content">
             <div class="battle-stats">
               <span class="battle-atk">${slot.attack}</span>
-              ${slot.failsafe ? `<span class="battle-failsafe">💀</span>` : ''}
+              ${slot.failsafe ? `<span class="battle-failsafe">💀</span>` : slot.extract ? `<span class="battle-extract">⬆</span>` : ''}
               <span class="battle-hp">${hp}</span>
             </div>
           </div>
+          ${slotTooltipHTML(slot)}
         </div>
       </div>`;
   }
@@ -1535,7 +1560,7 @@ function handCardHTML(card) {
          ${card.react    ? `<div class="card-ability">${REACT_EFFECTS[card.react]}</div>`       : ''}
          ${card.passive  ? `<div class="card-ability">${PASSIVE_EFFECTS[card.passive]}</div>`  : ''}
        </div>`;
-  return `<div class="${cls}" ${interact}>${inner}</div>`;
+  return `<div class="${cls}" ${interact}>${inner}${keywordTooltipHTML(card)}</div>`;
 }
 
 function playerSlotHTML(card, i) {
@@ -1552,10 +1577,11 @@ function playerSlotHTML(card, i) {
           <div class="card-content">
             <div class="battle-stats">
               <span class="battle-atk">${card.attack}</span>
-              ${card.failsafe ? `<span class="battle-failsafe">💀</span>` : ''}
+              ${card.failsafe ? `<span class="battle-failsafe">💀</span>` : card.extract ? `<span class="battle-extract">⬆</span>` : ''}
               <span class="battle-hp">${hp}</span>
             </div>
           </div>
+          ${slotTooltipHTML(card)}
         </div>
       </div>`;
   }

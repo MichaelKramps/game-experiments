@@ -112,8 +112,8 @@
       align-items: center;
       gap: 10px;
       position: relative;
-      overflow: hidden;
     }
+    .card:hover { z-index: 10; }
 
     .card-art {
       position: absolute;
@@ -337,6 +337,47 @@
     .battle-atk      { font-size: 1.7rem; color: #5599dd; font-weight: bold; line-height: 1; display: inline-block; }
     .battle-hp       { font-size: 1.7rem; color: #e05555; font-weight: bold; line-height: 1; display: inline-block; }
     .battle-failsafe { font-size: 1rem; line-height: 1; opacity: 0.85; }
+    .battle-extract  { font-size: 1rem; line-height: 1; opacity: 0.85; }
+
+    .card-tooltip {
+      display: none;
+      position: absolute;
+      bottom: calc(100% + 8px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: #0c0c1e;
+      border: 1px solid #3a3a6a;
+      border-radius: 6px;
+      padding: 10px 14px;
+      font-size: 0.78rem;
+      color: #c0c0d8;
+      z-index: 100;
+      pointer-events: none;
+      line-height: 1.6;
+      min-width: 190px;
+      max-width: 260px;
+      white-space: normal;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.8);
+      text-align: left;
+    }
+    .card-tooltip::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 6px solid transparent;
+      border-top-color: #3a3a6a;
+    }
+    .card:hover .card-tooltip { display: block; }
+    .tooltip-name {
+      display: block;
+      font-size: 0.88rem;
+      font-weight: bold;
+      color: #e0e0f0;
+      margin-bottom: 6px;
+    }
+    .tooltip-effect { color: #40a8c0; font-style: italic; }
 
     @keyframes stat-buff {
       0%   { transform: scale(1);    filter: brightness(1);   }
