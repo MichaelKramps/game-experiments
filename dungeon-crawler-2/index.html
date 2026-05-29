@@ -111,6 +111,32 @@
       flex-direction: column;
       align-items: center;
       gap: 10px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card-art {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 80%;
+      height: 80%;
+      object-fit: contain;
+      opacity: 0.18;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .card-content {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      flex: 1;
     }
 
     /* ── shop card states ── */
@@ -206,6 +232,10 @@
     }
     .btn-buy { background: #2d5a2d; color: #a8d4a8; margin-top: auto; width: 100%; }
     .btn-buy:hover:not(:disabled)       { background: #3a7a3a; }
+    .btn-remove { background: #4a1a1a; color: #d4a0a0; margin-top: 4px; width: 100%; }
+    .btn-remove:hover:not(:disabled)    { background: #6a2a2a; }
+    .btn-heal { background: #1a3a4a; color: #a0ccd4; margin-top: 4px; width: 100%; }
+    .btn-heal:hover:not(:disabled)      { background: #2a5a6a; }
     .btn-secondary { background: #252545; color: #9090c0; }
     .btn-secondary:hover:not(:disabled) { background: #333365; }
     .btn-proceed {
@@ -543,6 +573,7 @@
       box-shadow: 0 4px 16px rgba(0,0,0,0.6);
     }
     .pool-debug:hover .pool-tooltip { display: block; }
+
     .pool-tooltip-row {
       display: flex;
       align-items: center;
