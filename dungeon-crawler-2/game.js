@@ -1306,6 +1306,7 @@ function unlockHTML() {
                 ${card.react    ? `<div class="card-ability">${REACT_EFFECTS[card.react]}</div>`       : ''}
                 ${card.passive  ? `<div class="card-ability">${PASSIVE_EFFECTS[card.passive]}</div>`  : ''}
               </div>
+              ${keywordTooltipHTML(card)}
             </div>
             <div class="unlock-count">×${counts[card.name]} added to pool</div>
           </div>
@@ -1457,12 +1458,8 @@ function bossHTML() {
             <div class="hand-meta">
               <span class="hand-label">Hand &mdash; ${b.hand.length} units</span>
             </div>
-            <div class="field">
-              ${Array.from({length: 5}, (_, i) => {
-                const card = b.hand[i];
-                if (!card) return `<div class="slot"></div>`;
-                return `<div class="slot">${handCardHTML(card)}</div>`;
-              }).join('')}
+            <div class="field hand-field">
+              ${b.hand.map(card => `<div class="slot">${handCardHTML(card)}</div>`).join('')}
             </div>
           </div>
 
