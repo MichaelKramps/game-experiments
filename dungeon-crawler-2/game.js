@@ -129,6 +129,7 @@ const EFFECT_POOL = [
   { id: 'arcane_surge',    name: 'Systems Upgrade',  type: 'effect', desc: 'All units in your roster gain +1/+1.' },
   { id: 'divine_blessing', name: 'Emergency Repair', type: 'effect', desc: 'Restore your Commander to full health.' },
   { id: 'soul_capture',    name: 'Power Absorption', type: 'effect', desc: 'Give your Commander bonus Attack and Health based on the defeated boss tier.' },
+  { id: 'purge_low_tier',  name: 'Decommission',     type: 'effect', minBoss: 3, desc: 'Purge all Tier 1 units from the card pool (starting units and units from the first two encounters).' },
 ];
 
 // ── state ─────────────────────────────────────────────────────────────────────
@@ -240,6 +241,7 @@ function generateRewards() {
   }
 
   EFFECT_POOL.forEach(e => {
+    if (e.minBoss && state.bossIndex < e.minBoss) return;
     pool.push({ type: 'effect', data: e });
     if (e.id === 'call_to_arms') pool.push({ type: 'effect', data: e });
   });
@@ -334,6 +336,13 @@ function applyEffect(effectId) {
   } else if (effectId === 'divine_blessing') {
     const hero = state.deck.find(c => c.isHero);
     if (hero) hero.health = hero.maxHealth;
+  } else if (effectId === 'purge_low_tier') {
+    const lowTierNames = new Set([
+      ...MINION_POOL.map(m => m.name),
+      ...BOSS_DATA[0].minions.map(m => m.name),
+      ...BOSS_DATA[1].minions.map(m => m.name),
+    ]);
+    state.pool = state.pool.filter(c => !lowTierNames.has(c.name));
   } else if (effectId === 'soul_capture') {
     const x = state.bossIndex;
     const hero = state.deck.find(c => c.isHero);
