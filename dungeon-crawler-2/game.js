@@ -1,3 +1,42 @@
+// ── audio ─────────────────────────────────────────────────────────────────────
+
+const TRACK_VOL  = 0.4;
+
+const bgMusic       = new Audio('https://opengameart.org/sites/default/files/Lost%20signal%20main%20theme%20%28WIP%29.mp3');
+const shopMusic     = new Audio('https://opengameart.org/sites/default/files/ville_seppanen-1_g.mp3');
+const battleMusic   = new Audio('https://opengameart.org/sites/default/files/heavens_forbid_0.ogg');
+const rewardMusic   = new Audio('https://opengameart.org/sites/default/files/TremLoadingloopl.wav');
+const finalBossMusic = new Audio('https://opengameart.org/sites/default/files/e.ogg');
+[bgMusic, shopMusic, battleMusic, rewardMusic, finalBossMusic].forEach(t => { t.loop = true; t.volume = TRACK_VOL; });
+const FADE_MS    = 1200;
+const FADE_STEPS = 40;
+let   fadeTimer  = null;
+
+function playTrack(next) {
+  if (fadeTimer) { clearInterval(fadeTimer); fadeTimer = null; }
+
+  const outgoing = [bgMusic, shopMusic, battleMusic, rewardMusic, finalBossMusic]
+    .filter(t => t !== next && !t.paused);
+
+  if (next.paused) {
+    next.volume = 0;
+    next.play().catch(() => {});
+  }
+
+  let step = 0;
+  fadeTimer = setInterval(() => {
+    step++;
+    const p = step / FADE_STEPS;
+    outgoing.forEach(t => { t.volume = Math.max(0, TRACK_VOL * (1 - p)); });
+    next.volume = Math.min(TRACK_VOL, TRACK_VOL * p);
+    if (step >= FADE_STEPS) {
+      clearInterval(fadeTimer);
+      fadeTimer = null;
+      outgoing.forEach(t => { t.pause(); t.currentTime = 0; t.volume = TRACK_VOL; });
+    }
+  }, FADE_MS / FADE_STEPS);
+}
+
 // ── data ──────────────────────────────────────────────────────────────────────
 
 const BOSS_DATA = [
@@ -203,8 +242,9 @@ function generateShop() {
 }
 
 function newGame() {
+  playTrack(bgMusic);
   state = {
-    phase: 'shop',
+    phase: 'title',
     bossIndex: 0,
     deck: [makeHero()],
     gold: 5,
@@ -216,6 +256,12 @@ function newGame() {
     lastDefeatedBoss: null,
     removals: 0,
   };
+  render();
+}
+
+function startGame() {
+  playTrack(shopMusic);
+  state.phase = 'shop';
   state.shopItems = generateShop();
   render();
 }
@@ -278,6 +324,7 @@ function chooseReward(index) {
   state.pendingRewards = [];
   state.phase = 'shop';
   state.shopItems = generateShop();
+  playTrack(shopMusic);
   render();
 }
 
@@ -774,6 +821,7 @@ function endBattle() {
     b.log.push(`Mission complete! Salvaged ${reward} credits.`);
     render();
     setTimeout(() => {
+      playTrack(rewardMusic);
       const heroOnField = b.playerSlots.find(c => c && c.isHero);
       if (heroOnField) {
         const deckHero = state.deck.find(c => c.isHero);
@@ -801,7 +849,7 @@ function endBattle() {
       ? 'Commander down! Mission failed.'
       : 'Defeat! All units lost.');
     render();
-    setTimeout(() => { state.phase = 'lose'; render(); }, 2500);
+    setTimeout(() => { playTrack(shopMusic); state.phase = 'lose'; render(); }, 2500);
   }
 }
 
@@ -970,6 +1018,7 @@ function recruitUnit(minionName) {
   state.pendingRewards = [];
   state.phase = 'shop';
   state.shopItems = generateShop();
+  playTrack(shopMusic);
   render();
 }
 
@@ -981,6 +1030,7 @@ function rerollShop() {
 }
 
 function proceedToBoss() {
+  playTrack(state.bossIndex < 7 ? battleMusic : finalBossMusic);
   const boss = BOSS_DATA[state.bossIndex];
 
   const hero = state.deck.find(c => c.isHero);
@@ -1076,17 +1126,30 @@ function artImgHTML(art) {
   return `<img class="card-art" src="https://game-icons.net/icons/ffffff/transparent/1x1/lorc/${art}.svg" alt="">`;
 }
 
+function titleHTML() {
+  return `
+    <div class="screen title-screen">
+      <div class="facility-id">Classified — Sector Zero Research Facility</div>
+      <h1 class="game-title">SECTOR<br>ZERO</h1>
+      <p class="title-lore">All contact with Research Wing Ω has been lost.<br>Dispatching autonomous combat team.</p>
+      <button class="btn-start" onclick="startGame()">Initialize Mission</button>
+      <p class="title-credit">Music: "Lost Signal" by YoMikeyD — CC-BY 3.0</p>
+    </div>
+  `;
+}
+
 function render() {
   const app = document.getElementById('app');
   let screen = '';
-  if      (state.phase === 'shop')    screen = shopHTML();
+  if      (state.phase === 'title')   screen = titleHTML();
+  else if (state.phase === 'shop')    screen = shopHTML();
   else if (state.phase === 'boss')    screen = bossHTML();
   else if (state.phase === 'unlock')  screen = unlockHTML();
   else if (state.phase === 'reward')  screen = rewardHTML();
   else if (state.phase === 'recruit') screen = recruitHTML();
   else if (state.phase === 'win')     screen = winHTML();
   else if (state.phase === 'lose')    screen = loseHTML();
-  app.innerHTML = hudHTML() + screen;
+  app.innerHTML = (state.phase === 'title' ? '' : hudHTML()) + screen;
 }
 
 function hudHTML() {
@@ -1181,6 +1244,7 @@ function shopHTML() {
           Engage ${boss.name} →
         </button>
       </div>
+      <p class="title-credit">Music: "Space Ambient" by Ville Seppänen — CC-BY 3.0</p>
     </div>
   `;
 }
@@ -1474,6 +1538,7 @@ function bossHTML() {
           ${deckSlotHTML(b.remainingDeck)}
         </div>
       </div>
+      <p class="title-credit">${state.bossIndex < 7 ? 'Music: "Gods Forbid" by Centurion_of_war — CC-BY 4.0' : 'Music: "Last Stand in Space" by brandon75689'}</p>
     </div>
   `;
 }
@@ -1610,3 +1675,6 @@ function loseHTML() {
 // ── boot ──────────────────────────────────────────────────────────────────────
 
 newGame();
+bgMusic.play().catch(() => {
+  document.addEventListener('click', () => playTrack(bgMusic), { once: true });
+});
