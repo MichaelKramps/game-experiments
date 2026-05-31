@@ -396,6 +396,42 @@
       display: inline-block;
     }
 
+    @keyframes impact-burst {
+      0%   { transform: scale(0.1); opacity: 1;   }
+      35%  { transform: scale(1.1); opacity: 0.9; }
+      100% { transform: scale(2);   opacity: 0;   }
+    }
+    @keyframes impact-ring {
+      0%   { transform: scale(0.1); opacity: 0.9; }
+      100% { transform: scale(2.2); opacity: 0;   }
+    }
+    .impact-burst, .impact-ring {
+      position: fixed;
+      pointer-events: none;
+      z-index: 1000;
+      border-radius: 50%;
+    }
+    .impact-burst {
+      background: radial-gradient(circle, var(--impact-color, #44cc66) 0%, transparent 70%);
+      animation: impact-burst 0.32s ease-out forwards;
+    }
+    .impact-ring {
+      border: 3px solid var(--impact-color, #44cc66);
+      background: transparent;
+      animation: impact-ring 0.38s ease-out forwards;
+    }
+
+    @keyframes hp-damage {
+      0%   { transform: scale(1);   filter: brightness(1);   }
+      20%  { transform: scale(1.9); filter: brightness(2.5) drop-shadow(0 0 6px #ff3333); }
+      55%  { transform: scale(1.3); filter: brightness(1.6) drop-shadow(0 0 3px #ff4444); }
+      100% { transform: scale(1);   filter: brightness(1);   }
+    }
+    .hp-damage-anim {
+      animation: hp-damage 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      display: inline-block;
+    }
+
     .card.selected {
       outline: 2px solid #c9a84c;
       outline-offset: 3px;

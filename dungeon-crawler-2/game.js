@@ -12,6 +12,69 @@ const FADE_MS    = 1200;
 const FADE_STEPS = 40;
 let   fadeTimer  = null;
 
+let sfxCtx = null;
+function getSfxCtx() {
+  if (!sfxCtx) sfxCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return sfxCtx;
+}
+
+function playSmashSound() {
+  const ctx = getSfxCtx();
+  const t   = ctx.currentTime;
+
+  function noise(duration) {
+    const len = Math.ceil(ctx.sampleRate * duration);
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const d   = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    return src;
+  }
+
+  // Layer 1: sharp full-spectrum transient — the initial punch
+  const trans = noise(0.04);
+  const tGain = ctx.createGain();
+  trans.connect(tGain);
+  tGain.connect(ctx.destination);
+  tGain.gain.setValueAtTime(0.8, t);
+  tGain.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
+  trans.start(t); trans.stop(t + 0.04);
+
+  // Layer 2: crash body — wide noise with lowpass sweeping down
+  const body       = noise(0.7);
+  const bodyFilter = ctx.createBiquadFilter();
+  bodyFilter.type  = 'lowpass';
+  bodyFilter.frequency.setValueAtTime(9000, t);
+  bodyFilter.frequency.exponentialRampToValueAtTime(700, t + 0.55);
+  const bodyGain = ctx.createGain();
+  body.connect(bodyFilter); bodyFilter.connect(bodyGain); bodyGain.connect(ctx.destination);
+  bodyGain.gain.setValueAtTime(0.42, t);
+  bodyGain.gain.exponentialRampToValueAtTime(0.001, t + 0.65);
+  body.start(t); body.stop(t + 0.65);
+
+  // Layer 3: metallic shimmer — highpass noise for the crash character
+  const shim       = noise(0.55);
+  const shimFilter = ctx.createBiquadFilter();
+  shimFilter.type  = 'highpass';
+  shimFilter.frequency.value = 3500;
+  const shimGain = ctx.createGain();
+  shim.connect(shimFilter); shimFilter.connect(shimGain); shimGain.connect(ctx.destination);
+  shimGain.gain.setValueAtTime(0.25, t);
+  shimGain.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+  shim.start(t); shim.stop(t + 0.5);
+
+  // Layer 4: low thud — oscillator sweeping down
+  const osc   = ctx.createOscillator();
+  const oGain = ctx.createGain();
+  osc.connect(oGain); oGain.connect(ctx.destination);
+  osc.frequency.setValueAtTime(180, t);
+  osc.frequency.exponentialRampToValueAtTime(32, t + 0.18);
+  oGain.gain.setValueAtTime(0.55, t);
+  oGain.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+  osc.start(t); osc.stop(t + 0.3);
+}
+
 function playTrack(next) {
   if (fadeTimer) { clearInterval(fadeTimer); fadeTimer = null; }
 
@@ -439,6 +502,62 @@ function dropCard(event, slotIndex) {
   playCard(cardId, slotIndex);
 }
 
+function startFightAnimation(onComplete) {
+  const b = state.battle;
+
+  const allItems = [];
+  b.playerSlots.forEach((card, i) => {
+    if (!card) return;
+    const slotEl = document.getElementById(`ps-${i}`);
+    if (!slotEl) return;
+    const cardEl = slotEl.querySelector('.card');
+    if (cardEl) allItems.push({ cardEl, rect: slotEl.getBoundingClientRect() });
+  });
+  for (let i = 0; i < 5; i++) {
+    const slotEl = document.getElementById(`es-${i}`);
+    if (!slotEl) continue;
+    const cardEl = slotEl.querySelector('.card');
+    if (cardEl) allItems.push({ cardEl, rect: slotEl.getBoundingClientRect() });
+  }
+
+  if (allItems.length === 0) { onComplete(); return; }
+
+  const clones = allItems.map(({ cardEl, rect }) => {
+    const clone = cardEl.cloneNode(true);
+    Object.assign(clone.style, {
+      position: 'fixed', left: rect.left + 'px', top: rect.top + 'px',
+      width: rect.width + 'px', height: rect.height + 'px',
+      margin: '0', zIndex: '998', pointerEvents: 'none',
+      transition: 'transform 300ms ease-out', transformOrigin: 'center center',
+    });
+    document.body.appendChild(clone);
+    cardEl.style.opacity = '0';
+    return { clone, cardEl };
+  });
+
+  // Phase 1: lift all cards
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    clones.forEach(({ clone }) => { clone.style.transform = 'scale(1.28)'; });
+  }));
+
+  // Pause at peak, then settle back down
+  setTimeout(() => {
+    setTimeout(() => {
+      clones.forEach(({ clone }) => {
+        clone.style.transition = 'transform 220ms ease-out';
+        clone.style.transform  = '';
+      });
+      setTimeout(() => {
+        clones.forEach(({ clone, cardEl }) => {
+          if (clone.parentNode) document.body.removeChild(clone);
+          cardEl.style.opacity = '';
+        });
+        onComplete();
+      }, 220);
+    }, 160); // pause at peak
+  }, 300); // wait for lift
+}
+
 function startFight() {
   const b = state.battle;
   b.fighting = true;
@@ -447,7 +566,7 @@ function startFight() {
   b.playerSlots.forEach(c => { if (c) c.currentHp = c.currentHp ?? c.health; });
   b.bossMinions.forEach(c => { if (c) c.currentHp = c.currentHp ?? c.health; });
   render();
-  setTimeout(combatTick, ATTACK_MS);
+  startFightAnimation(() => setTimeout(combatTick, ATTACK_MS));
 }
 
 function combatTick() {
@@ -468,6 +587,7 @@ function combatTick() {
         doAttack(side, col, targetCol);
         render();
         applyStatBuffAnimations();
+        applyDamageAnimations();
         if (isBattleOver()) { endBattle(); return; }
         const attacker = side === 'p'
           ? state.battle.playerSlots[col]
@@ -479,6 +599,7 @@ function combatTick() {
               doAttack(side, col, secondTarget);
               render();
               applyStatBuffAnimations();
+              applyDamageAnimations();
               if (isBattleOver()) endBattle();
               else setTimeout(combatTick, ATTACK_MS);
             });
@@ -563,6 +684,25 @@ function randomPlayer() {
   return cols[Math.floor(Math.random() * cols.length)];
 }
 
+function spawnImpact(x, y, side) {
+  const color = side === 'p' ? '#44cc66' : '#cc4444';
+  const size  = 64;
+  ['impact-burst', 'impact-ring'].forEach(cls => {
+    const el = document.createElement('div');
+    el.className = cls;
+    el.style.setProperty('--impact-color', color);
+    Object.assign(el.style, {
+      left:   (x - size / 2) + 'px',
+      top:    (y - size / 2) + 'px',
+      width:  size + 'px',
+      height: size + 'px',
+    });
+    document.body.appendChild(el);
+    setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 420);
+  });
+
+}
+
 function animateAttack(side, col, targetCol, callback) {
   const srcId = side === 'p' ? `ps-${col}` : `es-${col}`;
   const tgtId = side === 'p' ? `es-${targetCol}` : `ps-${targetCol}`;
@@ -580,32 +720,48 @@ function animateAttack(side, col, targetCol, callback) {
 
   const clone = card.cloneNode(true);
   Object.assign(clone.style, {
-    position:      'fixed',
-    left:          sr.left + 'px',
-    top:           sr.top  + 'px',
-    width:         sr.width  + 'px',
-    height:        sr.height + 'px',
-    margin:        '0',
-    zIndex:        '999',
-    pointerEvents: 'none',
-    transition:    'transform 200ms ease-in',
+    position:        'fixed',
+    left:            sr.left + 'px',
+    top:             sr.top  + 'px',
+    width:           sr.width  + 'px',
+    height:          sr.height + 'px',
+    margin:          '0',
+    zIndex:          '999',
+    pointerEvents:   'none',
+    transition:      'transform 300ms ease-out',
+    transformOrigin: 'center center',
   });
   document.body.appendChild(clone);
   card.style.opacity = '0';
 
+  // Phase 1: lift — scale up before lunging
   requestAnimationFrame(() => requestAnimationFrame(() => {
-    clone.style.transform = `translate(${dx}px, ${dy}px)`;
+    clone.style.transform = 'scale(1.28)';
   }));
 
   setTimeout(() => {
-    clone.style.transition = 'transform 160ms ease-out';
-    clone.style.transform  = '';
+    // Brief pause at full lift before lunging
     setTimeout(() => {
-      document.body.removeChild(clone);
-      card.style.opacity = '';
-      callback();
-    }, 160);
-  }, 200);
+    // Phase 2: lunge toward target
+    clone.style.transition = 'transform 200ms ease-in';
+    clone.style.transform  = `translate(${dx}px, ${dy}px) scale(1)`;
+
+    setTimeout(() => {
+      // Impact at target position
+      spawnImpact(tr.left + tr.width / 2, tr.top + tr.height / 2, side);
+      playSmashSound();
+
+      // Phase 3: snap back
+      clone.style.transition = 'transform 160ms ease-out';
+      clone.style.transform  = '';
+      setTimeout(() => {
+        document.body.removeChild(clone);
+        card.style.opacity = '';
+        callback();
+      }, 160);
+    }, 200);
+    }, 160); // pause at peak lift
+  }, 300); // wait for lift to complete
 }
 
 function applyReactBuffs(triggerType) {
@@ -691,6 +847,7 @@ function triggerEnemyFailsafe(card) {
 function damageEnemy(col, amount) {
   if (col === 2) {
     state.battle.bossHp = Math.max(0, state.battle.bossHp - amount);
+    if (state.battle.bossHp > 0) state.battle.pendingDamageAnims.push({ id: 'boss' });
   } else {
     const m = state.battle.bossMinions[minionIdx(col)];
     if (!m) return;
@@ -700,6 +857,8 @@ function damageEnemy(col, amount) {
     if (m.currentHp <= 0) {
       state.battle.bossMinions[minionIdx(col)] = null;
       triggerEnemyFailsafe(m);
+    } else {
+      state.battle.pendingDamageAnims.push({ id: m.id });
     }
   }
 }
@@ -785,6 +944,8 @@ function damagePlayer(col, amount) {
     state.battle.playerSlots[col] = null;
     if (c.isHero) state.battle.heroSlain = true;
     triggerFailsafe(c, null, col);
+  } else {
+    state.battle.pendingDamageAnims.push({ id: c.id });
   }
 }
 
@@ -1052,7 +1213,8 @@ function proceedToBoss() {
     seqPos:        0,
     log:           [],
     heroSlain:        false,
-    pendingStatBuffs: [],
+    pendingStatBuffs:  [],
+    pendingDamageAnims: [],
     firstDeployUsed:   false,
     firstExtractUsed:  false,
     firstFailsafeUsed: false,
@@ -1097,6 +1259,42 @@ function applyStatBuffAnimations() {
     statEl.classList.remove('stat-buff-anim');
     void statEl.offsetWidth;
     statEl.classList.add('stat-buff-anim');
+  });
+}
+
+function applyDamageAnimations() {
+  const anims = state.battle?.pendingDamageAnims;
+  if (!anims || anims.length === 0) return;
+  state.battle.pendingDamageAnims = [];
+
+  const enemySlots = [
+    state.battle.bossMinions[0],
+    state.battle.bossMinions[1],
+    'boss',
+    state.battle.bossMinions[2],
+    state.battle.bossMinions[3],
+  ];
+
+  anims.forEach(({ id }) => {
+    let slotEl = null;
+    if (id === 'boss') {
+      slotEl = document.getElementById('es-2');
+    } else {
+      state.battle.playerSlots.forEach((card, i) => {
+        if (card && card.id === id) slotEl = document.getElementById(`ps-${i}`);
+      });
+      if (!slotEl) {
+        enemySlots.forEach((card, i) => {
+          if (card && card !== 'boss' && card.id === id) slotEl = document.getElementById(`es-${i}`);
+        });
+      }
+    }
+    if (!slotEl) return;
+    const hpEl = slotEl.querySelector('.battle-hp');
+    if (!hpEl) return;
+    hpEl.classList.remove('hp-damage-anim');
+    void hpEl.offsetWidth;
+    hpEl.classList.add('hp-damage-anim');
   });
 }
 
@@ -1506,12 +1704,12 @@ function bossHTML() {
           </div>
 
           <div class="battle-vs">
-            ${!b.fighting && !b.over ? `
-              <button class="btn-fight"
-                      onclick="startFight()"
-                      ${b.playerSlots.some(s => s !== null) ? '' : 'disabled'}>
-                Engage
-              </button>` : ''}
+            <button class="btn-fight"
+                    onclick="startFight()"
+                    ${b.playerSlots.some(s => s !== null) ? '' : 'disabled'}
+                    style="${b.fighting || b.over ? 'visibility:hidden' : ''}">
+              Engage
+            </button>
           </div>
 
           <div class="field player-field">
