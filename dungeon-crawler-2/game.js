@@ -12,67 +12,17 @@ const FADE_MS    = 1200;
 const FADE_STEPS = 40;
 let   fadeTimer  = null;
 
-let sfxCtx = null;
-function getSfxCtx() {
-  if (!sfxCtx) sfxCtx = new (window.AudioContext || window.webkitAudioContext)();
-  return sfxCtx;
-}
+const hitSounds = Array.from({ length: 37 }, (_, i) => {
+  const n = String(i + 1).padStart(2, '0');
+  const a = new Audio(`sfx/hit${n}.mp3`);
+  a.volume = 0.3;
+  return a;
+});
 
 function playSmashSound() {
-  const ctx = getSfxCtx();
-  const t   = ctx.currentTime;
-
-  function noise(duration) {
-    const len = Math.ceil(ctx.sampleRate * duration);
-    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
-    const d   = buf.getChannelData(0);
-    for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
-    const src = ctx.createBufferSource();
-    src.buffer = buf;
-    return src;
-  }
-
-  // Layer 1: sharp full-spectrum transient — the initial punch
-  const trans = noise(0.04);
-  const tGain = ctx.createGain();
-  trans.connect(tGain);
-  tGain.connect(ctx.destination);
-  tGain.gain.setValueAtTime(0.8, t);
-  tGain.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
-  trans.start(t); trans.stop(t + 0.04);
-
-  // Layer 2: crash body — wide noise with lowpass sweeping down
-  const body       = noise(0.7);
-  const bodyFilter = ctx.createBiquadFilter();
-  bodyFilter.type  = 'lowpass';
-  bodyFilter.frequency.setValueAtTime(9000, t);
-  bodyFilter.frequency.exponentialRampToValueAtTime(700, t + 0.55);
-  const bodyGain = ctx.createGain();
-  body.connect(bodyFilter); bodyFilter.connect(bodyGain); bodyGain.connect(ctx.destination);
-  bodyGain.gain.setValueAtTime(0.42, t);
-  bodyGain.gain.exponentialRampToValueAtTime(0.001, t + 0.65);
-  body.start(t); body.stop(t + 0.65);
-
-  // Layer 3: metallic shimmer — highpass noise for the crash character
-  const shim       = noise(0.55);
-  const shimFilter = ctx.createBiquadFilter();
-  shimFilter.type  = 'highpass';
-  shimFilter.frequency.value = 3500;
-  const shimGain = ctx.createGain();
-  shim.connect(shimFilter); shimFilter.connect(shimGain); shimGain.connect(ctx.destination);
-  shimGain.gain.setValueAtTime(0.25, t);
-  shimGain.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
-  shim.start(t); shim.stop(t + 0.5);
-
-  // Layer 4: low thud — oscillator sweeping down
-  const osc   = ctx.createOscillator();
-  const oGain = ctx.createGain();
-  osc.connect(oGain); oGain.connect(ctx.destination);
-  osc.frequency.setValueAtTime(180, t);
-  osc.frequency.exponentialRampToValueAtTime(32, t + 0.18);
-  oGain.gain.setValueAtTime(0.55, t);
-  oGain.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
-  osc.start(t); osc.stop(t + 0.3);
+  const snd = hitSounds[Math.floor(Math.random() * hitSounds.length)];
+  snd.currentTime = 0;
+  snd.play().catch(() => {});
 }
 
 function playTrack(next) {
@@ -1191,7 +1141,9 @@ function rerollShop() {
 }
 
 function proceedToBoss() {
-  playTrack(state.bossIndex < 7 ? battleMusic : finalBossMusic);
+  const bossTrack = state.bossIndex < 7 ? battleMusic : finalBossMusic;
+  if (bossTrack === finalBossMusic) finalBossMusic.currentTime = 4;
+  playTrack(bossTrack);
   const boss = BOSS_DATA[state.bossIndex];
 
   const hero = state.deck.find(c => c.isHero);
@@ -1337,6 +1289,17 @@ function titleHTML() {
 }
 
 function render() {
+  const battlePhases = ['boss', 'reward', 'unlock', 'recruit'];
+  if (state.phase === 'shop') {
+    document.body.classList.add('bg-shop');
+    document.body.classList.remove('bg-battle');
+  } else if (battlePhases.includes(state.phase)) {
+    document.body.classList.add('bg-battle');
+    document.body.classList.remove('bg-shop');
+  } else {
+    document.body.classList.remove('bg-shop', 'bg-battle');
+  }
+
   const app = document.getElementById('app');
   let screen = '';
   if      (state.phase === 'title')   screen = titleHTML();

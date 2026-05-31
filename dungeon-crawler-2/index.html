@@ -698,6 +698,27 @@
       bottom: 16px;
     }
 
+    /* ── phase backgrounds ── */
+    body.bg-shop {
+      background-image:
+        linear-gradient(rgba(8, 10, 8, 0.62), rgba(8, 10, 8, 0.62)),
+        linear-gradient(rgba(0, 180, 60, 0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 180, 60, 0.025) 1px, transparent 1px),
+        url('shop-background.png');
+      background-size: auto, 48px 48px, 48px 48px, cover;
+      background-position: 0 0, 0 0, 0 0, center center;
+    }
+
+    body.bg-battle {
+      background-image:
+        linear-gradient(rgba(8, 10, 8, 0.5), rgba(8, 10, 8, 0.5)),
+        linear-gradient(rgba(0, 180, 60, 0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 180, 60, 0.025) 1px, transparent 1px),
+        url('battle-background.png');
+      background-size: auto, 48px 48px, 48px 48px, cover;
+      background-position: 0 0, 0 0, 0 0, center center;
+    }
+
     /* ── pool debug tooltip ── */
     .pool-debug {
       position: relative;
