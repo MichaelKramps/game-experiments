@@ -1246,10 +1246,6 @@ function playCard(cardId, slotIndex) {
   state.battle.hand.splice(handIndex, 1);
   if (displaced) {
     triggerExtract(displaced, card);
-    if (displaced.extract !== 'give_stats_to_replacer') {
-      card.attack += displaced.attack;
-      state.battle.pendingStatBuffs.push({ id: card.id, stat: 'attack', side: 'player' });
-    }
     state.battle.remainingDeck.push(displaced);
   }
   state.battle.playerSlots[slotIndex] = card;
@@ -1517,8 +1513,8 @@ function hudHTML() {
 function shopBossCardHTML() {
   const boss = BOSS_DATA[state.bossIndex];
   const abilityLine = [
-    boss.specialAbility ? `<div class="card-ability" style="font-size:0.65rem;color:#cc6666;border-top-color:#2a1010;">${BOSS_ABILITY_EFFECTS[boss.specialAbility]}</div>` : '',
-    boss.passive        ? `<div class="card-ability" style="font-size:0.65rem;color:#cc6666;border-top-color:#2a1010;">${BOSS_PASSIVE_EFFECTS[boss.passive]}</div>`        : '',
+    boss.specialAbility ? `<div class="card-ability" style="font-size:0.65rem;color:#fff;border-top-color:#3a2020;">${BOSS_ABILITY_EFFECTS[boss.specialAbility]}</div>` : '',
+    boss.passive        ? `<div class="card-ability" style="font-size:0.65rem;color:#fff;border-top-color:#3a2020;">${BOSS_PASSIVE_EFFECTS[boss.passive]}</div>`        : '',
   ].join('');
   return `
     <div class="card boss-card boss-art-${state.bossIndex}" style="pointer-events:none;">
@@ -1527,8 +1523,8 @@ function shopBossCardHTML() {
         <div class="boss-card-name">${boss.name}</div>
         ${abilityLine}
         <div class="battle-stats">
-          <span class="battle-atk">${boss.attack}</span>
-          <span class="battle-hp">${boss.hp}</span>
+          <span class="battle-atk" style="color:#fff;">${boss.attack}</span>
+          <span class="battle-hp" style="color:#fff;">${boss.hp}</span>
         </div>
       </div>
     </div>
@@ -1623,6 +1619,7 @@ function shopHTML() {
     </div>
 
     <div class="shop-boss-panel">
+      <div class="shop-threat-label">Threat ${state.bossIndex + 1} of ${BOSS_DATA.length}</div>
       ${shopBossCardHTML()}
       <button class="btn-proceed" onclick="proceedToBoss()">
         Engage ${boss.name} →
