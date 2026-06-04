@@ -112,7 +112,7 @@
       border-radius: 8px;
       padding: 18px 14px;
       width: 155px;
-      min-height: 130px;
+      height: 230px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -265,7 +265,8 @@
       display: flex;
       justify-content: space-between;
       align-items: baseline;
-      margin-bottom: 20px;
+      padding: 12px 0 8px;
+      flex-shrink: 0;
     }
     .battle-boss-name { font-size: 1.5rem; font-weight: bold; }
     .battle-boss-num  { font-size: 0.85rem; color: #445544; }
@@ -278,7 +279,7 @@
 
     .slot {
       width: 155px;
-      min-height: 130px;
+      min-height: 230px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -300,23 +301,28 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      padding: 18px 0;
+      padding: 12px 0;
+      flex-shrink: 0;
     }
 
+    .enemy-field  { flex: 1; align-items: center; min-height: 0; }
+    .player-field { flex: 1; align-items: center; min-height: 0; }
+
     .btn-fight {
-      background: #3a1a1a;
-      color: #c07070;
-      border: 1px solid #6a2a2a;
+      background: #d4a800;
+      color: #000;
+      border: 1px solid #f0c000;
       padding: 10px 36px;
       font-size: 1rem;
       border-radius: 4px;
       letter-spacing: 1px;
-      transition: background 0.15s, border-color 0.15s, color 0.15s;
+      font-weight: bold;
+      transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
     }
     .btn-fight:not(:disabled):hover {
-      background: #6a2020;
-      border-color: #aa4040;
-      color: #e09090;
+      background: #f0c000;
+      border-color: #ffe040;
+      box-shadow: 0 0 14px rgba(240,192,0,0.5);
       cursor: pointer;
     }
     .btn-fight:disabled {
@@ -326,8 +332,90 @@
       cursor: not-allowed;
     }
 
-    .boss-card  { border-color: #7a1818; }
-    .enemy-card { border-color: #5a1818; }
+    @keyframes boss-pulse {
+      0%,100% { box-shadow: 0 0 4px rgba(210,50,50,0.15), inset 0 0 8px rgba(160,30,30,0.08); }
+      50%     { box-shadow: 0 0 40px rgba(240,70,70,0.9), inset 0 0 32px rgba(200,50,50,0.4); }
+    }
+    .boss-card {
+      border: 2px solid #cc3333;
+      animation: boss-pulse 1.6s ease-in-out infinite;
+    }
+    @keyframes commander-pulse {
+      0%,100% { box-shadow: 0 0 4px rgba(50,210,100,0.15), inset 0 0 8px rgba(30,160,60,0.08); }
+      50%     { box-shadow: 0 0 40px rgba(70,230,110,0.9), inset 0 0 32px rgba(45,200,80,0.4); }
+    }
+    .battle-hero {
+      border: 2px solid #33cc66 !important;
+      animation: commander-pulse 1.6s ease-in-out infinite;
+    }
+    .boss-card .card-art { opacity: 0.38; width: 85%; height: 85%; }
+    .boss-card-name {
+      font-size: 0.78rem;
+      color: #dd6666;
+      text-align: center;
+      font-weight: bold;
+      letter-spacing: 0.5px;
+      text-shadow: 0 0 8px rgba(200,50,50,0.5);
+    }
+    .enemy-card { border-color: #8a2828; }
+    .enemy-card-name {
+      font-size: 0.72rem;
+      color: #aa7070;
+      text-align: center;
+    }
+    .player-card-name {
+      font-size: 0.72rem;
+      color: #7aaa8a;
+      text-align: center;
+    }
+
+    /* ── battle modals ── */
+    @keyframes modal-fade-in  { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes modal-fade-out { from { opacity: 1; } to { opacity: 0; } }
+    @keyframes modal-title-glow-green {
+      from { text-shadow: 0 0 30px rgba(51,204,102,0.6), 0 0 60px rgba(51,204,102,0.3); }
+      to   { text-shadow: 0 0 60px rgba(51,204,102,1),   0 0 120px rgba(51,204,102,0.6); }
+    }
+    @keyframes modal-title-glow-red {
+      from { text-shadow: 0 0 30px rgba(210,50,50,0.6), 0 0 60px rgba(210,50,50,0.3); }
+      to   { text-shadow: 0 0 60px rgba(230,70,70,1),   0 0 120px rgba(230,70,70,0.6); }
+    }
+    #battle-modal {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 600;
+      background: rgba(0,0,0,0.65);
+      animation: modal-fade-in 0.4s ease-out forwards;
+    }
+    .battle-modal-inner {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .battle-modal-title {
+      font-size: 5.5rem;
+      font-weight: bold;
+      letter-spacing: 8px;
+      animation: 1s ease-in-out infinite alternate;
+    }
+    .victory-title {
+      color: #33cc66;
+      animation-name: modal-title-glow-green;
+    }
+    .defeat-title {
+      color: #dd4444;
+      animation-name: modal-title-glow-red;
+    }
+    .battle-modal-sub {
+      font-size: 1.1rem;
+      color: #c9a84c;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+    }
 
     .card[draggable="true"] { cursor: grab; }
     .card[draggable="true"]:active { cursor: grabbing; }
@@ -449,11 +537,13 @@
     /* ── battle layout ── */
     .battle-layout {
       display: flex;
-      align-items: flex-start;
+      align-items: stretch;
       gap: 28px;
+      flex: 1;
+      min-height: 0;
     }
-    .battle-main   { flex: 1; min-width: 0; }
-    .battle-sidebar { flex-shrink: 0; width: 155px; align-self: flex-end; }
+    .battle-main   { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+    .battle-sidebar { flex-shrink: 0; width: 155px; align-self: center; }
 
     /* ── battle relics panel ── */
     .battle-relics {
@@ -509,9 +599,9 @@
 
     /* ── hand area ── */
     .hand-area {
-      margin-top: 28px;
-      padding-top: 20px;
+      padding: 8px 0 4px;
       border-top: 1px solid #141e14;
+      flex-shrink: 0;
     }
     .hand-meta {
       display: flex;
@@ -524,7 +614,8 @@
 
     /* ── battle log ── */
     .battle-log {
-      margin-top: 20px;
+      margin-top: 8px;
+      flex-shrink: 0;
       padding: 10px 14px;
       background: #050908;
       border: 1px solid #142014;
@@ -643,6 +734,7 @@
     .relic-card {
       border-color: #1a5a3a;
       background: #080e0a;
+      height: 130px;
     }
     .relic-glyph { font-size: 1.4rem; color: #40cc70; }
     .relic-name  { color: #80ccaa; }
@@ -748,6 +840,8 @@
     }
 
     body.bg-battle {
+      overflow: hidden;
+      padding: 0;
       background-image:
         linear-gradient(rgba(8, 10, 8, 0.5), rgba(8, 10, 8, 0.5)),
         linear-gradient(rgba(0, 180, 60, 0.025) 1px, transparent 1px),
@@ -755,6 +849,15 @@
         url('battle-background.png');
       background-size: auto, 48px 48px, 48px 48px, cover;
       background-position: 0 0, 0 0, 0 0, center center;
+    }
+
+    .battle-screen {
+      position: fixed;
+      inset: 0;
+      padding: 0 24px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
     }
 
     /* ── pool debug tooltip ── */

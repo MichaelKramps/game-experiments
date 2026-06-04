@@ -53,48 +53,48 @@ function playTrack(next) {
 // ── data ──────────────────────────────────────────────────────────────────────
 
 const BOSS_DATA = [
-  { name: 'Corrupted Node',     hp: 8,  attack: 1, minions: [
+  { name: 'Corrupted Node',     hp: 7,  attack: 1, art: 'beams-aura',        specialAbility: 'minion_death_heal_1', minions: [
     { name: 'Volatile Drone', attack: 2, health: 1, failsafe: 'transfer_attack', art: 'missile-pod' },
     { name: 'Relay Unit',     attack: 1, health: 3, deploy: 'draw_a_card', cost: 2, art: 'aerial-signal' },
   ]},
-  { name: 'Security Drone',     hp: 12, attack: 2, minions: [
+  { name: 'Security Drone',     hp: 12, attack: 2, art: 'awareness',          specialAbility: 'minion_death_gain_attack_1', minions: [
     { name: 'Amp Unit',      attack: 1, health: 1, extract: 'share_attack',           cost: 2, art: 'beams-aura' },
     { name: 'Bulwark Unit',  attack: 2, health: 3, extract: 'give_stats_to_replacer', cost: 2, art: 'arrows-shield' },
   ]},
-  { name: 'Hive Controller',    hp: 15, attack: 3, minions: [
+  { name: 'Hive Controller',    hp: 15, attack: 3, art: 'tesla-coil',         specialAbility: 'minion_death_gain_1_1', minions: [
     { name: 'Mender Unit', attack: 1, health: 4, deploy: 'hero_heal_5',         cost: 2, art: 'crowned-heart' },
     { name: 'Pulse Node',  attack: 2, health: 2, failsafe: 'heal_friendlies_2', cost: 2, art: 'tesla-coil' },
     { name: 'Surge Unit',  attack: 1, health: 1, failsafe: 'buff_all_friendlies',cost: 2, art: 'power-lightning' },
   ]},
-  { name: 'Combat Mech',        hp: 18, attack: 3, minions: [
+  { name: 'Combat Mech',        hp: 18, attack: 3, art: 'bolter-gun',         specialAbility: 'on_attack_splash_2', minions: [
     { name: 'Chain Unit',  attack: 3, health: 3, deploy: 'trigger_random_failsafe', cost: 2, art: 'focused-lightning' },
     { name: 'Blast Drone', attack: 4, health: 1, failsafe: 'deal_4_damage',         cost: 2, art: 'bolter-gun' },
     { name: 'Echo Unit',   attack: 1, health: 1, react: 'failsafe', cost: 2, art: 'body-swapping' },
     { name: 'Trigger Unit',attack: 1, health: 1, react: 'deploy',   cost: 2, art: 'autogun' },
   ]},
-  { name: 'Stealth Cruiser',    hp: 22, attack: 4, minions: [
+  { name: 'Stealth Cruiser',    hp: 22, attack: 4, art: 'enlightenment',      specialAbility: 'on_attack_aoe_1', minions: [
     { name: 'Scatter Drone', attack: 1, health: 1, failsafe: 'deal_1_to_all',   cost: 2, art: 'atomic-slashes' },
     { name: 'Recon Unit',    attack: 2, health: 3, extract: 'draw_2_cards',     cost: 2, art: 'awareness' },
-    { name: 'Supply Drone',  attack: 3, health: 1, deploy:  'gain_1_gold',      cost: 2, art: 'cog' },
+    { name: 'Supply Drone',  attack: 3, health: 1, react:   'on_play',           cost: 2, art: 'cog' },
     { name: 'Power Core',    attack: 1, health: 1, failsafe: 'buff_random_4_4', cost: 2, art: 'enlightenment' },
   ]},
-  { name: 'Synthetic Overlord', hp: 26, attack: 5, minions: [
+  { name: 'Synthetic Overlord', hp: 26, attack: 5, art: 'all-for-one',        specialAbility: 'on_attack_buff_friendlies_3_3', minions: [
     { name: 'Amplifier Node',   attack: 5, health: 1, passive:  'double_deploy',     cost: 2, art: 'all-for-one' },
     { name: 'Redundancy Core',  attack: 1, health: 5, passive:  'double_failsafe',   cost: 2, art: 'backup' },
     { name: 'Harvest Grid',     attack: 3, health: 3, passive:  'double_extract',    cost: 2, art: 'recycle' },
-    { name: 'Contingency Unit', attack: 4, health: 4, failsafe: 'spawn_salvage_bot', cost: 2, art: 'cog-lock' },
+    { name: 'Archive Node',     attack: 1, health: 2, react: 'draw_on_deploy',       cost: 2, art: 'cog-lock' },
   ]},
-  { name: 'Quantum Titan', hp: 30, attack: 6, minions: [
+  { name: 'Quantum Titan', hp: 30, attack: 8, art: 'eye-shield',          specialAbility: 'double_attack', minions: [
     { name: 'Aegis Unit',    attack: 1, health: 1, passive: 'negate_damage', cost: 2, art: 'eye-shield' },
     { name: 'Twin Striker',  attack: 5, health: 2, passive: 'double_attack', cost: 2, art: 'double-shot' },
     { name: 'Scatter Array', attack: 1, health: 3, passive: 'cleave',        cost: 2, art: 'biohazard' },
-    { name: 'Catalyst Node', attack: 4, health: 4, deploy:  'buff_all_4_4',  cost: 2, art: 'crowned-skull' },
+    { name: 'Catalyst Node', attack: 1, health: 1, deploy:  'draw_all_cards', cost: 2, art: 'crowned-skull' },
   ]},
-  { name: 'The Architect', hp: 36, attack: 7, minions: [
-    { name: 'Prime Unit', attack: 10, health: 10, art: 'oppression' },
-    { name: 'Prime Unit', attack: 10, health: 10, art: 'oppression' },
-    { name: 'Prime Unit', attack: 10, health: 10, art: 'oppression' },
-    { name: 'Prime Unit', attack: 10, health: 10, art: 'oppression' },
+  { name: 'The Architect', hp: 36, attack: 7, art: 'crowned-skull',       passive: 'immune_until_minions_dead', minions: [
+    { name: 'Prime Unit', attack: 10, health: 10, art: 'oppression', failsafe: 'give_architect_10_10' },
+    { name: 'Prime Unit', attack: 10, health: 10, art: 'oppression', failsafe: 'give_architect_10_10' },
+    { name: 'Prime Unit', attack: 10, health: 10, art: 'oppression', failsafe: 'give_architect_10_10' },
+    { name: 'Prime Unit', attack: 10, health: 10, art: 'oppression', failsafe: 'give_architect_10_10' },
   ]},
 ];
 
@@ -112,10 +112,11 @@ const DEPLOY_EFFECTS = {
   hero_attack_plus_1:       '<b>Deploy:</b> Give your Commander +1 Attack.',
   hero_health_plus_1:       '<b>Deploy:</b> Give your Commander +1 Health.',
   draw_a_card:              '<b>Deploy:</b> Draw a card.',
-  hero_heal_5:              '<b>Deploy:</b> Restore 5 health to your Commander.',
+  hero_heal_5:              '<b>Deploy:</b> Give your Commander +5 Max Health and restore 5 health.',
   trigger_random_failsafe:  '<b>Deploy:</b> Activate the Failsafe of a random friendly unit.',
   gain_1_gold:              '<b>Deploy:</b> Gain 2 credits.',
   buff_all_4_4:             '<b>Deploy:</b> Give all friendly units +4 Attack and +4 Health.',
+  draw_all_cards:           '<b>Deploy:</b> Draw all remaining cards in your deck.',
 };
 
 const EXTRACT_EFFECTS = {
@@ -131,12 +132,15 @@ const FAILSAFE_EFFECTS = {
   deal_4_damage:       '<b>Failsafe:</b> Deal 4 damage to a random enemy unit.',
   deal_1_to_all:       '<b>Failsafe:</b> Deal 1 damage to all opposing units.',
   buff_random_4_4:     '<b>Failsafe:</b> Give a random friendly unit +4 Attack and +4 Health.',
-  spawn_salvage_bot:   '<b>Failsafe:</b> Replace this unit with a 4/1 Salvage Bot.',
+  spawn_salvage_bot:    '<b>Failsafe:</b> Replace this unit with a 4/1 Salvage Bot.',
+  give_architect_10_10: '<b>Failsafe:</b> Give The Architect +10 Attack and +10 Health.',
 };
 
 const REACT_EFFECTS = {
-  failsafe: 'When a friendly Failsafe triggers, this gains +1 Attack and +1 Health.',
-  deploy:   'When a friendly Deploy triggers, this gains +1 Attack and +1 Health.',
+  failsafe:       'When a friendly Failsafe triggers, this gains +1 Attack and +1 Health.',
+  deploy:         'When a friendly Deploy triggers, this gains +1 Attack and +1 Health.',
+  on_play:        'Whenever you play a card, gain 1 credit.',
+  draw_on_deploy: 'When you trigger a Deploy effect, draw a card.',
 };
 
 const PASSIVE_EFFECTS = {
@@ -146,6 +150,20 @@ const PASSIVE_EFFECTS = {
   negate_damage:   '<b>Passive:</b> Negate any damage dealt to this unit.',
   double_attack:   '<b>Passive:</b> This unit attacks twice.',
   cleave:          '<b>Passive:</b> When this unit attacks, it deals its attack damage to all enemy units.',
+};
+
+const BOSS_ABILITY_EFFECTS = {
+  minion_death_heal_1:         'When a support unit dies, gain 1 health.',
+  minion_death_gain_attack_1:  'When a support unit dies, gain 1 attack.',
+  minion_death_gain_1_1:       'When a support unit dies, gain 1 health and 1 attack.',
+  on_attack_splash_2:          'When this attacks, deal 2 damage to a random enemy unit first.',
+  on_attack_aoe_1:             'Before this attacks, deal 1 damage to all enemy units.',
+  on_attack_buff_friendlies_3_3: 'Before this attacks, give all support units +3 attack and +3 health.',
+  double_attack:                 'Attacks twice per turn.',
+};
+
+const BOSS_PASSIVE_EFFECTS = {
+  immune_until_minions_dead: 'Cannot be damaged until all Prime Units are destroyed.',
 };
 
 const MINION_POOL = [
@@ -496,6 +514,68 @@ function startFight() {
   startFightAnimation(() => setTimeout(combatTick, ATTACK_MS));
 }
 
+function fireBossOnAttackAbility(callback) {
+  const boss = BOSS_DATA[state.bossIndex];
+
+  if (boss.specialAbility === 'on_attack_splash_2') {
+    const targetCol = randomPlayer();
+    if (targetCol !== -1) {
+      const tgtEl = document.getElementById(`ps-${targetCol}`);
+      if (tgtEl) {
+        const tr = tgtEl.getBoundingClientRect();
+        spawnImpact(tr.left + tr.width / 2, tr.top + tr.height / 2, 'e');
+        playSmashSound();
+      }
+      const targetName = state.battle.playerSlots[targetCol]?.name;
+      damagePlayer(targetCol, 2);
+      state.battle.log.push(`${boss.name}'s ability triggers — deals 2 damage to your ${targetName}!`);
+      render();
+      applyDamageAnimations();
+    }
+    setTimeout(callback, ATTACK_MS);
+
+  } else if (boss.specialAbility === 'on_attack_aoe_1') {
+    let anyHit = false;
+    for (let col = 0; col < 5; col++) {
+      if (!state.battle.playerSlots[col]) continue;
+      const tgtEl = document.getElementById(`ps-${col}`);
+      if (tgtEl) {
+        const tr = tgtEl.getBoundingClientRect();
+        spawnImpact(tr.left + tr.width / 2, tr.top + tr.height / 2, 'e');
+      }
+      damagePlayer(col, 1);
+      anyHit = true;
+    }
+    if (anyHit) {
+      playSmashSound();
+      state.battle.log.push(`${boss.name}'s ability triggers — deals 1 damage to all your units!`);
+      render();
+      applyDamageAnimations();
+    }
+    setTimeout(callback, ATTACK_MS);
+
+  } else if (boss.specialAbility === 'on_attack_buff_friendlies_3_3') {
+    let anyBuffed = false;
+    state.battle.bossMinions.forEach(m => {
+      if (!m) return;
+      m.attack += 3;
+      m.health += 3;
+      if (m.currentHp !== undefined) m.currentHp += 3;
+      state.battle.pendingStatBuffs.push({ id: m.id, stat: 'attack', side: 'enemy' });
+      anyBuffed = true;
+    });
+    if (anyBuffed) {
+      state.battle.log.push(`${boss.name}'s ability triggers — all support units gain +3/+3!`);
+      render();
+      applyStatBuffAnimations();
+    }
+    setTimeout(callback, ATTACK_MS);
+
+  } else {
+    callback();
+  }
+}
+
 function combatTick() {
   if (isBattleOver()) { endBattle(); return; }
 
@@ -508,6 +588,25 @@ function combatTick() {
       : enemyOccupied(col);
 
     if (occupied) {
+      if (side === 'e' && col === 2) {
+        const boss = BOSS_DATA[state.bossIndex];
+        if (boss.specialAbility && boss.specialAbility.startsWith('on_attack_')) {
+          fireBossOnAttackAbility(() => {
+            if (isBattleOver()) { endBattle(); return; }
+            const targetCol = randomPlayer();
+            if (targetCol === -1) { setTimeout(combatTick, ATTACK_MS); return; }
+            animateAttack('e', 2, targetCol, () => {
+              doAttack('e', 2, targetCol);
+              render();
+              applyStatBuffAnimations();
+              applyDamageAnimations();
+              if (isBattleOver()) endBattle();
+              else setTimeout(combatTick, ATTACK_MS);
+            });
+          });
+          return;
+        }
+      }
       const targetCol = side === 'p' ? randomEnemy() : randomPlayer();
       if (targetCol === -1) continue;
       animateAttack(side, col, targetCol, () => {
@@ -519,7 +618,8 @@ function combatTick() {
         const attacker = side === 'p'
           ? state.battle.playerSlots[col]
           : (col !== 2 ? state.battle.bossMinions[minionIdx(col)] : null);
-        if (attacker && attacker.passive === 'double_attack') {
+        const bossDoubleAttack = side === 'e' && col === 2 && BOSS_DATA[state.bossIndex].specialAbility === 'double_attack';
+        if ((attacker && attacker.passive === 'double_attack') || bossDoubleAttack) {
           const secondTarget = side === 'p' ? randomEnemy() : randomPlayer();
           if (secondTarget !== -1) {
             animateAttack(side, col, secondTarget, () => {
@@ -693,12 +793,22 @@ function animateAttack(side, col, targetCol, callback) {
 
 function applyReactBuffs(triggerType) {
   state.battle.playerSlots.forEach(c => {
-    if (c && c.react === triggerType) {
+    if (!c) return;
+    if (c.react === triggerType) {
       c.attack++;
       c.health++;
       if (c.currentHp !== undefined) c.currentHp++;
       if (c.maxHealth !== undefined) c.maxHealth++;
       state.battle.pendingStatBuffs.push({ id: c.id, stat: 'attack', side: 'player' });
+    }
+    if (c.react === 'draw_on_deploy' && triggerType === 'deploy') {
+      if (state.battle.remainingDeck.length > 0) {
+        const drawn = state.battle.remainingDeck.shift();
+        state.battle.hand.push(drawn);
+        state.battle.log.push(`${c.name}'s React triggers — drew ${drawn.name}!`);
+      } else {
+        state.battle.log.push(`${c.name}'s React triggers — deck is empty!`);
+      }
     }
   });
 }
@@ -768,11 +878,42 @@ function triggerEnemyFailsafe(card) {
         state.battle.log.push(`${card.name}'s Failsafe triggers — ${pick.name} gains +4/+4!`);
       }
     }
+  } else if (card.failsafe === 'give_architect_10_10') {
+    const boss = BOSS_DATA[state.bossIndex];
+    if (state.battle.bossHp > 0) {
+      state.battle.bossHp += 10;
+      state.battle.bossAttack += 10;
+      state.battle.pendingStatBuffs.push({ id: 'boss', stat: 'attack', side: 'enemy' });
+      state.battle.log.push(`${card.name}'s Failsafe triggers — ${boss.name} gains +10 Attack and +10 Health!`);
+    }
+  }
+}
+
+function triggerBossAbilityOnMinionDeath() {
+  const boss = BOSS_DATA[state.bossIndex];
+  if (!boss.specialAbility) return;
+  if (boss.specialAbility === 'minion_death_heal_1' && state.battle.bossHp > 0) {
+    state.battle.bossHp++;
+    state.battle.log.push(`${boss.name}'s ability triggers — regenerates 1 health!`);
+  } else if (boss.specialAbility === 'minion_death_gain_attack_1' && state.battle.bossHp > 0) {
+    state.battle.bossAttack++;
+    state.battle.pendingStatBuffs.push({ id: 'boss', stat: 'attack', side: 'enemy' });
+    state.battle.log.push(`${boss.name}'s ability triggers — gains 1 attack!`);
+  } else if (boss.specialAbility === 'minion_death_gain_1_1' && state.battle.bossHp > 0) {
+    state.battle.bossHp++;
+    state.battle.bossAttack++;
+    state.battle.pendingStatBuffs.push({ id: 'boss', stat: 'attack', side: 'enemy' });
+    state.battle.log.push(`${boss.name}'s ability triggers — gains 1 health and 1 attack!`);
   }
 }
 
 function damageEnemy(col, amount) {
   if (col === 2) {
+    const boss = BOSS_DATA[state.bossIndex];
+    if (boss.passive === 'immune_until_minions_dead' && state.battle.bossMinions.some(m => m !== null)) {
+      state.battle.log.push(`${boss.name} is immune — destroy all Prime Units first!`);
+      return;
+    }
     state.battle.bossHp = Math.max(0, state.battle.bossHp - amount);
     if (state.battle.bossHp > 0) state.battle.pendingDamageAnims.push({ id: 'boss' });
   } else {
@@ -784,6 +925,7 @@ function damageEnemy(col, amount) {
     if (m.currentHp <= 0) {
       state.battle.bossMinions[minionIdx(col)] = null;
       triggerEnemyFailsafe(m);
+      triggerBossAbilityOnMinionDeath();
     } else {
       state.battle.pendingDamageAnims.push({ id: m.id });
     }
@@ -896,6 +1038,35 @@ function isBattleOver() {
   return playerDead || bossDead || state.battle.heroSlain;
 }
 
+function showBattleModal(html, onDone) {
+  const el = document.createElement('div');
+  el.id = 'battle-modal';
+  el.innerHTML = html;
+  document.body.appendChild(el);
+  setTimeout(() => {
+    el.style.animation = 'modal-fade-out 0.4s ease-in forwards';
+    setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); onDone(); }, 400);
+  }, 3000);
+}
+
+function showVictoryModal(onDone) {
+  const isFinal = state.bossIndex === BOSS_DATA.length - 1;
+  const sub = isFinal ? 'Mission Complete' : 'Move deeper into the Research Wing';
+  showBattleModal(`
+    <div class="battle-modal-inner">
+      <div class="battle-modal-title victory-title">Victory!</div>
+      <div class="battle-modal-sub">${sub}</div>
+    </div>`, onDone);
+}
+
+function showDefeatModal(onDone) {
+  showBattleModal(`
+    <div class="battle-modal-inner">
+      <div class="battle-modal-title defeat-title">Defeat!</div>
+      <div class="battle-modal-sub">Mission Failed</div>
+    </div>`, onDone);
+}
+
 function endBattle() {
   const b = state.battle;
   b.fighting = false;
@@ -907,7 +1078,7 @@ function endBattle() {
     const reward = 3 + state.bossIndex + fortuneBonus;
     b.log.push(`Mission complete! Salvaged ${reward} credits.`);
     render();
-    setTimeout(() => {
+    showVictoryModal(() => {
       playTrack(rewardMusic);
       const heroOnField = b.playerSlots.find(c => c && c.isHero);
       if (heroOnField) {
@@ -930,13 +1101,13 @@ function endBattle() {
         state.pendingRewards = generateRewards();
       }
       render();
-    }, 2500);
+    });
   } else {
     b.log.push(b.heroSlain
       ? 'Commander down! Mission failed.'
       : 'Defeat! All units lost.');
     render();
-    setTimeout(() => { playTrack(shopMusic); state.phase = 'lose'; render(); }, 2500);
+    showDefeatModal(() => { playTrack(shopMusic); state.phase = 'lose'; render(); });
   }
 }
 
@@ -951,15 +1122,14 @@ function triggerDeploy(card, times = null) {
   }
   if (times <= 0) return;
   if (card.deploy === 'hero_health_plus_1') {
-    [...state.battle.playerSlots, ...state.battle.hand].forEach(c => {
-      if (c && c.isHero) {
-        c.currentHp = (c.currentHp ?? c.health) + 1;
-        c.health++;
-        state.battle.pendingStatBuffs.push({ id: c.id, stat: 'health', side: 'player' });
-      }
-    });
-    const deckHero = state.deck.find(c => c.isHero);
-    if (deckHero) { deckHero.health++; deckHero.maxHealth++; }
+    const heroOnField = state.battle.playerSlots.find(c => c && c.isHero);
+    if (heroOnField) {
+      heroOnField.currentHp = (heroOnField.currentHp ?? heroOnField.health) + 1;
+      heroOnField.health++;
+      state.battle.pendingStatBuffs.push({ id: heroOnField.id, stat: 'health', side: 'player' });
+      const deckHero = state.deck.find(c => c.isHero);
+      if (deckHero) { deckHero.health++; deckHero.maxHealth++; }
+    }
   } else if (card.deploy === 'draw_a_card') {
     if (state.battle.remainingDeck.length > 0) {
       const drawn = state.battle.remainingDeck.shift();
@@ -969,20 +1139,23 @@ function triggerDeploy(card, times = null) {
       state.battle.log.push(`${card.name}'s Deploy triggers — deck is empty!`);
     }
   } else if (card.deploy === 'hero_heal_5') {
-    const heroInPlay = [...state.battle.playerSlots, ...state.battle.hand].find(c => c && c.isHero);
-    if (heroInPlay) {
-      heroInPlay.currentHp = Math.min(heroInPlay.maxHealth, (heroInPlay.currentHp ?? heroInPlay.health) + 5);
-      state.battle.pendingStatBuffs.push({ id: heroInPlay.id, stat: 'health', side: 'player' });
+    const heroOnField = state.battle.playerSlots.find(c => c && c.isHero);
+    if (heroOnField) {
+      heroOnField.currentHp = (heroOnField.currentHp ?? heroOnField.health) + 5;
+      heroOnField.health += 5;
+      if (heroOnField.maxHealth !== undefined) heroOnField.maxHealth += 5;
+      state.battle.pendingStatBuffs.push({ id: heroOnField.id, stat: 'health', side: 'player' });
+      const deckHero = state.deck.find(c => c.isHero);
+      if (deckHero) { deckHero.health += 5; deckHero.maxHealth += 5; }
     }
   } else if (card.deploy === 'hero_attack_plus_1') {
-    [...state.battle.playerSlots, ...state.battle.hand].forEach(c => {
-      if (c && c.isHero) {
-        c.attack++;
-        state.battle.pendingStatBuffs.push({ id: c.id, stat: 'attack', side: 'player' });
-      }
-    });
-    const deckHero = state.deck.find(c => c.isHero);
-    if (deckHero) deckHero.attack++;
+    const heroOnField = state.battle.playerSlots.find(c => c && c.isHero);
+    if (heroOnField) {
+      heroOnField.attack++;
+      state.battle.pendingStatBuffs.push({ id: heroOnField.id, stat: 'attack', side: 'player' });
+      const deckHero = state.deck.find(c => c.isHero);
+      if (deckHero) deckHero.attack++;
+    }
   } else if (card.deploy === 'gain_1_gold') {
     state.gold += 2;
     state.battle.log.push(`${card.name}'s Deploy triggers — gained 2 credits!`);
@@ -1003,6 +1176,12 @@ function triggerDeploy(card, times = null) {
       }
     });
     state.battle.log.push(`${card.name}'s Deploy triggers — all friendly units gain +4/+4!`);
+  } else if (card.deploy === 'draw_all_cards') {
+    const count = state.battle.remainingDeck.length;
+    state.battle.hand.push(...state.battle.remainingDeck.splice(0));
+    state.battle.log.push(count > 0
+      ? `${card.name}'s Deploy triggers — drew ${count} card${count === 1 ? '' : 's'}!`
+      : `${card.name}'s Deploy triggers — deck is empty!`);
   }
   applyReactBuffs('deploy');
   if (times > 1) triggerDeploy(card, times - 1);
@@ -1062,6 +1241,8 @@ function playCard(cardId, slotIndex) {
   const card = state.battle.hand[handIndex];
   const displaced = state.battle.playerSlots[slotIndex];
 
+  if (displaced && displaced.isHero) return;
+
   state.battle.hand.splice(handIndex, 1);
   if (displaced) {
     triggerExtract(displaced, card);
@@ -1075,6 +1256,12 @@ function playCard(cardId, slotIndex) {
   state.battle.selectedCard = null;
 
   triggerDeploy(card);
+  state.battle.playerSlots.forEach(c => {
+    if (c && c.react === 'on_play') {
+      state.gold++;
+      state.battle.log.push(`${c.name}'s React triggers — gained 1 credit!`);
+    }
+  });
   render();
   applyStatBuffAnimations();
 }
@@ -1663,7 +1850,7 @@ function bossHTML() {
           <div class="battle-vs">
             <button class="btn-fight"
                     onclick="startFight()"
-                    ${b.playerSlots.some(s => s !== null) ? '' : 'disabled'}
+                    ${b.playerSlots.some(s => s && s.isHero) ? '' : 'disabled'}
                     style="${b.fighting || b.over ? 'visibility:hidden' : ''}">
               Engage
             </button>
@@ -1703,11 +1890,18 @@ function enemySlotHTML(slot, boss, i) {
     return `<div class="slot empty-slot" id="es-${i}"></div>`;
   }
   if (i === 2) {
-    const bossTooltip = `<div class="card-tooltip"><span class="tooltip-name">${boss.name}</span></div>`;
+    const bossAbilityLine = [
+      boss.specialAbility ? `<div class="card-ability" style="font-size:0.65rem;color:#cc6666;border-top-color:#2a1010;">${BOSS_ABILITY_EFFECTS[boss.specialAbility]}</div>` : '',
+      boss.passive        ? `<div class="card-ability" style="font-size:0.65rem;color:#cc6666;border-top-color:#2a1010;">${BOSS_PASSIVE_EFFECTS[boss.passive]}</div>`        : '',
+    ].join('');
+    const bossTooltip = `<div class="card-tooltip"><span class="tooltip-name">${boss.name}</span>${boss.specialAbility ? `<br><span class="tooltip-effect" style="color:#cc6666;">${BOSS_ABILITY_EFFECTS[boss.specialAbility]}</span>` : ''}${boss.passive ? `<br><span class="tooltip-effect" style="color:#cc6666;">${BOSS_PASSIVE_EFFECTS[boss.passive]}</span>` : ''}</div>`;
     return `
       <div class="slot" id="es-${i}">
         <div class="card battle-card boss-card boss-art-${state.bossIndex}">
+          ${artImgHTML(boss.art)}
           <div class="card-content">
+            <div class="boss-card-name">${boss.name}</div>
+            ${bossAbilityLine}
             <div class="battle-stats">
               <span class="battle-atk">${state.battle.bossAttack}</span>
               <span class="battle-hp">${state.battle.bossHp}</span>
@@ -1724,6 +1918,7 @@ function enemySlotHTML(slot, boss, i) {
         <div class="card battle-card enemy-card">
           ${artImgHTML(slot.art)}
           <div class="card-content">
+            <div class="enemy-card-name">${slot.name}</div>
             <div class="battle-stats">
               <span class="battle-atk">${slot.attack}</span>
               ${slot.failsafe ? `<span class="battle-failsafe">💀</span>` : slot.extract ? `<span class="battle-extract">⬆</span>` : ''}
@@ -1738,12 +1933,9 @@ function enemySlotHTML(slot, boss, i) {
 }
 
 function deckSlotHTML(deck) {
-  if (deck.length === 0) {
-    return `<div class="slot deck-empty"></div>`;
-  }
   return `
     <div class="slot">
-      <div class="card deck-pile">
+      <div class="card deck-pile ${deck.length === 0 ? 'deck-empty' : ''}">
         <div class="deck-count">×${deck.length}</div>
       </div>
     </div>`;
@@ -1783,15 +1975,17 @@ function handCardHTML(card) {
 function playerSlotHTML(card, i) {
   const fighting    = state.battle.fighting;
   const hasSelected = !fighting && state.battle.selectedCard !== null;
-  const dropAttrs   = fighting ? '' : `ondragover="event.preventDefault()" ondrop="dropCard(event,${i})" onclick="clickSlot(${i})"`;
+  const heroOccupied = card && card.isHero;
+  const dropAttrs   = (fighting || heroOccupied) ? '' : `ondragover="event.preventDefault()" ondrop="dropCard(event,${i})" onclick="clickSlot(${i})"`;
 
   if (card) {
     const hp = card.currentHp ?? card.health;
     return `
       <div class="slot" id="ps-${i}" ${dropAttrs}>
-        <div class="card battle-card ${card.isHero ? 'hero-card' : ''}">
+        <div class="card battle-card ${card.isHero ? 'hero-card battle-hero' : ''}">
           ${artImgHTML(card.art)}
           <div class="card-content">
+            <div class="${card.isHero ? 'boss-card-name' : 'player-card-name'}" style="${card.isHero ? 'color:#33cc66;text-shadow:0 0 8px rgba(51,204,102,0.5)' : ''}">${card.name}</div>
             <div class="battle-stats">
               <span class="battle-atk">${card.attack}</span>
               ${card.failsafe ? `<span class="battle-failsafe">💀</span>` : card.extract ? `<span class="battle-extract">⬆</span>` : ''}
