@@ -1523,8 +1523,8 @@ function shopBossCardHTML() {
         <div class="boss-card-name">${boss.name}</div>
         ${abilityLine}
         <div class="battle-stats">
-          <span class="battle-atk" style="color:#fff;">${boss.attack}</span>
-          <span class="battle-hp" style="color:#fff;">${boss.hp}</span>
+          <span class="battle-atk" style="color:#4da6ff;">${boss.attack}</span>
+          <span class="battle-hp" style="color:#ff4d4d;">${boss.hp}</span>
         </div>
       </div>
     </div>
@@ -1676,7 +1676,7 @@ function deckCardHTML(card) {
             <span class="hp-stat">♥ ${card.health}/${card.maxHealth}</span>
           </div>
           <div class="card-ability">Always drawn first</div>
-          <div class="card-ability">Keeps all enhancements gained in battle</div>
+          <div class="card-ability">Keeps attack and health between battles</div>
           <button class="btn-heal" onclick="healCommander()"
             ${state.gold < 1 || card.health >= card.maxHealth ? 'disabled' : ''}>
             Heal <span class="hp-stat">♥ 3</span> <span class="coin"></span> 1
