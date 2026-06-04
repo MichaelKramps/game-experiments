@@ -114,7 +114,7 @@ const DEPLOY_EFFECTS = {
   draw_a_card:              '<b>Deploy:</b> Draw a card.',
   hero_heal_5:              '<b>Deploy:</b> Restore 5 health to your Commander.',
   trigger_random_failsafe:  '<b>Deploy:</b> Activate the Failsafe of a random friendly unit.',
-  gain_1_gold:              '<b>Deploy:</b> Gain 1 credit.',
+  gain_1_gold:              '<b>Deploy:</b> Gain 2 credits.',
   buff_all_4_4:             '<b>Deploy:</b> Give all friendly units +4 Attack and +4 Health.',
 };
 
@@ -167,11 +167,10 @@ const RELIC_POOL = [
   { id: 'ancient_tome',  name: 'Trade Algorithm', type: 'relic', desc: 'Shop items cost 1 less credit (min 1).' },
   { id: 'stone_heart',   name: 'Reinforced Hull', type: 'relic', desc: 'Your Commander gains +8 Max Health.' },
   { id: 'berserker_axe',    name: 'Combat Implant',    type: 'relic', desc: 'Your Commander gains +2 Attack.' },
-  { id: 'vital_surge',      name: 'Vital Surge',       type: 'relic', desc: 'Whenever your Commander gains Health, it also gains +1 Attack.' },
-  { id: 'adaptive_plating', name: 'Adaptive Plating',  type: 'relic', desc: 'Whenever your Commander gains Attack, it also gains +1 Health.' },
-  { id: 'first_deploy',   name: 'Flashpoint Coil',   type: 'relic', desc: 'The first Deploy effect each battle triggers twice.' },
+{ id: 'first_deploy',   name: 'Flashpoint Coil',   type: 'relic', desc: 'The first Deploy effect each battle triggers twice.' },
   { id: 'first_extract',  name: 'Recall Surge',      type: 'relic', desc: 'The first Extract effect each battle triggers twice.' },
   { id: 'first_failsafe', name: 'Deathswitch',       type: 'relic', desc: 'The first Failsafe effect each battle triggers twice.' },
+  { id: 'tactical_uplink', name: 'Tactical Uplink',  type: 'relic', desc: 'Draw 2 additional cards at the start of each battle.' },
 ];
 
 
@@ -341,24 +340,6 @@ function chooseReward(index) {
   render();
 }
 
-function onCommanderGain(stat) {
-  if (stat === 'health' && state.relics.some(r => r.id === 'vital_surge')) {
-    const hero = state.deck.find(c => c.isHero);
-    if (hero) hero.attack++;
-    if (state.phase === 'boss') {
-      state.battle.playerSlots.forEach(c => { if (c && c.isHero) c.attack++; });
-      state.battle.hand.forEach(c => { if (c && c.isHero) c.attack++; });
-    }
-  }
-  if (stat === 'attack' && state.relics.some(r => r.id === 'adaptive_plating')) {
-    const hero = state.deck.find(c => c.isHero);
-    if (hero) { hero.health++; hero.maxHealth++; }
-    if (state.phase === 'boss') {
-      state.battle.playerSlots.forEach(c => { if (c && c.isHero) { c.health++; if (c.currentHp !== undefined) c.currentHp++; } });
-      state.battle.hand.forEach(c => { if (c && c.isHero) c.health++; });
-    }
-  }
-}
 
 function applyRelicToAll(relic) {
   if (relic.id === 'war_horn') {
@@ -368,11 +349,9 @@ function applyRelicToAll(relic) {
   } else if (relic.id === 'stone_heart') {
     const hero = state.deck.find(c => c.isHero);
     if (hero) { hero.health += 8; hero.maxHealth += 8; }
-    onCommanderGain('health');
   } else if (relic.id === 'berserker_axe') {
     const hero = state.deck.find(c => c.isHero);
     if (hero) hero.attack += 2;
-    onCommanderGain('attack');
   }
   // fortune_coin: checked in endBattle; ancient_tome: checked in generateShop
 }
@@ -411,8 +390,6 @@ function applyEffect(effectId) {
       hero.health += x;
       hero.maxHealth += x;
     }
-    onCommanderGain('attack');
-    onCommanderGain('health');
   }
 }
 
@@ -844,7 +821,6 @@ function triggerFailsafe(card, times = null, col = null) {
         c.attack++; c.health++; if (c.currentHp !== undefined) c.currentHp++;
         if (c.maxHealth !== undefined) c.maxHealth++;
         state.battle.pendingStatBuffs.push({ id: c.id, stat: 'attack', side: 'player' });
-        if (c.isHero) { onCommanderGain('attack'); onCommanderGain('health'); }
       }
     });
     state.battle.log.push(`${card.name}'s Failsafe triggers — all friendly units gain +1/+1!`);
@@ -984,7 +960,6 @@ function triggerDeploy(card, times = null) {
     });
     const deckHero = state.deck.find(c => c.isHero);
     if (deckHero) { deckHero.health++; deckHero.maxHealth++; }
-    onCommanderGain('health');
   } else if (card.deploy === 'draw_a_card') {
     if (state.battle.remainingDeck.length > 0) {
       const drawn = state.battle.remainingDeck.shift();
@@ -1008,10 +983,9 @@ function triggerDeploy(card, times = null) {
     });
     const deckHero = state.deck.find(c => c.isHero);
     if (deckHero) deckHero.attack++;
-    onCommanderGain('attack');
   } else if (card.deploy === 'gain_1_gold') {
-    state.gold += 1;
-    state.battle.log.push(`${card.name}'s Deploy triggers — gained 1 credit!`);
+    state.gold += 2;
+    state.battle.log.push(`${card.name}'s Deploy triggers — gained 2 credits!`);
   } else if (card.deploy === 'trigger_random_failsafe') {
     const eligible = state.battle.playerSlots.filter(c => c && c.failsafe && c.id !== card.id);
     if (eligible.length > 0) {
@@ -1069,10 +1043,14 @@ function triggerExtract(displaced, replacer, times = null) {
     replacer.attack += displaced.attack;
     replacer.health += displaced.health;
     replacer.currentHp = (replacer.currentHp ?? replacer.health - displaced.health) + displaced.health;
+    if (replacer.isHero) {
+      if (replacer.maxHealth !== undefined) replacer.maxHealth += displaced.health;
+      const deckHero = state.deck.find(c => c.isHero);
+      if (deckHero) deckHero.maxHealth += displaced.health;
+    }
     state.battle.pendingStatBuffs.push({ id: replacer.id, stat: 'attack', side: 'player' });
     state.battle.pendingStatBuffs.push({ id: replacer.id, stat: 'health', side: 'player' });
     state.battle.log.push(`${displaced.name}'s Extract triggers — ${replacer.name} gains +${displaced.attack} Attack and +${displaced.health} Health!`);
-    if (replacer.isHero) { onCommanderGain('health'); onCommanderGain('attack'); }
   }
   if (times > 1) triggerExtract(displaced, replacer, times - 1);
 }
@@ -1090,7 +1068,6 @@ function playCard(cardId, slotIndex) {
     if (displaced.extract !== 'give_stats_to_replacer') {
       card.attack += displaced.attack;
       state.battle.pendingStatBuffs.push({ id: card.id, stat: 'attack', side: 'player' });
-      if (card.isHero) onCommanderGain('attack');
     }
     state.battle.remainingDeck.push(displaced);
   }
@@ -1150,7 +1127,8 @@ function proceedToBoss() {
   const rest = state.deck.filter(c => !c.isHero).sort(() => Math.random() - 0.5);
   const drawPile = [hero, ...rest].map(c => ({ ...c }));
 
-  const drawCount = Math.min(drawPile.length, 5);
+  const extraDraw = state.relics.some(r => r.id === 'tactical_uplink') ? 2 : 0;
+  const drawCount = Math.min(drawPile.length, 5 + extraDraw);
 
   state.phase = 'boss';
   state.battle = {
@@ -1280,8 +1258,8 @@ function titleHTML() {
   return `
     <div class="screen title-screen">
       <div class="facility-id">Classified — Sector Zero Research Facility</div>
-      <h1 class="game-title">SECTOR<br>ZERO</h1>
-      <p class="title-lore">All contact with Research Wing Ω has been lost.<br>Dispatching autonomous combat team.</p>
+      <h1 class="game-title">OMEGA<br>WING</h1>
+      <p class="title-lore">All contact with Research Wing Ω has been lost.<br>Dispatching Commander with autonomous combat team.</p>
       <button class="btn-start" onclick="startGame()">Initialize Mission</button>
       <p class="title-credit">Music: "Lost Signal" by YoMikeyD — CC-BY 3.0</p>
     </div>
@@ -1645,6 +1623,21 @@ function rewardOptionHTML(reward, index) {
   `;
 }
 
+function battleRelicsHTML() {
+  if (state.relics.length === 0) return '';
+  return `
+    <div class="battle-relics">
+      <div class="battle-relics-label">Modules</div>
+      ${state.relics.map(r => `
+        <div class="battle-relic-item">
+          <div class="battle-relic-name">${r.name}</div>
+          <div class="battle-relic-desc">${r.desc}</div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
 // ── boss battle ───────────────────────────────────────────────────────────────
 
 function bossHTML() {
@@ -1656,6 +1649,7 @@ function bossHTML() {
   return `
     <div class="screen battle-screen">
       <div class="battle-layout">
+        ${battleRelicsHTML()}
         <div class="battle-main">
           <div class="battle-header">
             <span class="battle-boss-name red">${boss.name}</span>

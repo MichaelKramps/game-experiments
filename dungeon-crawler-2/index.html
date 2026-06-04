@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Sector Zero</title>
+  <title>Omega Wing</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -20,7 +20,7 @@
       padding: 24px 16px;
     }
 
-    #app { width: 100%; max-width: 1100px; }
+    #app { width: 100%; max-width: 1200px; }
 
     #home-link {
       position: fixed;
@@ -449,11 +449,49 @@
     /* ── battle layout ── */
     .battle-layout {
       display: flex;
-      align-items: flex-end;
+      align-items: flex-start;
       gap: 28px;
     }
     .battle-main   { flex: 1; min-width: 0; }
-    .battle-sidebar { flex-shrink: 0; width: 155px; }
+    .battle-sidebar { flex-shrink: 0; width: 155px; align-self: flex-end; }
+
+    /* ── battle relics panel ── */
+    .battle-relics {
+      flex-shrink: 0;
+      width: 155px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding-top: 4px;
+    }
+    .battle-relics-label {
+      font-size: 0.72rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #3a6a4a;
+      margin-bottom: 2px;
+    }
+    .battle-relic-item {
+      background: #080e0a;
+      border: 1px solid #1a4a2a;
+      border-radius: 6px;
+      padding: 8px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      position: relative;
+    }
+    .battle-relic-name {
+      font-size: 0.78rem;
+      color: #80ccaa;
+      font-weight: bold;
+    }
+    .battle-relic-desc {
+      font-size: 0.68rem;
+      color: #3a6a4a;
+      line-height: 1.4;
+      font-style: italic;
+    }
 
     .deck-pile {
       background: #0a120a;
