@@ -265,8 +265,7 @@
       display: flex;
       justify-content: space-between;
       align-items: baseline;
-      padding: 12px 0 8px;
-      flex-shrink: 0;
+      margin-bottom: 20px;
     }
     .battle-boss-name { font-size: 1.5rem; font-weight: bold; }
     .battle-boss-num  { font-size: 0.85rem; color: #445544; }
@@ -301,12 +300,8 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      padding: 12px 0;
-      flex-shrink: 0;
+      padding: 18px 0;
     }
-
-    .enemy-field  { flex: 1; align-items: center; min-height: 0; }
-    .player-field { flex: 1; align-items: center; min-height: 0; }
 
     .btn-fight {
       background: #d4a800;
@@ -537,13 +532,11 @@
     /* ── battle layout ── */
     .battle-layout {
       display: flex;
-      align-items: stretch;
+      align-items: flex-start;
       gap: 28px;
-      flex: 1;
-      min-height: 0;
     }
-    .battle-main   { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
-    .battle-sidebar { flex-shrink: 0; width: 155px; align-self: center; }
+    .battle-main   { flex: 1; min-width: 0; }
+    .battle-sidebar { flex-shrink: 0; width: 155px; align-self: flex-end; }
 
     /* ── battle relics panel ── */
     .battle-relics {
@@ -599,9 +592,9 @@
 
     /* ── hand area ── */
     .hand-area {
-      padding: 8px 0 4px;
+      margin-top: 28px;
+      padding-top: 20px;
       border-top: 1px solid #141e14;
-      flex-shrink: 0;
     }
     .hand-meta {
       display: flex;
@@ -614,8 +607,7 @@
 
     /* ── battle log ── */
     .battle-log {
-      margin-top: 8px;
-      flex-shrink: 0;
+      margin-top: 20px;
       padding: 10px 14px;
       background: #050908;
       border: 1px solid #142014;
@@ -840,8 +832,6 @@
     }
 
     body.bg-battle {
-      overflow: hidden;
-      padding: 0;
       background-image:
         linear-gradient(rgba(8, 10, 8, 0.5), rgba(8, 10, 8, 0.5)),
         linear-gradient(rgba(0, 180, 60, 0.025) 1px, transparent 1px),
@@ -849,15 +839,6 @@
         url('battle-background.png');
       background-size: auto, 48px 48px, 48px 48px, cover;
       background-position: 0 0, 0 0, 0 0, center center;
-    }
-
-    .battle-screen {
-      position: fixed;
-      inset: 0;
-      padding: 0 24px;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
     }
 
     /* ── pool debug tooltip ── */
