@@ -1448,7 +1448,7 @@ function artImgHTML(art) {
   if (!art) return '';
   const svg = ART_CACHE.get(art);
   if (svg) return `<div class="card-art">${svg}</div>`;
-  return `<img class="card-art" src="https://game-icons.net/icons/ffffff/transparent/1x1/lorc/${art}.svg" alt="">`;
+  return `<img class="card-art" src="art/${art}.svg" alt="" decoding="sync">`;
 }
 
 async function preloadArt() {
@@ -1461,7 +1461,7 @@ async function preloadArt() {
 
   await Promise.all([...arts].map(async art => {
     try {
-      const res = await fetch(`https://game-icons.net/icons/ffffff/transparent/1x1/lorc/${art}.svg`);
+      const res = await fetch(`art/${art}.svg`);
       if (res.ok) ART_CACHE.set(art, await res.text());
     } catch(_) {}
   }));
