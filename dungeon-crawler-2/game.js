@@ -1266,6 +1266,11 @@ function playCard(cardId, slotIndex) {
   applyStatBuffAnimations();
 }
 
+function toggleBattleLog() {
+  state.battle.showLog = !state.battle.showLog;
+  render();
+}
+
 function healCommander() {
   const hero = state.deck.find(c => c.isHero);
   if (!hero || state.gold < 1) return;
@@ -1335,6 +1340,7 @@ function proceedToBoss() {
     firstDeployUsed:   false,
     firstExtractUsed:  false,
     firstFailsafeUsed: false,
+    showLog:           false,
   };
   render();
 }
@@ -1838,10 +1844,6 @@ function bossHTML() {
       <div class="battle-layout">
         ${battleRelicsHTML()}
         <div class="battle-main">
-          <div class="battle-header">
-            <span class="battle-boss-name red">${boss.name}</span>
-            <span class="battle-boss-num">Threat ${state.bossIndex + 1} of ${BOSS_DATA.length}</span>
-          </div>
 
           <div class="field enemy-field">
             ${enemySlots.map((slot, i) => enemySlotHTML(slot, boss, i)).join('')}
@@ -1861,19 +1863,18 @@ function bossHTML() {
           </div>
 
           <div class="hand-area">
-            <div class="hand-meta">
-              <span class="hand-label">Hand &mdash; ${b.hand.length} units</span>
-            </div>
             <div class="field hand-field">
               ${b.hand.map(card => `<div class="slot">${handCardHTML(card)}</div>`).join('')}
             </div>
           </div>
 
-          <div class="battle-log">
-            ${b.log.length === 0
-              ? `<span class="log-empty">Deploy units to the field, then engage.</span>`
-              : b.log.slice(-6).map(msg => `<div class="log-entry">${msg}</div>`).join('')}
-          </div>
+          <button class="log-toggle-btn ${b.showLog ? 'log-active' : ''}" onclick="toggleBattleLog()">≡</button>
+          ${b.showLog ? `
+            <div class="battle-log-popup">
+              ${b.log.length === 0
+                ? `<span class="log-empty">No combat events yet.</span>`
+                : [...b.log].reverse().map(msg => `<div class="log-entry">${msg}</div>`).join('')}
+            </div>` : ''}
         </div>
 
         <div class="battle-sidebar">
