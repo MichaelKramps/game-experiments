@@ -1442,9 +1442,29 @@ function slotTooltipHTML(card) {
   return `<div class="card-tooltip">${parts.join('<br>')}</div>`;
 }
 
+const ART_CACHE = new Map();
+
 function artImgHTML(art) {
   if (!art) return '';
+  const svg = ART_CACHE.get(art);
+  if (svg) return `<div class="card-art">${svg}</div>`;
   return `<img class="card-art" src="https://game-icons.net/icons/ffffff/transparent/1x1/lorc/${art}.svg" alt="">`;
+}
+
+async function preloadArt() {
+  const arts = new Set(['battle-gear', 'auto-repair']);
+  BOSS_DATA.forEach(b => {
+    if (b.art) arts.add(b.art);
+    (b.minions || []).forEach(m => { if (m.art) arts.add(m.art); });
+  });
+  MINION_POOL.forEach(m => { if (m.art) arts.add(m.art); });
+
+  await Promise.all([...arts].map(async art => {
+    try {
+      const res = await fetch(`https://game-icons.net/icons/ffffff/transparent/1x1/lorc/${art}.svg`);
+      if (res.ok) ART_CACHE.set(art, await res.text());
+    } catch(_) {}
+  }));
 }
 
 function titleHTML() {
@@ -1494,9 +1514,29 @@ function hudHTML() {
 
 // ── shop ──────────────────────────────────────────────────────────────────────
 
+function shopBossCardHTML() {
+  const boss = BOSS_DATA[state.bossIndex];
+  const abilityLine = [
+    boss.specialAbility ? `<div class="card-ability" style="font-size:0.65rem;color:#cc6666;border-top-color:#2a1010;">${BOSS_ABILITY_EFFECTS[boss.specialAbility]}</div>` : '',
+    boss.passive        ? `<div class="card-ability" style="font-size:0.65rem;color:#cc6666;border-top-color:#2a1010;">${BOSS_PASSIVE_EFFECTS[boss.passive]}</div>`        : '',
+  ].join('');
+  return `
+    <div class="card boss-card boss-art-${state.bossIndex}" style="pointer-events:none;">
+      ${artImgHTML(boss.art)}
+      <div class="card-content">
+        <div class="boss-card-name">${boss.name}</div>
+        ${abilityLine}
+        <div class="battle-stats">
+          <span class="battle-atk">${boss.attack}</span>
+          <span class="battle-hp">${boss.hp}</span>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 function shopHTML() {
   const boss = BOSS_DATA[state.bossIndex];
-  const bossNum = state.bossIndex + 1;
 
   const relicsSection = state.relics.length > 0 ? `
     <div class="shop-section">
@@ -1511,14 +1551,10 @@ function shopHTML() {
   ` : '';
 
   return `
+    <div class="shop-layout">
     <div class="screen shop-screen">
       <div class="shop-header">
         <h1 class="title">Supply Depot</h1>
-        <p class="subtitle">
-          Next: <span class="red">${boss.name}</span>
-          &nbsp;·&nbsp; ♥ ${boss.hp} &nbsp; ⚔ ${boss.attack}
-          &nbsp;·&nbsp; Threat ${bossNum} of ${BOSS_DATA.length}
-        </p>
       </div>
 
       ${relicsSection}
@@ -1566,17 +1602,32 @@ function shopHTML() {
         <div class="section-header">
           <h2 class="section-title">Your Roster &mdash; ${state.deck.length} units</h2>
         </div>
-        <div class="card-row">
-          ${state.deck.map(deckCardHTML).join('')}
+        <div class="card-row roster-row">
+          ${(() => {
+            const count = state.deck.length;
+            const cardWidth = 155;
+            const maxWidth = 900;
+            const gap = 14;
+            const totalWithGap = count * cardWidth + (count - 1) * gap;
+            const marginRight = totalWithGap <= maxWidth
+              ? gap
+              : count > 1 ? -((count * cardWidth - maxWidth) / (count - 1)) : 0;
+            return state.deck.map((card, i) =>
+              `<div class="roster-slot" style="margin-right:${i < count - 1 ? marginRight : 0}px;z-index:${i + 1}">${deckCardHTML(card)}</div>`
+            ).join('');
+          })()}
         </div>
       </div>
 
-      <div class="footer-actions">
-        <button class="btn-proceed" onclick="proceedToBoss()">
-          Engage ${boss.name} →
-        </button>
-      </div>
       <p class="title-credit">Music: "Space Ambient" by Ville Seppänen — CC-BY 3.0</p>
+    </div>
+
+    <div class="shop-boss-panel">
+      ${shopBossCardHTML()}
+      <button class="btn-proceed" onclick="proceedToBoss()">
+        Engage ${boss.name} →
+      </button>
+    </div>
     </div>
   `;
 }
@@ -1845,26 +1896,40 @@ function bossHTML() {
         ${battleRelicsHTML()}
         <div class="battle-main">
 
-          <div class="field enemy-field">
-            ${enemySlots.map((slot, i) => enemySlotHTML(slot, boss, i)).join('')}
-          </div>
+          <div class="battlefield-center">
+            <div class="field enemy-field">
+              ${enemySlots.map((slot, i) => enemySlotHTML(slot, boss, i)).join('')}
+            </div>
 
-          <div class="battle-vs">
-            <button class="btn-fight"
-                    onclick="startFight()"
-                    ${b.playerSlots.some(s => s && s.isHero) ? '' : 'disabled'}
-                    style="${b.fighting || b.over ? 'visibility:hidden' : ''}">
-              Engage
-            </button>
-          </div>
+            <div class="battle-vs">
+              <button class="btn-fight"
+                      onclick="startFight()"
+                      ${b.playerSlots.some(s => s && s.isHero) ? '' : 'disabled'}
+                      style="${b.fighting || b.over ? 'visibility:hidden' : ''}">
+                Engage
+              </button>
+            </div>
 
-          <div class="field player-field">
-            ${b.playerSlots.map((card, i) => playerSlotHTML(card, i)).join('')}
+            <div class="field player-field">
+              ${b.playerSlots.map((card, i) => playerSlotHTML(card, i)).join('')}
+            </div>
           </div>
 
           <div class="hand-area">
             <div class="field hand-field">
-              ${b.hand.map(card => `<div class="slot">${handCardHTML(card)}</div>`).join('')}
+              ${(() => {
+                const count = b.hand.length;
+                const cardWidth = 155;
+                const maxWidth = 800;
+                const gap = 14;
+                const totalWithGap = count * cardWidth + (count - 1) * gap;
+                const marginRight = totalWithGap <= maxWidth
+                  ? gap
+                  : count > 1 ? -((count * cardWidth - maxWidth) / (count - 1)) : 0;
+                return b.hand.map((card, i) =>
+                  `<div class="slot" style="margin-right:${i < count - 1 ? marginRight : 0}px;z-index:${i + 1}">${handCardHTML(card)}</div>`
+                ).join('');
+              })()}
             </div>
           </div>
 
@@ -2024,7 +2089,9 @@ function loseHTML() {
 
 // ── boot ──────────────────────────────────────────────────────────────────────
 
-newGame();
-bgMusic.play().catch(() => {
-  document.addEventListener('click', () => playTrack(bgMusic), { once: true });
+preloadArt().then(() => {
+  newGame();
+  bgMusic.play().catch(() => {
+    document.addEventListener('click', () => playTrack(bgMusic), { once: true });
+  });
 });

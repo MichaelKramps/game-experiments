@@ -60,6 +60,8 @@
 
     /* ── screens ── */
     .screen { padding: 24px 0 60px; }
+    .shop-layout { display: flex; align-items: center; gap: 60px; }
+    .shop-screen { width: 960px; }
 
     .title {
       font-size: 2rem;
@@ -95,6 +97,10 @@
     .section-title { font-size: 1.1rem; color: #33cc66; letter-spacing: 0.5px; }
 
     .card-row { display: flex; gap: 14px; flex-wrap: wrap; }
+    .roster-row { flex-wrap: nowrap; gap: 0; }
+    .roster-slot { position: relative; }
+    .roster-slot:hover { z-index: 1000 !important; }
+    .roster-slot:hover .card { transform: scale(1.1); }
 
     .section-divider {
       border: none;
@@ -119,7 +125,9 @@
       gap: 10px;
       position: relative;
     }
+    .card { transition: transform 0.18s ease, bottom 0.18s ease; }
     .card:hover { z-index: 10; }
+    .hand-field .card:hover { transform: scale(1.1) translateY(-100px); }
 
     .card-art {
       position: absolute;
@@ -133,6 +141,7 @@
       pointer-events: none;
       z-index: 0;
     }
+    .card-art svg { width: 100%; height: 100%; display: block; }
 
     .card-content {
       position: relative;
@@ -245,12 +254,12 @@
     .btn-secondary { background: #1a2a1a; color: #6aaa7a; }
     .btn-secondary:hover:not(:disabled) { background: #243624; }
     .btn-proceed {
-      background: #5a2020;
-      color: #d4a0a0;
+      background: #aa2222;
+      color: #ffe0e0;
       padding: 10px 28px;
       font-size: 1rem;
     }
-    .btn-proceed:hover { background: #7a3030; }
+    .btn-proceed:hover { background: #cc2828; }
     button:disabled { opacity: 0.35; cursor: not-allowed; }
 
     /* ── footer ── */
@@ -529,13 +538,23 @@
       background: #071007;
     }
 
+    /* ── battlefield center ── */
+    .battlefield-center {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
     /* ── battle layout ── */
+    .battle-screen { height: 100%; }
     .battle-layout {
       display: flex;
       align-items: flex-start;
       gap: 28px;
+      height: 100%;
     }
-    .battle-main   { flex: 1; min-width: 0; }
+    .battle-main   { flex: 1; min-width: 0; display: flex; height: 100%; align-items: center; justify-content: center; }
     .battle-sidebar { flex-shrink: 0; width: 155px; align-self: flex-end; }
 
     /* ── battle relics panel ── */
@@ -592,9 +611,8 @@
 
     /* ── hand area ── */
     .hand-area {
-      margin-top: 28px;
-      padding-top: 20px;
-      border-top: 1px solid #141e14;
+      position: fixed;
+      bottom: -100px;
     }
     .hand-meta {
       display: flex;
@@ -603,7 +621,9 @@
       margin-bottom: 14px;
     }
     .hand-label { font-size: 1.1rem; color: #33cc66; }
-    .hand-field { flex-wrap: wrap; }
+    .hand-field { flex-wrap: nowrap; gap: 0; }
+    .hand-field .slot { position: relative; }
+    .hand-field .slot:hover { z-index: 1000 !important; }
 
     /* ── battle log ── */
     .log-toggle-btn {
@@ -867,6 +887,15 @@
         url('battle-background.png');
       background-size: auto, 48px 48px, 48px 48px, cover;
       background-position: 0 0, 0 0, 0 0, center center;
+    }
+
+    /* ── shop boss panel ── */
+    .shop-boss-panel {
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
     }
 
     /* ── pool debug tooltip ── */
