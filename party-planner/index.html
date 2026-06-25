@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Party Planner</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #0a0a18; overflow: hidden; font-family: monospace; }
+
+    #party-canvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 0;
+    }
+
+    /* Welcome overlay */
+    #welcome {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      background: rgba(8, 8, 22, 0.88);
+    }
+    #welcome h1 { font-size: 2.4rem; color: #44ff88; letter-spacing: 0.1em; }
+    #welcome p { color: #777; text-align: center; line-height: 1.9; }
+    .start-btn {
+      background: #44ff88;
+      border: none;
+      border-radius: 8px;
+      color: #0a0a18;
+      font-family: monospace;
+      font-size: 1rem;
+      font-weight: bold;
+      padding: 14px 42px;
+      cursor: pointer;
+      letter-spacing: 0.05em;
+      margin-top: 8px;
+    }
+    .start-btn:hover { background: #66ffaa; }
+
+    /* Choice panel */
+    #choice-panel {
+      position: fixed;
+      bottom: 26px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      background: rgba(6, 6, 18, 0.86);
+      border: 1px solid rgba(68, 255, 136, 0.22);
+      border-radius: 16px;
+      padding: 20px 26px;
+      width: min(580px, calc(100vw - 36px));
+      flex-direction: column;
+      gap: 13px;
+      backdrop-filter: blur(12px);
+      display: none;
+    }
+    #choice-panel.visible { display: flex; }
+
+    .panel-label {
+      font-size: 0.62rem;
+      color: #44ff88;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+    .panel-question { font-size: 1rem; color: #eee; }
+
+    .options { display: flex; gap: 8px; flex-wrap: wrap; }
+    .option-btn {
+      flex: 1;
+      min-width: 80px;
+      background: rgba(255,255,255,0.04);
+      border: 1.5px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      color: #bbb;
+      font-family: monospace;
+      font-size: 0.85rem;
+      padding: 10px 12px;
+      cursor: pointer;
+      transition: border-color 0.12s, color 0.12s;
+      text-align: center;
+    }
+    .option-btn:hover { border-color: #44ff88; color: #fff; }
+    .option-btn.selected { border-color: #44ff88; background: rgba(68,255,136,0.1); color: #44ff88; }
+  </style>
+</head>
+<body>
+  <canvas id="party-canvas"></canvas>
+
+  <div id="welcome">
+    <h1>Party Planner</h1>
+    <p>You're throwing a party.<br>Make your choices, then watch it come to life.</p>
+    <button class="start-btn" onclick="startGame()">Let's go →</button>
+  </div>
+
+  <div id="choice-panel">
+    <div class="panel-label" id="panel-label"></div>
+    <div class="panel-question" id="panel-question"></div>
+    <div class="options" id="panel-options"></div>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>
