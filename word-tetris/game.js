@@ -20,6 +20,11 @@ const ARROW_INSET = CELL * 0.22;
 const ARROWHEAD_LEN = 10;
 const FALL_MS_PER_ROW = 90;
 
+const LETTER_FONT_SIZE = 28;
+const VALUE_FONT_SIZE = 10;
+const VALUE_INSET = 8;
+const COLOR_VALUE_TEXT = '#555555';
+
 // Rough English letter frequency so boards feel more word-friendly than pure A-Z.
 const LETTER_BAG = 'EEEEEEEEEEEEAAAAAAAAAIIIIIIIIIOOOOOOOONNNNNNNRRRRRRRTTTTTTTLLLLSSSSUUUUDDDDGGGBBCCMMPPFFHHVVWWYYKJXQZ';
 
@@ -32,6 +37,42 @@ const SCRABBLE_SCORES = {
   K: 5, L: 1, M: 3, N: 1, O: 1, P: 3, Q: 10, R: 1, S: 1, T: 1,
   U: 1, V: 4, W: 4, X: 8, Y: 4, Z: 10,
 };
+
+// Difficulty ticks up every 5 levels. Each difficulty tier defines how many
+// points a word is expected to score, and a 10-value range for how many
+// words a level demands; the 5 levels in a tier draw unique word counts from
+// that range so the same count never repeats within a tier.
+const LEVELS_PER_DIFFICULTY = 5;
+const BASE_POINTS_PER_WORD = 4;
+const BASE_WORD_COUNT_MIN = 3;
+const BASE_WORD_COUNT_MAX = 12;
+const WORD_COUNT_RANGE_SHIFT = 2;
+const FIRST_LEVEL_WORD_COUNT = 3;
+const LEVEL_COMPLETE_DISPLAY_MS = 1400;
+
+function difficultyForLevel(level) {
+  return Math.floor((level - 1) / LEVELS_PER_DIFFICULTY);
+}
+
+function pointsPerWordForDifficulty(difficulty) {
+  return BASE_POINTS_PER_WORD + difficulty;
+}
+
+function wordCountRangeForDifficulty(difficulty) {
+  return {
+    min: BASE_WORD_COUNT_MIN + difficulty * WORD_COUNT_RANGE_SHIFT,
+    max: BASE_WORD_COUNT_MAX + difficulty * WORD_COUNT_RANGE_SHIFT,
+  };
+}
+
+function shuffled(array) {
+  const result = array.slice();
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
 
 function randomLetter() {
   return LETTER_BAG[Math.floor(Math.random() * LETTER_BAG.length)];
@@ -67,7 +108,10 @@ class GameScene extends Phaser.Scene {
     this.selected = [];
     this.selectedKeys = new Set();
     this.dragging = false;
-    this.score = 0;
+    this.gameOver = false;
+    this.levelComplete = false;
+    this.difficulty = -1;
+    this.wordCountPool = [];
 
     this.selectedText = this.add.text(WIDTH / 2, TOP_PADDING + HEADER_HEIGHT / 2, '', {
       fontSize: '28px',
@@ -75,10 +119,22 @@ class GameScene extends Phaser.Scene {
       color: '#ffffff',
     }).setOrigin(0.5);
 
-    this.scoreText = this.add.text(10, 8, 'Score: 0', {
-      fontSize: '18px',
+    this.levelText = this.add.text(10, 8, '', {
+      fontSize: '16px',
       fontFamily: 'monospace',
-      color: '#ffffff',
+      color: COLOR_TEXT_DEFAULT,
+    });
+
+    this.scoreText = this.add.text(10, 28, '', {
+      fontSize: '16px',
+      fontFamily: 'monospace',
+      color: COLOR_TEXT_DEFAULT,
+    });
+
+    this.movesText = this.add.text(10, 48, '', {
+      fontSize: '16px',
+      fontFamily: 'monospace',
+      color: COLOR_TEXT_DEFAULT,
     });
 
     for (let row = 0; row < GRID_SIZE; row++) {
@@ -91,14 +147,18 @@ class GameScene extends Phaser.Scene {
           .setStrokeStyle(1, COLOR_BORDER);
 
         const text = this.add.text(x + CELL / 2, y + CELL / 2, '', {
-          fontSize: '28px',
+          fontSize: `${LETTER_FONT_SIZE}px`,
           fontFamily: 'monospace',
           color: '#44ff88',
         }).setOrigin(0.5).setDepth(2);
 
-        const cell = { letter: null, text, rect };
-        this.setCellLetter(cell, randomLetter());
-        rowCells.push(cell);
+        const valueText = this.add.text(x + CELL - VALUE_INSET, y + VALUE_INSET, '', {
+          fontSize: `${VALUE_FONT_SIZE}px`,
+          fontFamily: 'monospace',
+          color: COLOR_VALUE_TEXT,
+        }).setOrigin(1, 0).setDepth(2);
+
+        rowCells.push({ letter: null, text, valueText, rect });
       }
       this.grid.push(rowCells);
     }
@@ -107,7 +167,14 @@ class GameScene extends Phaser.Scene {
     // obscure the glyph at either end.
     this.arrowGfx = this.add.graphics().setDepth(1);
 
+    this.startLevel(1);
+
     this.input.on('pointerdown', (pointer) => {
+      if (this.gameOver) {
+        this.scene.restart();
+        return;
+      }
+      if (this.levelComplete) return;
       const cell = this.cellAt(pointer.x, pointer.y);
       if (!cell) return;
       this.dragging = true;
@@ -126,9 +193,120 @@ class GameScene extends Phaser.Scene {
       if (this.isValidWord) {
         this.awardScore();
         this.removeAndCollapse(this.selected);
+        this.registerMove();
       }
       this.clearSelection();
     });
+
+    this.input.keyboard.on('keydown-R', () => {
+      if (this.gameOver) this.scene.restart();
+    });
+  }
+
+  startLevel(level) {
+    this.level = level;
+    const difficulty = difficultyForLevel(level);
+
+    if (difficulty !== this.difficulty) {
+      this.difficulty = difficulty;
+      const { min, max } = wordCountRangeForDifficulty(difficulty);
+      const range = [];
+      for (let n = min; n <= max; n++) range.push(n);
+
+      if (level === 1) {
+        // Level 1 always eases players in with a fixed word count; the rest
+        // of this tier draws unique counts from what's left of the range.
+        const rest = range.filter((n) => n !== FIRST_LEVEL_WORD_COUNT);
+        this.wordCountPool = shuffled(rest).slice(0, LEVELS_PER_DIFFICULTY - 1);
+      } else {
+        this.wordCountPool = shuffled(range).slice(0, LEVELS_PER_DIFFICULTY);
+      }
+    }
+
+    const wordCount = level === 1 ? FIRST_LEVEL_WORD_COUNT : this.wordCountPool.pop();
+    this.pointsPerWord = pointsPerWordForDifficulty(difficulty);
+    this.movesRemaining = wordCount;
+    this.targetScore = this.pointsPerWord * wordCount;
+    this.score = 0;
+    this.resetBoard();
+    this.updateHud();
+
+    if (level > 1) {
+      this.levelText.setColor(COLOR_TEXT_VALID);
+      this.time.delayedCall(400, () => this.levelText.setColor(COLOR_TEXT_DEFAULT));
+    }
+  }
+
+  resetBoard() {
+    for (let row = 0; row < GRID_SIZE; row++) {
+      for (let col = 0; col < GRID_SIZE; col++) {
+        const cell = this.grid[row][col];
+        // A tile mid-fall from the word that just finished the level could
+        // still be tweening; kill it and snap back to its home position
+        // before handing the slot a fresh letter.
+        this.tweens.killTweensOf([cell.rect, cell.text, cell.valueText]);
+        const y = GRID_TOP + row * CELL;
+        cell.rect.y = y + CELL / 2;
+        cell.text.y = y + CELL / 2;
+        cell.valueText.y = y + VALUE_INSET;
+        this.setCellLetter(cell, randomLetter());
+      }
+    }
+  }
+
+  registerMove() {
+    this.movesRemaining -= 1;
+    if (this.score >= this.targetScore) {
+      this.levelUp();
+    } else if (this.movesRemaining <= 0) {
+      this.triggerGameOver();
+    } else {
+      this.updateHud();
+    }
+  }
+
+  levelUp() {
+    this.levelComplete = true;
+    const completedLevel = this.level;
+    const completedScore = this.score;
+    const completedTarget = this.targetScore;
+
+    const summary = this.showOverlayMessage(
+      `LEVEL ${completedLevel} COMPLETE!\n\nScore: ${completedScore} / ${completedTarget}`,
+      COLOR_TEXT_VALID
+    );
+
+    this.time.delayedCall(LEVEL_COMPLETE_DISPLAY_MS, () => {
+      summary.destroy();
+      this.levelComplete = false;
+      this.startLevel(completedLevel + 1);
+    });
+  }
+
+  triggerGameOver() {
+    this.gameOver = true;
+    this.updateHud();
+    this.showOverlayMessage(
+      `GAME OVER\nReached Level ${this.level}\n\nClick or press R to restart`,
+      '#ffffff'
+    );
+  }
+
+  showOverlayMessage(message, color) {
+    return this.add.text(WIDTH / 2, HEIGHT / 2, message, {
+      fontSize: '20px',
+      fontFamily: 'monospace',
+      color,
+      align: 'center',
+      backgroundColor: '#0d0d1acc',
+      padding: { x: 20, y: 16 },
+    }).setOrigin(0.5).setDepth(10);
+  }
+
+  updateHud() {
+    this.levelText.setText(`Level ${this.level}`);
+    this.scoreText.setText(`Score: ${this.score} / ${this.targetScore}`);
+    this.movesText.setText(`Moves: ${this.movesRemaining}`);
   }
 
   cellAt(x, y) {
@@ -194,12 +372,14 @@ class GameScene extends Phaser.Scene {
   setCellLetter(cell, letter) {
     cell.letter = letter;
     cell.text.setText(letter);
+    cell.valueText.setText(String(SCRABBLE_SCORES[letter] || ''));
     this.resetCellVisual(cell);
   }
 
   setCellEmpty(cell) {
     cell.letter = null;
     cell.text.setText('');
+    cell.valueText.setText('');
     this.resetCellVisual(cell);
   }
 
@@ -224,24 +404,28 @@ class GameScene extends Phaser.Scene {
         } else {
           const survivor = survivors[row - emptyCount];
           this.setCellLetter(cell, survivor.letter);
-          if (survivor.fromRow !== row) this.animateFall(cell, survivor.fromRow, row, col);
+          if (survivor.fromRow !== row) this.animateFall(cell, survivor.fromRow, row);
         }
       }
     }
   }
 
-  animateFall(cell, fromRow, toRow, col) {
-    // Drop the tile (background + glyph together) in from where it used to
-    // be and let it settle into its new slot, easing in like it's
-    // accelerating under gravity.
-    const fromY = this.cellCenter({ row: fromRow, col }).y;
-    const toY = this.cellCenter({ row: toRow, col }).y;
-    cell.rect.y = fromY;
-    cell.text.y = fromY;
+  animateFall(cell, fromRow, toRow) {
+    // Drop the tile (background + glyph + value label together) in from
+    // where it used to be and let it settle into its new slot, easing in
+    // like it's accelerating under gravity. Each object keeps its own
+    // permanent y (rect/glyph are center-anchored, the value label is
+    // top-anchored), so shift by a relative delta rather than an absolute y.
+    const rowsFallen = toRow - fromRow;
+    const deltaY = rowsFallen * CELL;
+    const targets = [cell.rect, cell.text, cell.valueText];
+
+    for (const target of targets) target.y -= deltaY;
+
     this.tweens.add({
-      targets: [cell.rect, cell.text],
-      y: toY,
-      duration: (toRow - fromRow) * FALL_MS_PER_ROW,
+      targets,
+      y: `+=${deltaY}`,
+      duration: rowsFallen * FALL_MS_PER_ROW,
       ease: 'Quad.easeIn',
     });
   }
@@ -256,7 +440,6 @@ class GameScene extends Phaser.Scene {
   awardScore() {
     const points = this.selected.reduce((sum, s) => sum + (SCRABBLE_SCORES[s.letter] || 0), 0);
     this.score += points;
-    this.scoreText.setText(`Score: ${this.score}`);
   }
 
   cellCenter({ row, col }) {
