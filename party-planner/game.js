@@ -6,6 +6,11 @@ function resize() { W = canvas.width = window.innerWidth; H = canvas.height = wi
 resize();
 window.addEventListener('resize', resize);
 
+// ---- Assets ----
+const imgs = {
+  backyard: Object.assign(new Image(), { src: 'image/backyard-background.jpeg' }),
+};
+
 // ---- State ----
 const choices = {};
 let phaseIndex = -1;
@@ -252,12 +257,25 @@ function drawPreBackground() {
 
 // ---- Venue background ----
 function drawBackground(gy) {
+  if (choices.venue === 'backyard') {
+    const img = imgs.backyard;
+    if (img.complete && img.naturalWidth > 0) {
+      ctx.drawImage(img, 0, 0, W, H);
+    } else {
+      // fallback until image loads
+      const grad = ctx.createLinearGradient(0, 0, 0, gy);
+      grad.addColorStop(0, '#1a3a5c'); grad.addColorStop(1, '#4a7fa0');
+      ctx.fillStyle = grad; ctx.fillRect(0, 0, W, gy);
+      ctx.fillStyle = '#3d6e35'; ctx.fillRect(0, gy, W, H - gy);
+    }
+    return;
+  }
+
   const SKY = {
-    backyard: ['#1a3a5c', '#4a7fa0'],
-    club:     ['#050510', '#12082a'],
-    beach:    ['#4ba3d4', '#fce38a'],
+    club:  ['#050510', '#12082a'],
+    beach: ['#4ba3d4', '#fce38a'],
   }[choices.venue];
-  const GROUND = { backyard: '#3d6e35', club: '#111118', beach: '#d4b85a' }[choices.venue];
+  const GROUND = { club: '#111118', beach: '#d4b85a' }[choices.venue];
 
   const grad = ctx.createLinearGradient(0, 0, 0, gy);
   grad.addColorStop(0, SKY[0]); grad.addColorStop(1, SKY[1]);
@@ -268,25 +286,7 @@ function drawBackground(gy) {
 // ---- Venue-specific elements ----
 function drawVenueDetails(gy, pal) {
   if (choices.venue === 'backyard') {
-    // Stars + moon
-    for (let i = 0; i < 35; i++) {
-      const x = (i * 213 + 40) % W, y = (i * 71 + 8) % (gy * 0.55);
-      ctx.fillStyle = `rgba(255,255,255,${0.3 + (i % 3) * 0.2})`;
-      ctx.beginPath(); ctx.arc(x, y, 1.3, 0, Math.PI * 2); ctx.fill();
-    }
-    ctx.fillStyle = '#fffde7';
-    ctx.beginPath(); ctx.arc(W * 0.84, gy * 0.14, 28, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#1a3a5c';
-    ctx.beginPath(); ctx.arc(W * 0.84 + 12, gy * 0.14 - 5, 22, 0, Math.PI * 2); ctx.fill();
-    // Trees
-    drawTree(W * 0.04, gy); drawTree(W * 0.96, gy);
-    // Fence
-    const postW = Math.max(8, W * 0.009);
-    const postGap = Math.max(22, W * 0.024);
-    ctx.fillStyle = '#c8a96e';
-    for (let x = 0; x < W; x += postGap) ctx.fillRect(x + 2, gy - 40, postW, 40);
-    ctx.fillRect(0, gy - 44, W, 5);
-    ctx.fillRect(0, gy - 22, W, 5);
+    // background image handles the scenery
 
   } else if (choices.venue === 'club') {
     ctx.fillStyle = '#111'; ctx.fillRect(0, 0, W, 22);
