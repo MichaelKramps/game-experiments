@@ -24,6 +24,7 @@ const LETTER_FONT_SIZE = 28;
 const VALUE_FONT_SIZE = 10;
 const VALUE_INSET = 8;
 const COLOR_VALUE_TEXT = '#555555';
+const COLOR_LETTER_TEXT = '#44ff88';
 
 // Rough English letter frequency so boards feel more word-friendly than pure A-Z.
 const LETTER_BAG = 'EEEEEEEEEEEEAAAAAAAAAIIIIIIIIIOOOOOOOONNNNNNNRRRRRRRTTTTTTTLLLLSSSSUUUUDDDDGGGBBCCMMPPFFHHVVWWYYKJXQZ';
@@ -48,7 +49,6 @@ const BASE_WORD_COUNT_MIN = 3;
 const BASE_WORD_COUNT_MAX = 12;
 const WORD_COUNT_RANGE_SHIFT = 2;
 const FIRST_LEVEL_WORD_COUNT = 3;
-const LEVEL_COMPLETE_DISPLAY_MS = 1400;
 
 function difficultyForLevel(level) {
   return Math.floor((level - 1) / LEVELS_PER_DIFFICULTY);
@@ -149,7 +149,7 @@ class GameScene extends Phaser.Scene {
         const text = this.add.text(x + CELL / 2, y + CELL / 2, '', {
           fontSize: `${LETTER_FONT_SIZE}px`,
           fontFamily: 'monospace',
-          color: '#44ff88',
+          color: COLOR_LETTER_TEXT,
         }).setOrigin(0.5).setDepth(2);
 
         const valueText = this.add.text(x + CELL - VALUE_INSET, y + VALUE_INSET, '', {
@@ -276,10 +276,23 @@ class GameScene extends Phaser.Scene {
       COLOR_TEXT_VALID
     );
 
-    this.time.delayedCall(LEVEL_COMPLETE_DISPLAY_MS, () => {
+    const button = this.add.text(WIDTH / 2, HEIGHT / 2 + 70, 'PROCEED', {
+      fontSize: '18px',
+      fontFamily: 'monospace',
+      color: '#ffffff',
+      backgroundColor: '#2f6fed',
+      padding: { x: 18, y: 8 },
+    }).setOrigin(0.5).setDepth(10).setInteractive({ useHandCursor: true });
+
+    button.on('pointerdown', () => {
       summary.destroy();
-      this.levelComplete = false;
+      button.destroy();
       this.startLevel(completedLevel + 1);
+      // Clear the flag next tick so this same click can't also fall through
+      // to the scene's pointerdown handler and start selecting a tile.
+      this.time.delayedCall(0, () => {
+        this.levelComplete = false;
+      });
     });
   }
 
@@ -393,7 +406,10 @@ class GameScene extends Phaser.Scene {
     for (const [col, removedRows] of removedByCol) {
       const survivors = [];
       for (let row = 0; row < GRID_SIZE; row++) {
-        if (!removedRows.has(row)) survivors.push({ letter: this.grid[row][col].letter, fromRow: row });
+        if (removedRows.has(row)) continue;
+        const source = this.grid[row][col];
+        if (!source.letter) continue; // already a hole; don't drag it along as a "survivor"
+        survivors.push({ letter: source.letter, fromRow: row });
       }
 
       const emptyCount = GRID_SIZE - survivors.length;
