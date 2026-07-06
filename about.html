@@ -16,6 +16,9 @@
       justify-content: center;
       padding: 60px 20px;
     }
+    main {
+        max-width: 800px;
+    }
     nav {
       position: absolute;
       top: 20px;
@@ -30,18 +33,30 @@
     nav a:hover { color: #44ff88; }
     h1 {
       font-size: 2rem;
-      margin-bottom: 16px;
+      margin-bottom: 72px;
       letter-spacing: 0.1em;
     }
     p {
-      color: #666;
+      color: #ccc;
       font-size: 0.9rem;
+      margin-bottom: 36px;
+    }
+    p a {
+      color: #44ff88;
+      text-decoration: none;
+    }
+    p a:hover {
+      text-decoration: underline;
     }
   </style>
 </head>
 <body>
   <nav><a href="index.html">← back</a></nav>
-  <h1>About</h1>
-  <p>under construction</p>
+  <main>
+      <h1>About Kramps Games</h1>
+      <p>Kramps Games is named after me, Michael Kramps, the sole developer. My games can be played directly in your browser with any device.</p>
+      <p>All my games are free of advertisements. The <a href="free-games.html">free games</a> require no sign up. The <a href="premium-games.html">premium games</a> require a Google account to log in, and each game can be purchased in full for a one time price.</p>
+      <p>I tend to build low stress games, which often means turn-based, or untimed game speed. I also enjoy strategy in games more than real time skill.</p>
+  </main>
 </body>
 </html>
