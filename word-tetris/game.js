@@ -25,6 +25,37 @@ const VALUE_FONT_SIZE = 10;
 const VALUE_INSET = 8;
 const COLOR_VALUE_TEXT = '#555555';
 const COLOR_LETTER_TEXT = '#44ff88';
+const COLOR_VALUE_POWERED = '#e085ff';
+
+// Every newly-created tile independently rolls each of these; if more than
+// one hits, the tile is powered up by the highest bonus that landed.
+const POWER_UP_ROLLS = [
+  { chance: 0.05, bonus: 1 },
+  { chance: 0.03, bonus: 3 },
+  { chance: 0.01, bonus: 5 },
+];
+
+function rollPowerUpBonus() {
+  let bonus = 0;
+  for (const roll of POWER_UP_ROLLS) {
+    if (Math.random() < roll.chance) bonus = Math.max(bonus, roll.bonus);
+  }
+  return bonus;
+}
+
+// Scoring a word this long or longer guarantees the tiles that drop in to
+// replace it are powered up by at least this much (still takes the highest
+// against the random roll above, rather than stacking with it).
+const LONG_WORD_LENGTH = 5;
+const LONG_WORD_BONUS = 2;
+
+// Words worth this much or more also power up their replacement tiles, by
+// the word's total score divided down (floored) — a 12-point word gives +2,
+// a 20-point word gives +4, and so on. This stacks additively with the long
+// word bonus above (a 5-letter, 15-point word gives +2 +3 = +5), but the
+// combined guaranteed bonus and the random roll don't stack — highest wins.
+const HIGH_SCORE_THRESHOLD = 12;
+const HIGH_SCORE_DIVISOR = 5;
 
 // Rough English letter frequency so boards feel more word-friendly than pure A-Z.
 const LETTER_BAG = 'EEEEEEEEEEEEAAAAAAAAAIIIIIIIIIOOOOOOOONNNNNNNRRRRRRRTTTTTTTLLLLSSSSUUUUDDDDGGGBBCCMMPPFFHHVVWWYYKJXQZ';
@@ -112,6 +143,7 @@ class GameScene extends Phaser.Scene {
     this.levelComplete = false;
     this.difficulty = -1;
     this.wordCountPool = [];
+    this.gameScore = 0;
 
     this.selectedText = this.add.text(WIDTH / 2, TOP_PADDING + HEADER_HEIGHT / 2, '', {
       fontSize: '28px',
@@ -119,23 +151,29 @@ class GameScene extends Phaser.Scene {
       color: '#ffffff',
     }).setOrigin(0.5);
 
-    this.levelText = this.add.text(10, 8, '', {
+    this.scoreText = this.add.text(10, 8, '', {
       fontSize: '16px',
       fontFamily: 'monospace',
       color: COLOR_TEXT_DEFAULT,
     });
 
-    this.scoreText = this.add.text(10, 28, '', {
+    this.movesText = this.add.text(10, 28, '', {
       fontSize: '16px',
       fontFamily: 'monospace',
       color: COLOR_TEXT_DEFAULT,
     });
 
-    this.movesText = this.add.text(10, 48, '', {
+    this.levelText = this.add.text(WIDTH - 10, 8, '', {
       fontSize: '16px',
       fontFamily: 'monospace',
       color: COLOR_TEXT_DEFAULT,
-    });
+    }).setOrigin(1, 0);
+
+    this.gameScoreText = this.add.text(WIDTH - 10, 28, '', {
+      fontSize: '16px',
+      fontFamily: 'monospace',
+      color: COLOR_TEXT_DEFAULT,
+    }).setOrigin(1, 0);
 
     for (let row = 0; row < GRID_SIZE; row++) {
       const rowCells = [];
@@ -158,7 +196,7 @@ class GameScene extends Phaser.Scene {
           color: COLOR_VALUE_TEXT,
         }).setOrigin(1, 0).setDepth(2);
 
-        rowCells.push({ letter: null, text, valueText, rect });
+        rowCells.push({ letter: null, bonus: 0, text, valueText, rect });
       }
       this.grid.push(rowCells);
     }
@@ -191,8 +229,11 @@ class GameScene extends Phaser.Scene {
     this.input.on('pointerup', () => {
       this.dragging = false;
       if (this.isValidWord) {
-        this.awardScore();
-        this.removeAndCollapse(this.selected);
+        const points = this.awardScore();
+        const lengthBonus = this.selected.length >= LONG_WORD_LENGTH ? LONG_WORD_BONUS : 0;
+        const scoreBonus = points >= HIGH_SCORE_THRESHOLD ? Math.floor(points / HIGH_SCORE_DIVISOR) : 0;
+        const refillBonus = lengthBonus + scoreBonus;
+        this.removeAndCollapse(this.selected, refillBonus);
         this.registerMove();
       }
       this.clearSelection();
@@ -249,7 +290,7 @@ class GameScene extends Phaser.Scene {
         cell.rect.y = y + CELL / 2;
         cell.text.y = y + CELL / 2;
         cell.valueText.y = y + VALUE_INSET;
-        this.setCellLetter(cell, randomLetter());
+        this.setCellLetter(cell, randomLetter(), rollPowerUpBonus());
       }
     }
   }
@@ -271,12 +312,22 @@ class GameScene extends Phaser.Scene {
     const completedScore = this.score;
     const completedTarget = this.targetScore;
 
+    // Reward for finishing under budget: leftover moves cash out at this
+    // difficulty's points-per-word rate and roll into the persistent total.
+    const efficiencyBonus = this.movesRemaining * this.pointsPerWord;
+    this.gameScore += completedScore + efficiencyBonus;
+    this.updateHud();
+
     const summary = this.showOverlayMessage(
-      `LEVEL ${completedLevel} COMPLETE!\n\nScore: ${completedScore} / ${completedTarget}`,
-      COLOR_TEXT_VALID
+      `LEVEL ${completedLevel} COMPLETE!\n\n` +
+        `Level Score: ${completedScore} / ${completedTarget}\n` +
+        `Bonus: +${efficiencyBonus} (${this.movesRemaining} moves left x ${this.pointsPerWord})\n\n` +
+        `Game Score: ${this.gameScore}`,
+      COLOR_TEXT_DEFAULT
     );
 
-    const button = this.add.text(WIDTH / 2, HEIGHT / 2 + 70, 'PROCEED', {
+    const buttonY = HEIGHT / 2 + summary.height / 2 + 30;
+    const button = this.add.text(WIDTH / 2, buttonY, 'PROCEED', {
       fontSize: '18px',
       fontFamily: 'monospace',
       color: '#ffffff',
@@ -300,7 +351,7 @@ class GameScene extends Phaser.Scene {
     this.gameOver = true;
     this.updateHud();
     this.showOverlayMessage(
-      `GAME OVER\nReached Level ${this.level}\n\nClick or press R to restart`,
+      `GAME OVER\nReached Level ${this.level}\nGame Score: ${this.gameScore}\n\nClick or press R to restart`,
       '#ffffff'
     );
   }
@@ -318,8 +369,9 @@ class GameScene extends Phaser.Scene {
 
   updateHud() {
     this.levelText.setText(`Level ${this.level}`);
-    this.scoreText.setText(`Score: ${this.score} / ${this.targetScore}`);
+    this.scoreText.setText(`Level Score: ${this.score} / ${this.targetScore}`);
     this.movesText.setText(`Moves: ${this.movesRemaining}`);
+    this.gameScoreText.setText(`Game Score: ${this.gameScore}`);
   }
 
   cellAt(x, y) {
@@ -343,8 +395,6 @@ class GameScene extends Phaser.Scene {
 
   trySelect(row, col) {
     const cell = this.grid[row][col];
-    if (!cell.letter) return; // holes left behind by a cleared word can't be selected
-
     const key = `${row},${col}`;
     if (this.selectedKeys.has(key)) return;
 
@@ -357,7 +407,7 @@ class GameScene extends Phaser.Scene {
     cell.rect.setFillStyle(COLOR_CELL_SELECTED);
     cell.rect.setStrokeStyle(2, COLOR_BORDER_SELECTED);
 
-    this.selected.push({ row, col, letter: cell.letter });
+    this.selected.push({ row, col, letter: cell.letter, bonus: cell.bonus });
     this.selectedKeys.add(key);
     this.updateSelectedText();
 
@@ -377,26 +427,20 @@ class GameScene extends Phaser.Scene {
   }
 
   resetCellVisual(cell) {
-    const alpha = cell.letter ? 1 : 0.25;
-    cell.rect.setFillStyle(COLOR_CELL, alpha);
-    cell.rect.setStrokeStyle(1, COLOR_BORDER, alpha);
+    cell.rect.setFillStyle(COLOR_CELL);
+    cell.rect.setStrokeStyle(1, COLOR_BORDER);
   }
 
-  setCellLetter(cell, letter) {
+  setCellLetter(cell, letter, bonus = 0) {
     cell.letter = letter;
+    cell.bonus = bonus;
     cell.text.setText(letter);
-    cell.valueText.setText(String(SCRABBLE_SCORES[letter] || ''));
+    cell.valueText.setText(String((SCRABBLE_SCORES[letter] || 0) + bonus));
+    cell.valueText.setColor(bonus > 0 ? COLOR_VALUE_POWERED : COLOR_VALUE_TEXT);
     this.resetCellVisual(cell);
   }
 
-  setCellEmpty(cell) {
-    cell.letter = null;
-    cell.text.setText('');
-    cell.valueText.setText('');
-    this.resetCellVisual(cell);
-  }
-
-  removeAndCollapse(selectedCells) {
+  removeAndCollapse(selectedCells, refillBonus = 0) {
     const removedByCol = new Map();
     for (const { row, col } of selectedCells) {
       if (!removedByCol.has(col)) removedByCol.set(col, new Set());
@@ -408,18 +452,21 @@ class GameScene extends Phaser.Scene {
       for (let row = 0; row < GRID_SIZE; row++) {
         if (removedRows.has(row)) continue;
         const source = this.grid[row][col];
-        if (!source.letter) continue; // already a hole; don't drag it along as a "survivor"
-        survivors.push({ letter: source.letter, fromRow: row });
+        survivors.push({ letter: source.letter, bonus: source.bonus, fromRow: row });
       }
 
       const emptyCount = GRID_SIZE - survivors.length;
       for (let row = 0; row < GRID_SIZE; row++) {
         const cell = this.grid[row][col];
         if (row < emptyCount) {
-          this.setCellEmpty(cell);
+          // New tile queued above the board; the higher up the empty slot,
+          // the further it has to drop, so refills cascade in one after another.
+          const bonus = Math.max(rollPowerUpBonus(), refillBonus);
+          this.setCellLetter(cell, randomLetter(), bonus);
+          this.animateFall(cell, row - emptyCount, row);
         } else {
           const survivor = survivors[row - emptyCount];
-          this.setCellLetter(cell, survivor.letter);
+          this.setCellLetter(cell, survivor.letter, survivor.bonus);
           if (survivor.fromRow !== row) this.animateFall(cell, survivor.fromRow, row);
         }
       }
@@ -448,14 +495,15 @@ class GameScene extends Phaser.Scene {
 
   updateSelectedText() {
     const word = this.selected.map((s) => s.letter).join('');
-    this.isValidWord = word.length > 0 && this.wordSet.has(word);
+    this.isValidWord = word.length > 1 && this.wordSet.has(word);
     this.selectedText.setText(word);
     this.selectedText.setColor(this.isValidWord ? COLOR_TEXT_VALID : COLOR_TEXT_DEFAULT);
   }
 
   awardScore() {
-    const points = this.selected.reduce((sum, s) => sum + (SCRABBLE_SCORES[s.letter] || 0), 0);
+    const points = this.selected.reduce((sum, s) => sum + (SCRABBLE_SCORES[s.letter] || 0) + (s.bonus || 0), 0);
     this.score += points;
+    return points;
   }
 
   cellCenter({ row, col }) {
