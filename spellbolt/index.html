@@ -2,10 +2,18 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Word Tetris</title>
+  <title>Spellbolt</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: #000; display: flex; justify-content: center; align-items: center; height: 100vh; }
+    body {
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+      height: 100vh;
+    }
     #home-link {
       position: fixed;
       top: 12px;
@@ -17,10 +25,18 @@
       z-index: 100;
     }
     #home-link:hover { color: #aaa; }
+    h1 {
+      color: #44ff88;
+      font-family: monospace;
+      font-size: 1.6rem;
+      letter-spacing: 0.15em;
+      margin: 0;
+    }
   </style>
 </head>
 <body>
   <a id="home-link" href="../index.html">← Home</a>
+  <h1>Spellbolt</h1>
   <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.min.js"></script>
   <script src="game.js"></script>
 </body>

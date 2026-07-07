@@ -13,7 +13,6 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
       padding: 60px 20px;
     }
     nav {
@@ -33,15 +32,45 @@
       margin-bottom: 16px;
       letter-spacing: 0.1em;
     }
-    p {
-      color: #666;
-      font-size: 0.9rem;
+    .games {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 20px;
+      width: 100%;
+      max-width: 900px;
+    }
+    .game-card {
+      background: #1a1a2e;
+      border: 1px solid #2a2a4a;
+      border-radius: 8px;
+      padding: 24px;
+      text-decoration: none;
+      color: inherit;
+      transition: border-color 0.2s, transform 0.1s;
+    }
+    .game-card:hover {
+      border-color: #44ff88;
+      transform: translateY(-2px);
+    }
+    .game-card h2 {
+      font-size: 1.2rem;
+      margin-bottom: 6px;
+      color: #44ff88;
+    }
+    .game-card p {
+      font-size: 0.8rem;
+      color: #888;
     }
   </style>
 </head>
 <body>
   <nav><a href="index.html">← back</a></nav>
   <h1>Free Games</h1>
-  <p>coming soon</p>
+  <div class="games">
+    <a class="game-card" href="spellbolt/index.html">
+      <h2>Spellbolt</h2>
+      <p>Drag through connected letters to spell words on a falling grid. Chain long or high-scoring words to charge up powered tiles.</p>
+    </a>
+  </div>
 </body>
 </html>

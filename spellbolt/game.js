@@ -177,6 +177,9 @@ class GameScene extends Phaser.Scene {
     this.wordCountPool = [];
     this.gameScore = 0;
 
+    this.glowingCells = new Set();
+    this.startGlowClock();
+
     this.selectedText = this.add.text(WIDTH / 2, TOP_PADDING + HEADER_HEIGHT / 2, '', {
       fontSize: '28px',
       fontFamily: 'monospace',
@@ -460,6 +463,25 @@ class GameScene extends Phaser.Scene {
     }
   }
 
+  startGlowClock() {
+    // A single perpetual tween driving one shared value, applied to every
+    // currently-glowing tile's outerStrength each frame. Tiles read off this
+    // common clock rather than running their own tween so a tile that joins
+    // the selection mid-pulse still breathes in sync with the rest.
+    this.glowPulse = { value: 0 };
+    this.tweens.add({
+      targets: this.glowPulse,
+      value: 3,
+      duration: GLOW_PULSE_DURATION,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut',
+      onUpdate: () => {
+        for (const cell of this.glowingCells) cell.glowFx.outerStrength = this.glowPulse.value;
+      },
+    });
+  }
+
   updateBonusGlow() {
     const points = this.wordPoints(this.selected);
     const qualifies = this.isValidWord && computeRefillBonus(this.selected.length, points) > 0;
@@ -497,25 +519,18 @@ class GameScene extends Phaser.Scene {
     cell.valueText.setDepth(GLOW_TEXT_DEPTH);
 
     // A soft green glow around the tile's outer edge, pulsating like a
-    // box-shadow whose spread breathes in and out.
-    const glowFx = cell.rect.postFX.addGlow(0x44ff88, 0, 0, false, 0.1, 12);
-    const glowPulse = this.tweens.add({
-      targets: glowFx,
-      outerStrength: 3,
-      duration: GLOW_PULSE_DURATION,
-      yoyo: true,
-      repeat: -1,
-      ease: 'Sine.easeInOut',
-    });
-
-    cell.glowFx = glowFx;
-    cell.glowTween = glowPulse;
+    // box-shadow whose spread breathes in and out. Every glowing tile reads
+    // off the same shared pulse clock (see startGlowClock) instead of
+    // running its own tween, so a tile added mid-selection still breathes
+    // in lockstep with tiles that started glowing earlier.
+    cell.glowFx = cell.rect.postFX.addGlow(0x44ff88, 0, 0, false, 0.1, 12);
+    cell.glowFx.outerStrength = this.glowPulse.value;
+    this.glowingCells.add(cell);
   }
 
   stopPowerGlow(cell) {
     if (!cell.glowFx) return;
-    cell.glowTween.stop();
-    cell.glowTween = null;
+    this.glowingCells.delete(cell);
     cell.rect.postFX.remove(cell.glowFx);
     cell.glowFx = null;
 
