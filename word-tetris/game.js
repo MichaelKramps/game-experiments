@@ -14,11 +14,31 @@ const HEIGHT = GRID_TOP + GRID_PIXELS + BOTTOM_PADDING;
 const COLOR_CELL = 0x1a1a2e;
 const COLOR_CELL_SELECTED = 0x2a5a3a;
 const COLOR_BORDER = 0x2a2a4a;
-const COLOR_BORDER_SELECTED = 0x44ff88;
 const COLOR_ARROW = 0x44ff88;
 const ARROW_INSET = CELL * 0.22;
 const ARROWHEAD_LEN = 10;
 const FALL_MS_PER_ROW = 90;
+
+const RECT_DEPTH = 0;
+const TEXT_DEPTH = 2;
+// A glowing tile's edge-bleeding effect needs to render above neighboring
+// tiles, so it's elevated past every normal depth above; its own glyphs are
+// bumped further still so they stay on top of their own background.
+const GLOW_RECT_DEPTH = 3;
+const GLOW_TEXT_DEPTH = 4;
+// Above everything, including glow-elevated tiles — the line's endpoints
+// already stop short of each tile's center (ARROW_INSET), so it never
+// actually overlaps a letter glyph regardless of z-order.
+const ARROW_DEPTH = 5;
+const BLAST_DEPTH = 6;
+
+// When a scored word qualifies for a refill bonus, each of its tiles fires a
+// streak straight up its column to the top of the grid, where the
+// powered-up replacement tile is about to fall in from.
+const COLOR_BLAST = 0xff2fd6;
+const BLAST_WIDTH = 10;
+const BLAST_MS_PER_ROW = 40;
+const EXPLOSION_DURATION = 200;
 
 const LETTER_FONT_SIZE = 28;
 const VALUE_FONT_SIZE = 10;
@@ -56,6 +76,18 @@ const LONG_WORD_BONUS = 2;
 // combined guaranteed bonus and the random roll don't stack — highest wins.
 const HIGH_SCORE_THRESHOLD = 12;
 const HIGH_SCORE_DIVISOR = 5;
+
+function computeRefillBonus(wordLength, points) {
+  const lengthBonus = wordLength >= LONG_WORD_LENGTH ? LONG_WORD_BONUS : 0;
+  const scoreBonus = points >= HIGH_SCORE_THRESHOLD ? Math.floor(points / HIGH_SCORE_DIVISOR) : 0;
+  return lengthBonus + scoreBonus;
+}
+
+// While the currently-selected letters form a valid word that qualifies for
+// a refill bonus (long enough or high-scoring enough), every tile in that
+// selection glows around its outer edge, previewing that this word will
+// cash in a bonus.
+const GLOW_PULSE_DURATION = 600;
 
 // Rough English letter frequency so boards feel more word-friendly than pure A-Z.
 const LETTER_BAG = 'EEEEEEEEEEEEAAAAAAAAAIIIIIIIIIOOOOOOOONNNNNNNRRRRRRRTTTTTTTLLLLSSSSUUUUDDDDGGGBBCCMMPPFFHHVVWWYYKJXQZ';
@@ -182,28 +214,29 @@ class GameScene extends Phaser.Scene {
         const y = GRID_TOP + row * CELL;
 
         const rect = this.add.rectangle(x + CELL / 2, y + CELL / 2, CELL - 2, CELL - 2, COLOR_CELL)
-          .setStrokeStyle(1, COLOR_BORDER);
+          .setStrokeStyle(1, COLOR_BORDER)
+          .setDepth(RECT_DEPTH);
 
         const text = this.add.text(x + CELL / 2, y + CELL / 2, '', {
           fontSize: `${LETTER_FONT_SIZE}px`,
           fontFamily: 'monospace',
           color: COLOR_LETTER_TEXT,
-        }).setOrigin(0.5).setDepth(2);
+        }).setOrigin(0.5).setDepth(TEXT_DEPTH);
 
         const valueText = this.add.text(x + CELL - VALUE_INSET, y + VALUE_INSET, '', {
           fontSize: `${VALUE_FONT_SIZE}px`,
           fontFamily: 'monospace',
           color: COLOR_VALUE_TEXT,
-        }).setOrigin(1, 0).setDepth(2);
+        }).setOrigin(1, 0).setDepth(TEXT_DEPTH);
 
-        rowCells.push({ letter: null, bonus: 0, text, valueText, rect });
+        rowCells.push({ letter: null, bonus: 0, pending: false, text, valueText, rect });
       }
       this.grid.push(rowCells);
     }
 
     // Sits above the tile backgrounds but below the letters, so arrows don't
     // obscure the glyph at either end.
-    this.arrowGfx = this.add.graphics().setDepth(1);
+    this.arrowGfx = this.add.graphics().setDepth(ARROW_DEPTH);
 
     this.startLevel(1);
 
@@ -228,11 +261,15 @@ class GameScene extends Phaser.Scene {
 
     this.input.on('pointerup', () => {
       this.dragging = false;
+      // Stop any active glows before the board content underneath potentially
+      // changes, so a stray tween never keeps animating a tile that's since
+      // become something else.
+      for (const { row, col } of this.selected) {
+        this.stopPowerGlow(this.grid[row][col]);
+      }
       if (this.isValidWord) {
         const points = this.awardScore();
-        const lengthBonus = this.selected.length >= LONG_WORD_LENGTH ? LONG_WORD_BONUS : 0;
-        const scoreBonus = points >= HIGH_SCORE_THRESHOLD ? Math.floor(points / HIGH_SCORE_DIVISOR) : 0;
-        const refillBonus = lengthBonus + scoreBonus;
+        const refillBonus = computeRefillBonus(this.selected.length, points);
         this.removeAndCollapse(this.selected, refillBonus);
         this.registerMove();
       }
@@ -282,10 +319,15 @@ class GameScene extends Phaser.Scene {
     for (let row = 0; row < GRID_SIZE; row++) {
       for (let col = 0; col < GRID_SIZE; col++) {
         const cell = this.grid[row][col];
-        // A tile mid-fall from the word that just finished the level could
-        // still be tweening; kill it and snap back to its home position
-        // before handing the slot a fresh letter.
+        // A tile mid-fall (or mid-blast-wait, still hidden as `pending`) from
+        // the word that just finished the level could still be tweening;
+        // kill it and snap back to a normal, visible state before handing
+        // the slot a fresh letter.
         this.tweens.killTweensOf([cell.rect, cell.text, cell.valueText]);
+        cell.pending = false;
+        cell.rect.setAlpha(1);
+        cell.text.setAlpha(1);
+        cell.valueText.setAlpha(1);
         const y = GRID_TOP + row * CELL;
         cell.rect.y = y + CELL / 2;
         cell.text.y = y + CELL / 2;
@@ -395,6 +437,8 @@ class GameScene extends Phaser.Scene {
 
   trySelect(row, col) {
     const cell = this.grid[row][col];
+    if (cell.pending) return; // awaiting its refill blast/impact — not there yet
+
     const key = `${row},${col}`;
     if (this.selectedKeys.has(key)) return;
 
@@ -405,25 +449,79 @@ class GameScene extends Phaser.Scene {
     }
 
     cell.rect.setFillStyle(COLOR_CELL_SELECTED);
-    cell.rect.setStrokeStyle(2, COLOR_BORDER_SELECTED);
 
     this.selected.push({ row, col, letter: cell.letter, bonus: cell.bonus });
     this.selectedKeys.add(key);
     this.updateSelectedText();
+    this.updateBonusGlow();
 
     if (this.selected.length > 1) {
       this.drawArrow(this.selected[this.selected.length - 2], this.selected[this.selected.length - 1]);
     }
   }
 
+  updateBonusGlow() {
+    const points = this.wordPoints(this.selected);
+    const qualifies = this.isValidWord && computeRefillBonus(this.selected.length, points) > 0;
+    for (const { row, col } of this.selected) {
+      const cell = this.grid[row][col];
+      if (qualifies) {
+        this.startPowerGlow(cell);
+      } else {
+        this.stopPowerGlow(cell);
+      }
+    }
+  }
+
   clearSelection() {
     for (const { row, col } of this.selected) {
-      this.resetCellVisual(this.grid[row][col]);
+      const cell = this.grid[row][col];
+      this.stopPowerGlow(cell);
+      this.resetCellVisual(cell);
     }
     this.selected = [];
     this.selectedKeys.clear();
     this.updateSelectedText();
     this.arrowGfx.clear();
+  }
+
+  startPowerGlow(cell) {
+    if (cell.glowFx) return;
+
+    // Bleeds past the tile's own edges, so it needs to render above
+    // neighboring tiles (depth 0) instead of getting clipped underneath
+    // them; bump this tile's own glyphs above that so they still show
+    // on top of their own (now-elevated) background.
+    cell.rect.setDepth(GLOW_RECT_DEPTH);
+    cell.text.setDepth(GLOW_TEXT_DEPTH);
+    cell.valueText.setDepth(GLOW_TEXT_DEPTH);
+
+    // A soft green glow around the tile's outer edge, pulsating like a
+    // box-shadow whose spread breathes in and out.
+    const glowFx = cell.rect.postFX.addGlow(0x44ff88, 0, 0, false, 0.1, 12);
+    const glowPulse = this.tweens.add({
+      targets: glowFx,
+      outerStrength: 3,
+      duration: GLOW_PULSE_DURATION,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut',
+    });
+
+    cell.glowFx = glowFx;
+    cell.glowTween = glowPulse;
+  }
+
+  stopPowerGlow(cell) {
+    if (!cell.glowFx) return;
+    cell.glowTween.stop();
+    cell.glowTween = null;
+    cell.rect.postFX.remove(cell.glowFx);
+    cell.glowFx = null;
+
+    cell.rect.setDepth(RECT_DEPTH);
+    cell.text.setDepth(TEXT_DEPTH);
+    cell.valueText.setDepth(TEXT_DEPTH);
   }
 
   resetCellVisual(cell) {
@@ -456,19 +554,59 @@ class GameScene extends Phaser.Scene {
       }
 
       const emptyCount = GRID_SIZE - survivors.length;
-      for (let row = 0; row < GRID_SIZE; row++) {
+
+      // Survivors fall right away regardless of any bonus.
+      for (let row = emptyCount; row < GRID_SIZE; row++) {
         const cell = this.grid[row][col];
-        if (row < emptyCount) {
+        const survivor = survivors[row - emptyCount];
+        this.setCellLetter(cell, survivor.letter, survivor.bonus);
+        if (survivor.fromRow !== row) this.animateFall(cell, survivor.fromRow, row);
+      }
+
+      const spawnNewTiles = () => {
+        for (let row = 0; row < emptyCount; row++) {
+          const cell = this.grid[row][col];
           // New tile queued above the board; the higher up the empty slot,
-          // the further it has to drop, so refills cascade in one after another.
+          // the further it has to drop, so refills cascade one after another.
           const bonus = Math.max(rollPowerUpBonus(), refillBonus);
           this.setCellLetter(cell, randomLetter(), bonus);
           this.animateFall(cell, row - emptyCount, row);
-        } else {
-          const survivor = survivors[row - emptyCount];
-          this.setCellLetter(cell, survivor.letter, survivor.bonus);
-          if (survivor.fromRow !== row) this.animateFall(cell, survivor.fromRow, row);
         }
+      };
+
+      if (refillBonus > 0 && emptyCount > 0) {
+        // Hide the slots awaiting a refill so the column reads as cleared
+        // while the blast travels, instead of showing stale leftover tiles;
+        // `pending` keeps them unselectable in the meantime.
+        for (let row = 0; row < emptyCount; row++) {
+          const cell = this.grid[row][col];
+          cell.pending = true;
+          cell.rect.setAlpha(0);
+          cell.text.setAlpha(0);
+          cell.valueText.setAlpha(0);
+        }
+
+        // Fire a blast for every removed tile in this column, then wait for
+        // the last one to land, play the impact, and only then spawn the
+        // replacement tiles.
+        const deepestRow = Math.max(...removedRows);
+        const travelTime = (deepestRow + 1) * BLAST_MS_PER_ROW;
+        for (const row of removedRows) this.spawnBlast(row, col);
+        this.time.delayedCall(travelTime, () => {
+          this.spawnBlastImpact(col);
+          this.time.delayedCall(EXPLOSION_DURATION, () => {
+            for (let row = 0; row < emptyCount; row++) {
+              const cell = this.grid[row][col];
+              cell.pending = false;
+              cell.rect.setAlpha(1);
+              cell.text.setAlpha(1);
+              cell.valueText.setAlpha(1);
+            }
+            spawnNewTiles();
+          });
+        });
+      } else {
+        spawnNewTiles();
       }
     }
   }
@@ -493,6 +631,37 @@ class GameScene extends Phaser.Scene {
     });
   }
 
+  spawnBlast(row, col) {
+    const { x, y } = this.cellCenter({ row, col });
+    const topY = GRID_TOP - CELL / 2;
+    const blast = this.add.rectangle(x, y, BLAST_WIDTH, CELL * 0.8, COLOR_BLAST, 0.9)
+      .setDepth(BLAST_DEPTH);
+
+    this.tweens.add({
+      targets: blast,
+      y: topY,
+      alpha: 0,
+      duration: (row + 1) * BLAST_MS_PER_ROW,
+      ease: 'Quad.easeIn',
+      onComplete: () => blast.destroy(),
+    });
+  }
+
+  spawnBlastImpact(col) {
+    const x = SIDE_PADDING + col * CELL + CELL / 2;
+    const y = GRID_TOP - CELL / 2;
+    const impact = this.add.circle(x, y, 4, COLOR_BLAST, 1).setDepth(BLAST_DEPTH);
+
+    this.tweens.add({
+      targets: impact,
+      radius: CELL * 0.6,
+      alpha: 0,
+      duration: EXPLOSION_DURATION,
+      ease: 'Quad.easeOut',
+      onComplete: () => impact.destroy(),
+    });
+  }
+
   updateSelectedText() {
     const word = this.selected.map((s) => s.letter).join('');
     this.isValidWord = word.length > 1 && this.wordSet.has(word);
@@ -500,8 +669,12 @@ class GameScene extends Phaser.Scene {
     this.selectedText.setColor(this.isValidWord ? COLOR_TEXT_VALID : COLOR_TEXT_DEFAULT);
   }
 
+  wordPoints(selected) {
+    return selected.reduce((sum, s) => sum + (SCRABBLE_SCORES[s.letter] || 0) + (s.bonus || 0), 0);
+  }
+
   awardScore() {
-    const points = this.selected.reduce((sum, s) => sum + (SCRABBLE_SCORES[s.letter] || 0) + (s.bonus || 0), 0);
+    const points = this.wordPoints(this.selected);
     this.score += points;
     return points;
   }
