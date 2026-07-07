@@ -1,3 +1,5 @@
+.cave/
+
 # wrangler files
 .wrangler
 .dev.vars*
