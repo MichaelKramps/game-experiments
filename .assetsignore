@@ -1,0 +1,8 @@
+.git
+.idea
+.cave
+.claude
+.DS_Store
+.gitignore
+.assetsignore
+wrangler.jsonc
