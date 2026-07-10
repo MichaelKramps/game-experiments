@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Idle Life</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0d0d1a;
+      color: #ffffff;
+      font-family: monospace;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 60px 20px;
+    }
+    nav {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+    }
+    nav a {
+      color: #666;
+      text-decoration: none;
+      font-size: 0.85rem;
+      letter-spacing: 0.05em;
+    }
+    nav a:hover { color: #44ff88; }
+    h1 {
+      font-size: 2rem;
+      letter-spacing: 0.1em;
+      color: #44ff88;
+      margin-bottom: 32px;
+    }
+    #layout {
+      display: grid;
+      grid-template-columns: 1fr 1.8fr 1fr;
+      gap: 20px;
+      width: 100%;
+      max-width: 1200px;
+      align-items: start;
+    }
+    @media (max-width: 760px) {
+      #layout {
+        grid-template-columns: 1fr;
+      }
+    }
+    .column {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    #col-middle {
+      align-items: center;
+      text-align: center;
+    }
+    #age-display {
+      font-size: 0.8rem;
+      letter-spacing: 0.08em;
+      color: #888;
+    }
+    #age-display .age-value {
+      color: #44ff88;
+      font-weight: bold;
+    }
+    #stats {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+      width: 100%;
+    }
+    .stat {
+      background: #1a1a2e;
+      border: 1px solid #2a2a4a;
+      border-radius: 8px;
+      padding: 10px 16px;
+      text-align: center;
+      flex: 1;
+      min-width: 100px;
+    }
+    .stat .label {
+      font-size: 0.7rem;
+      letter-spacing: 0.08em;
+      color: #666;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .stat .value {
+      font-size: 1.05rem;
+      font-weight: bold;
+    }
+    .value.positive { color: #44ff88; }
+    .value.negative { color: #ff5566; }
+    .value.neutral { color: #ffffff; }
+    [data-money] { cursor: help; border-bottom: 1px dotted currentColor; }
+    #tooltip {
+      display: none;
+      position: fixed;
+      background: #1a1a2e;
+      border: 1px solid #44ff88;
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 0.75rem;
+      font-family: monospace;
+      color: #ffffff;
+      pointer-events: none;
+      white-space: nowrap;
+      z-index: 100;
+    }
+    .section-card {
+      background: #14141f;
+      border: 1px solid #2a2a4a;
+      border-radius: 8px;
+      padding: 14px 18px;
+      text-align: left;
+      width: 100%;
+    }
+    .section-card h3 {
+      font-size: 0.7rem;
+      letter-spacing: 0.08em;
+      color: #44ff88;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .section-line {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 0.8rem;
+      color: #ccc;
+      padding: 3px 0;
+    }
+    .section-line .positive { color: #44ff88; }
+    .section-line .negative { color: #ff5566; }
+    #scene {
+      width: 100%;
+      margin-top: 28px;
+    }
+    #prompt {
+      font-size: 1.05rem;
+      margin-bottom: 24px;
+      line-height: 1.6;
+      color: #eee;
+    }
+    #choices {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .choice-btn {
+      background: #1a1a2e;
+      border: 1px solid #2a2a4a;
+      border-radius: 8px;
+      padding: 16px 20px;
+      text-align: left;
+      color: #ffffff;
+      font-family: monospace;
+      cursor: pointer;
+      transition: border-color 0.2s, transform 0.1s;
+    }
+    .choice-btn:hover {
+      border-color: #44ff88;
+      transform: translateY(-2px);
+    }
+    .choice-btn .choice-label {
+      font-size: 1rem;
+      color: #44ff88;
+      margin-bottom: 4px;
+    }
+    .choice-btn .choice-desc {
+      font-size: 0.8rem;
+      color: #888;
+    }
+    .period-select {
+      margin-top: 6px;
+      background: #0d0d1a;
+      border: 1px solid #2a2a4a;
+      border-radius: 4px;
+      color: #888;
+      font-family: monospace;
+      font-size: 0.65rem;
+      padding: 2px 4px;
+    }
+    .period-select:hover { border-color: #44ff88; color: #44ff88; }
+  </style>
+</head>
+<body>
+  <nav><a href="../index.html">← back</a></nav>
+  <h1>Idle Life</h1>
+  <div id="layout">
+    <div id="col-left" class="column"></div>
+    <div id="col-middle" class="column">
+      <div id="age-display">AGE: <span class="age-value" id="age-value">18.0000</span> years</div>
+      <div id="stats">
+        <div class="stat">
+          <div class="label">Net Worth</div>
+          <div class="value neutral" id="stat-networth">$0</div>
+        </div>
+        <div class="stat">
+          <div class="label">Cash</div>
+          <div class="value neutral" id="stat-cash">$0</div>
+        </div>
+        <div class="stat">
+          <div class="label">Cash Flow</div>
+          <div class="value neutral" id="stat-cashflow">$0/mo</div>
+          <select id="cashflow-period-select" class="period-select">
+            <option value="second">per second</option>
+            <option value="minute">per minute</option>
+            <option value="hour">per hour</option>
+            <option value="day">per day</option>
+            <option value="week">per week</option>
+            <option value="month" selected>per month</option>
+            <option value="year">per year</option>
+          </select>
+        </div>
+      </div>
+      <div id="scene">
+        <div id="prompt"></div>
+        <div id="choices"></div>
+      </div>
+    </div>
+    <div id="col-right" class="column"></div>
+  </div>
+  <div id="tooltip"></div>
+  <script src="game.js"></script>
+</body>
+</html>
