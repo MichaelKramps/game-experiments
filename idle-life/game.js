@@ -35,6 +35,29 @@ const APARTMENT_RENT_AMOUNT = -900;
 const ADULT_DEPENDENT_COST = 600; // $/mo cost of living per adult dependent
 const CHILD_DEPENDENT_COST = 400; // $/mo cost of living per child dependent
 
+// Multiplier on top of the (already inflation-growing) dependent cost above
+// — inflation and lifestyle choice stay orthogonal rather than one
+// replacing the other.
+const LIFESTYLE_TIERS = [
+  { key: 'frugal', label: 'Frugal', multiplier: 0.7, happinessPoints: -1 },
+  { key: 'standard', label: 'Standard', multiplier: 1.0, happinessPoints: 0 },
+  { key: 'comfortable', label: 'Comfortable', multiplier: 1.5, happinessPoints: 1 },
+  { key: 'lavish', label: 'Lavish', multiplier: 2.5, happinessPoints: 2 },
+];
+
+// `cost` is mutable and grown by inflation in advanceSimulation, same as
+// HOME_TIERS/RENTAL_TIERS prices. socialStandingTarget is not applied
+// instantly — state.socialStanding drifts toward whichever tier's target
+// is currently selected (see SOCIAL_STANDING_APPROACH_RATE) and it's that
+// drifting value, not the tier itself, that feeds
+// socialLifePromotionMultiplier.
+const SOCIAL_LIFE_TIERS = [
+  { key: 'homebody', label: 'Homebody', cost: 0, happinessPoints: -1, socialStandingTarget: 0.5 },
+  { key: 'balanced', label: 'Balanced', cost: 250, happinessPoints: 0, socialStandingTarget: 1.0 },
+  { key: 'socialite', label: 'Very Social', cost: 500, happinessPoints: 1, socialStandingTarget: 2.0 },
+];
+const SOCIAL_STANDING_APPROACH_RATE = 0.5; // fraction of the remaining gap to the target closed per year
+
 // Listing prices, not per-owned-property values — advanceSimulation grows
 // tier.price with inflation directly (mutated in place), so a newly bought
 // home/rental starts at whatever the current inflated listing price is.
@@ -111,6 +134,16 @@ const HAPPINESS_MODIFIERS = [
     label: 'Housing',
     points: () => HOME_HAPPINESS_POINTS[state.home] ?? 0,
   },
+  {
+    key: 'lifestyle',
+    label: 'Lifestyle',
+    points: () => currentLifestyleTier().happinessPoints,
+  },
+  {
+    key: 'socialLife',
+    label: 'Social Life',
+    points: () => currentSocialLifeTier().happinessPoints,
+  },
 ];
 
 const CASH_FLOW_PERIODS = {
@@ -154,12 +187,16 @@ const state = {
   childDependents: 0,
   adultDependentCost: ADULT_DEPENDENT_COST,
   childDependentCost: CHILD_DEPENDENT_COST,
+  apartmentRentAmount: APARTMENT_RENT_AMOUNT,
+  lifestyleTier: 'standard',
+  socialLifeTier: 'balanced',
+  socialStanding: 1.0, // drifts toward the current social life tier's target — see advanceSimulation
   happiness: 'neutral',
   happinessScore: 6,
   happinessHours: { miserable: 0, unhappy: 0, neutral: 0, happy: 0, lovingLife: 0 },
   graduatesAtAge: null,
   housedAfterGraduation: false,
-  unlocked: { home: false, debt: false, assets: false, cashFlow: false },
+  unlocked: { home: false, debt: false, assets: false, cashFlow: false, lifestyle: false },
   idleStarted: false,
   lastTick: 0,
 };
@@ -211,7 +248,6 @@ const scenes = {
           s.home = 'Apartment';
           s.unlocked.home = true;
           s.jobs.push({ id: s.nextJobId++, type: 'fulltime', label: 'Entry-Level Job', units: FULLTIME_JOB_UNITS, amount: getOrInitFulltimeRate(FULLTIME_JOB_BASE_PAY) });
-          s.cashFlowItems.push({ label: 'Apartment Rent', amount: APARTMENT_RENT_AMOUNT });
           s.unlocked.cashFlow = true;
           s.unlocked.assets = true;
         },
@@ -368,8 +404,57 @@ function indexFundMonthlyDividend() {
   return (indexFundValue() * INDEX_FUND_DIVIDEND_YIELD) / 12;
 }
 
+function currentLifestyleTier() {
+  return LIFESTYLE_TIERS.find((t) => t.key === state.lifestyleTier) ?? LIFESTYLE_TIERS[1];
+}
+
+function currentSocialLifeTier() {
+  return SOCIAL_LIFE_TIERS.find((t) => t.key === state.socialLifeTier) ?? SOCIAL_LIFE_TIERS[1];
+}
+
 function costOfLivingMonthly() {
-  return -((state.adultDependents * state.adultDependentCost) + (state.childDependents * state.childDependentCost));
+  const base = (state.adultDependents * state.adultDependentCost) + (state.childDependents * state.childDependentCost);
+  return -(base * currentLifestyleTier().multiplier);
+}
+
+function socialLifeMonthly() {
+  return -currentSocialLifeTier().cost;
+}
+
+// Computed from current renting status rather than a one-time-pushed
+// cashFlowItems entry, so it can inflate continuously like everything
+// else — see state.apartmentRentAmount in advanceSimulation.
+function apartmentRentMonthly() {
+  return state.home === 'Apartment' ? state.apartmentRentAmount : 0;
+}
+
+// Lists every tier *other than* the current one — mirroring how the rental
+// kebab shows only the applicable management-toggle option rather than a
+// disabled "already here" entry.
+function buildLifestyleKebabMenu() {
+  return buildKebabMenu(() => LIFESTYLE_TIERS
+    .filter((tier) => tier.key !== state.lifestyleTier)
+    .map((tier) => ({
+      label: `Switch to ${tier.label} (${tier.multiplier.toFixed(1)}x)`,
+      onClick: () => {
+        state.lifestyleTier = tier.key;
+        recomputeCashFlow();
+        render();
+      },
+    })));
+}
+
+function buildSocialLifeKebabMenu() {
+  return buildKebabMenu(() => SOCIAL_LIFE_TIERS
+    .filter((tier) => tier.key !== state.socialLifeTier)
+    .map((tier) => ({
+      label: `Switch to ${tier.label} (${formatMoney(tier.cost, '/mo')})`,
+      onClick: () => {
+        state.socialLifeTier = tier.key;
+        recomputeCashFlow();
+        render();
+      },
+    })));
 }
 
 // Standard fixed-payment mortgage amortization, matching how a real 30-year
@@ -403,7 +488,7 @@ function recomputeCashFlow() {
   const jobsFlow = state.jobs.reduce((sum, j) => sum + j.amount, 0);
   const itemsFlow = state.cashFlowItems.reduce((sum, item) => sum + item.amount, 0);
   const debtPaymentsFlow = state.debts.reduce((sum, d) => sum - (d.principal > 0 && !isDebtPaymentPaused(d) ? d.minPayment : 0), 0);
-  state.cashFlow = jobsFlow + itemsFlow + debtPaymentsFlow + indexFundMonthlyDividend() + totalRentalNetIncomeMonthly() + costOfLivingMonthly();
+  state.cashFlow = jobsFlow + itemsFlow + debtPaymentsFlow + indexFundMonthlyDividend() + totalRentalNetIncomeMonthly() + costOfLivingMonthly() + socialLifeMonthly() + apartmentRentMonthly();
 }
 
 function totalJobUnits() {
@@ -498,10 +583,8 @@ function getOrInitParttimeRate() {
   return state.parttimeJobRate;
 }
 
-// Stub — Phase 1 (Lifestyle/Social Life) will scale this based on the
-// player's social life tier. Neutral until then.
 function socialLifePromotionMultiplier() {
-  return 1;
+  return state.socialStanding;
 }
 
 let pendingCareerReviewMessage = null;
@@ -680,7 +763,6 @@ function buyHome(tier) {
   state.debts.push(debt);
   state.ownedHome = { key: tier.key, label: tier.label, value: tier.price, debt };
   state.home = tier.label;
-  state.cashFlowItems = state.cashFlowItems.filter((item) => item.label !== 'Apartment Rent');
   // Buying a home (even mid-college) must stop the graduation auto-apartment
   // logic from later overwriting it with a rented apartment.
   state.housedAfterGraduation = true;
@@ -694,7 +776,6 @@ function sellHome() {
   state.debts = state.debts.filter((d) => d !== state.ownedHome.debt);
   state.ownedHome = null;
   state.home = 'Apartment';
-  state.cashFlowItems.push({ label: 'Apartment Rent', amount: APARTMENT_RENT_AMOUNT });
 }
 
 function buyRentalProperty(tier, selfManaged) {
@@ -741,39 +822,41 @@ function toggleRentalManagement(rental) {
 }
 
 function buildRentalKebabMenu(rental) {
-  const canSelfManage = totalJobUnits() + rental.jobUnits <= MAX_JOB_UNITS;
-  const items = [];
+  return buildKebabMenu(() => {
+    const canSelfManage = totalJobUnits() + rental.jobUnits <= MAX_JOB_UNITS;
+    const items = [];
 
-  items.push(rental.selfManaged
-    ? {
-      label: 'Hire a Management Company',
+    items.push(rental.selfManaged
+      ? {
+        label: 'Hire a Management Company',
+        onClick: () => {
+          toggleRentalManagement(rental);
+          recomputeCashFlow();
+          render();
+        },
+      }
+      : {
+        label: `Self-Manage for ${rental.jobUnits} jobs`,
+        disabled: !canSelfManage,
+        onClick: () => {
+          toggleRentalManagement(rental);
+          recomputeCashFlow();
+          render();
+        },
+      });
+
+    items.push({
+      label: `Sell ${rental.label}`,
       onClick: () => {
-        toggleRentalManagement(rental);
+        sellRentalProperty(rental);
         recomputeCashFlow();
-        render();
-      },
-    }
-    : {
-      label: `Self-Manage for ${rental.jobUnits} jobs`,
-      disabled: !canSelfManage,
-      onClick: () => {
-        toggleRentalManagement(rental);
-        recomputeCashFlow();
+        recomputeNetWorth();
         render();
       },
     });
 
-  items.push({
-    label: `Sell ${rental.label}`,
-    onClick: () => {
-      sellRentalProperty(rental);
-      recomputeCashFlow();
-      recomputeNetWorth();
-      render();
-    },
+    return items;
   });
-
-  return buildKebabMenu(items);
 }
 
 function totalAssetsValue() {
@@ -812,6 +895,7 @@ function advanceSimulation(deltaGameHours) {
   const inflationStep = INFLATION_RATE * (deltaGameHours / HOURS_PER_YEAR);
   state.adultDependentCost += state.adultDependentCost * inflationStep;
   state.childDependentCost += state.childDependentCost * inflationStep;
+  state.apartmentRentAmount += state.apartmentRentAmount * inflationStep;
   state.sideHustleCost += state.sideHustleCost * inflationStep;
   state.businessCost += state.businessCost * inflationStep;
   HOME_TIERS.forEach((tier) => {
@@ -820,6 +904,15 @@ function advanceSimulation(deltaGameHours) {
   RENTAL_TIERS.forEach((tier) => {
     tier.price += tier.price * inflationStep;
   });
+  SOCIAL_LIFE_TIERS.forEach((tier) => {
+    tier.cost += tier.cost * inflationStep;
+  });
+
+  // Social standing drifts toward whichever tier is currently selected
+  // rather than snapping instantly, so switching tiers back and forth
+  // can't be used to game the promotion odds.
+  const socialStandingTarget = currentSocialLifeTier().socialStandingTarget;
+  state.socialStanding += (socialStandingTarget - state.socialStanding) * SOCIAL_STANDING_APPROACH_RATE * (deltaGameHours / HOURS_PER_YEAR);
 
   let debtPaidOff = false;
   state.debts.forEach((d) => {
@@ -861,7 +954,6 @@ function advanceSimulation(deltaGameHours) {
 
   if (state.flags.university && !isStudent() && !state.housedAfterGraduation) {
     state.home = 'Apartment';
-    state.cashFlowItems.push({ label: 'Apartment Rent', amount: APARTMENT_RENT_AMOUNT });
     state.housedAfterGraduation = true;
     graduationOccurred = true;
   }
@@ -948,6 +1040,7 @@ function startIdle() {
   state.idleStarted = true;
   state.unlocked.assets = true;
   state.unlocked.cashFlow = true;
+  state.unlocked.lifestyle = true;
   state.lastTick = performance.now();
   setInterval(tick, TICK_MS);
   render();
@@ -983,7 +1076,7 @@ window.addEventListener('resize', closeAllKebabMenus);
 // (`overflow-y: auto`, which per spec also clips the x-axis), and any
 // descendant of a clipping ancestor gets clipped regardless of its own
 // `position`, `fixed` included. Escaping to <body> is the only way out.
-function buildKebabMenu(items) {
+function buildKebabMenu(itemsFactory) {
   const wrap = document.createElement('div');
   wrap.className = 'kebab-menu';
 
@@ -994,18 +1087,27 @@ function buildKebabMenu(items) {
 
   const popover = document.createElement('div');
   popover.className = 'kebab-popover';
-  items.forEach((item) => {
-    const optionBtn = document.createElement('button');
-    optionBtn.className = 'kebab-option';
-    optionBtn.textContent = item.label;
-    optionBtn.disabled = Boolean(item.disabled);
-    optionBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      closePopover();
-      item.onClick();
+
+  // Items (including each one's disabled state) are computed fresh right
+  // before the popover opens, not once when the row was built — a kebab
+  // built during one full render could otherwise sit unopened through many
+  // ticks of cash/state changes and show a stale "can't afford this"
+  // greyed-out state even once you actually can afford it.
+  function renderItems() {
+    popover.innerHTML = '';
+    itemsFactory().forEach((item) => {
+      const optionBtn = document.createElement('button');
+      optionBtn.className = 'kebab-option';
+      optionBtn.textContent = item.label;
+      optionBtn.disabled = Boolean(item.disabled);
+      optionBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        closePopover();
+        item.onClick();
+      });
+      popover.appendChild(optionBtn);
     });
-    popover.appendChild(optionBtn);
-  });
+  }
 
   function closePopover() {
     popover.classList.remove('open');
@@ -1015,6 +1117,7 @@ function buildKebabMenu(items) {
 
   function openPopover() {
     closeAllKebabMenus();
+    renderItems();
     document.body.appendChild(popover);
     popover.classList.add('open');
 
@@ -1121,6 +1224,23 @@ function buildAssetsTotalRow() {
 }
 
 // options: { id, kebab } — both optional, mirrors buildDebtLine's shape.
+// A plain status line (text + optional trailing kebab menu), no dollar
+// value slot — same left/right layout as buildAssetLine/buildDebtLine, for
+// status cards like Lifestyle/Social Life that just show a tier name.
+function buildKebabLine(text, kebab, tooltipType) {
+  const row = document.createElement('div');
+  row.className = 'section-line';
+
+  const textEl = document.createElement('span');
+  textEl.textContent = text;
+  if (tooltipType) textEl.dataset.tooltipType = tooltipType;
+  row.appendChild(textEl);
+
+  if (kebab) row.appendChild(kebab);
+
+  return row;
+}
+
 function buildAssetLine(label, value, options = {}) {
   const row = document.createElement('div');
   row.className = 'section-line';
@@ -1158,19 +1278,21 @@ function sellIndexFundShares(quantity) {
 }
 
 function buildIndexFundKebabMenu() {
-  const items = INDEX_FUND_SELL_QUANTITIES.map((qty) => ({
-    label: `Sell ${qty} share${qty === 1 ? '' : 's'}`,
-    disabled: state.indexFundShares < qty,
-    onClick: () => sellIndexFundShares(qty),
-  }));
+  return buildKebabMenu(() => {
+    const items = INDEX_FUND_SELL_QUANTITIES.map((qty) => ({
+      label: `Sell ${qty} share${qty === 1 ? '' : 's'}`,
+      disabled: state.indexFundShares < qty,
+      onClick: () => sellIndexFundShares(qty),
+    }));
 
-  items.push({
-    label: 'Sell all shares',
-    disabled: state.indexFundShares <= 0,
-    onClick: () => sellIndexFundShares(state.indexFundShares),
+    items.push({
+      label: 'Sell all shares',
+      disabled: state.indexFundShares <= 0,
+      onClick: () => sellIndexFundShares(state.indexFundShares),
+    });
+
+    return items;
   });
-
-  return buildKebabMenu(items);
 }
 
 function buildDebtTotalRow() {
@@ -1194,19 +1316,21 @@ function payTowardDebt(debt, amount) {
 }
 
 function buildDebtKebabMenu(debt) {
-  const items = DEBT_EXTRA_PAYMENT_AMOUNTS.map((amount) => ({
-    label: `Pay extra ${formatMoney(amount)}`,
-    disabled: state.cash < amount,
-    onClick: () => payTowardDebt(debt, amount),
-  }));
+  return buildKebabMenu(() => {
+    const items = DEBT_EXTRA_PAYMENT_AMOUNTS.map((amount) => ({
+      label: `Pay extra ${formatMoney(amount)}`,
+      disabled: state.cash < amount,
+      onClick: () => payTowardDebt(debt, amount),
+    }));
 
-  items.push({
-    label: 'Pay in full',
-    disabled: state.cash < debt.principal,
-    onClick: () => payTowardDebt(debt, debt.principal),
+    items.push({
+      label: 'Pay in full',
+      disabled: state.cash < debt.principal,
+      onClick: () => payTowardDebt(debt, debt.principal),
+    });
+
+    return items;
   });
-
-  return buildKebabMenu(items);
 }
 
 function buildDebtLine(debt, index) {
@@ -1248,6 +1372,12 @@ function buildCashFlowLines() {
   const costOfLivingItems = (state.adultDependents + state.childDependents) > 0
     ? [{ label: 'Cost of Living', amount: costOfLivingMonthly(), id: 'cashflow-cost-of-living' }]
     : [];
+  const socialLifeItems = state.unlocked.lifestyle
+    ? [{ label: 'Social Life', amount: socialLifeMonthly(), id: 'cashflow-social-life' }]
+    : [];
+  const apartmentRentItems = state.home === 'Apartment'
+    ? [{ label: 'Apartment Rent', amount: apartmentRentMonthly(), id: 'cashflow-apartment-rent' }]
+    : [];
 
   const rentalMortgageDebts = new Set(state.rentalProperties.map((r) => r.debt));
   const standaloneDebtItems = state.debts
@@ -1273,6 +1403,8 @@ function buildCashFlowLines() {
     ...dividendItems.map((item) => ({ sortAmount: item.amount, items: [item] })),
     ...standaloneDebtItems.map((item) => ({ sortAmount: item.amount, items: [item] })),
     ...costOfLivingItems.map((item) => ({ sortAmount: item.amount, items: [item] })),
+    ...socialLifeItems.map((item) => ({ sortAmount: item.amount, items: [item] })),
+    ...apartmentRentItems.map((item) => ({ sortAmount: item.amount, items: [item] })),
     ...rentalGroups,
   ];
 
@@ -1291,6 +1423,16 @@ function renderSections() {
   if (state.unlocked.home) {
     leftEl.appendChild(buildSectionCard('Home', `<div class="section-line"><span>${state.home}</span></div>`));
     leftEl.appendChild(buildSectionCard('Occupation', `<div class="section-line"><span>${getOccupation()}</span></div>`));
+  }
+
+  if (state.unlocked.lifestyle) {
+    const lifestyleCard = buildSectionCard('Lifestyle', '');
+    lifestyleCard.appendChild(buildKebabLine(currentLifestyleTier().label, buildLifestyleKebabMenu()));
+    leftEl.appendChild(lifestyleCard);
+
+    const socialLifeCard = buildSectionCard('Social Life', '');
+    socialLifeCard.appendChild(buildKebabLine(currentSocialLifeTier().label, buildSocialLifeKebabMenu(), 'social-standing'));
+    leftEl.appendChild(socialLifeCard);
   }
 
   if (state.unlocked.cashFlow) {
@@ -1423,6 +1565,24 @@ function updateInvestmentDisplays() {
     costOfLivingEl.textContent = formatMoney(amount, period.suffix, period.decimals);
     costOfLivingEl.className = valueClass(amount);
     applyMoneyDataAttrs(costOfLivingEl, amount, period.suffix);
+  }
+
+  const socialLifeEl = document.getElementById('cashflow-social-life');
+  if (socialLifeEl) {
+    const period = CASH_FLOW_PERIODS[state.cashFlowPeriod];
+    const amount = convertMonthlyToPeriod(socialLifeMonthly(), state.cashFlowPeriod);
+    socialLifeEl.textContent = formatMoney(amount, period.suffix, period.decimals);
+    socialLifeEl.className = valueClass(amount);
+    applyMoneyDataAttrs(socialLifeEl, amount, period.suffix);
+  }
+
+  const apartmentRentEl = document.getElementById('cashflow-apartment-rent');
+  if (apartmentRentEl) {
+    const period = CASH_FLOW_PERIODS[state.cashFlowPeriod];
+    const amount = convertMonthlyToPeriod(apartmentRentMonthly(), state.cashFlowPeriod);
+    apartmentRentEl.textContent = formatMoney(amount, period.suffix, period.decimals);
+    apartmentRentEl.className = valueClass(amount);
+    applyMoneyDataAttrs(apartmentRentEl, amount, period.suffix);
   }
 
   state.rentalProperties.forEach((r) => {
@@ -1831,11 +1991,6 @@ function buildHousingGroup() {
   group.className = 'action-group';
   group.innerHTML = '<h4>Housing</h4>';
 
-  const line = document.createElement('div');
-  line.className = 'section-line';
-  line.innerHTML = `<span>${state.home}</span>`;
-  group.appendChild(line);
-
   if (state.ownedHome) {
     const equity = Math.max(0, state.ownedHome.value - state.ownedHome.debt.principal);
     group.appendChild(makeActionButton(
@@ -2206,6 +2361,10 @@ function tooltipTextFor(el) {
     if (!debt) return '';
     const ratePct = (debt.interestRate * 100).toFixed(1);
     return `${ratePct}% APR — ${formatMoneyFull(debt.interestPaid)} interest accrued to date`;
+  }
+  if (el.dataset.tooltipType === 'social-standing') {
+    const target = currentSocialLifeTier().socialStandingTarget;
+    return `Social Standing: ${state.socialStanding.toFixed(2)}x promotion odds\nDrifting toward: ${target.toFixed(2)}x (${currentSocialLifeTier().label})`;
   }
   if (el.dataset.tooltipType === 'happiness-history') {
     const scoreLines = [
