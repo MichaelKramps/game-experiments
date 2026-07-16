@@ -180,6 +180,8 @@ const state = {
   businessAttempts: 0,
   sideHustleCost: SIDE_HUSTLE_COST,
   businessCost: BUSINESS_COST,
+  ventureIncomeBase: VENTURE_INCOME_BASE,
+  ventureIncomePerAttempt: VENTURE_INCOME_PER_ATTEMPT,
   indexFundPrice: INDEX_FUND_STARTING_PRICE,
   indexFundShares: 0,
   indexFundBuyQuantity: 1,
@@ -666,8 +668,8 @@ function resolveVentureOutcome(kind, attemptsPrior) {
   if (!isFailure) {
     baseRoll = cubicRoll();
     attemptRoll = cubicRoll();
-    baseComponent = VENTURE_INCOME_BASE * multiplier * baseRoll.weighted;
-    attemptComponent = VENTURE_INCOME_PER_ATTEMPT * multiplier * attemptsPrior * attemptRoll.weighted;
+    baseComponent = state.ventureIncomeBase * multiplier * baseRoll.weighted;
+    attemptComponent = state.ventureIncomePerAttempt * multiplier * attemptsPrior * attemptRoll.weighted;
     amount = (baseComponent + attemptComponent) * educationMultiplier;
   }
 
@@ -684,8 +686,8 @@ function resolveVentureOutcome(kind, attemptsPrior) {
       baseRandomCubed: baseRoll.weighted,
       attemptRandomRaw: attemptRoll.raw,
       attemptRandomCubed: attemptRoll.weighted,
-      baseComponent: `${VENTURE_INCOME_BASE} * ${multiplier} * ${baseRoll.weighted} = ${baseComponent}`,
-      attemptComponent: `${VENTURE_INCOME_PER_ATTEMPT} * ${multiplier} * ${attemptsPrior} * ${attemptRoll.weighted} = ${attemptComponent}`,
+      baseComponent: `${state.ventureIncomeBase} * ${multiplier} * ${baseRoll.weighted} = ${baseComponent}`,
+      attemptComponent: `${state.ventureIncomePerAttempt} * ${multiplier} * ${attemptsPrior} * ${attemptRoll.weighted} = ${attemptComponent}`,
       preEducationTotal: baseComponent + attemptComponent,
     }),
     finalAmount: amount,
@@ -898,6 +900,8 @@ function advanceSimulation(deltaGameHours) {
   state.apartmentRentAmount += state.apartmentRentAmount * inflationStep;
   state.sideHustleCost += state.sideHustleCost * inflationStep;
   state.businessCost += state.businessCost * inflationStep;
+  state.ventureIncomeBase += state.ventureIncomeBase * inflationStep;
+  state.ventureIncomePerAttempt += state.ventureIncomePerAttempt * inflationStep;
   HOME_TIERS.forEach((tier) => {
     tier.price += tier.price * inflationStep;
   });
