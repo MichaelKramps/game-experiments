@@ -269,6 +269,66 @@
       align-items: center;
       gap: 8px;
     }
+    .line-value-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .kebab-menu {
+      display: inline-flex;
+    }
+    .kebab-toggle {
+      background: transparent;
+      border: 1px solid #2a2a4a;
+      border-radius: 4px;
+      color: #888;
+      font-family: monospace;
+      font-size: 0.85rem;
+      line-height: 1;
+      padding: 2px 6px;
+      cursor: pointer;
+    }
+    .kebab-toggle:hover {
+      border-color: #44ff88;
+      color: #44ff88;
+    }
+    .kebab-popover {
+      display: none;
+      position: fixed;
+      background: #1a1a2e;
+      border: 1px solid #2a2a4a;
+      border-radius: 6px;
+      padding: 4px;
+      min-width: 170px;
+      z-index: 300;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    }
+    .kebab-popover.open {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .kebab-option {
+      background: transparent;
+      border: none;
+      border-radius: 4px;
+      color: #eee;
+      font-family: monospace;
+      font-size: 0.8rem;
+      text-align: left;
+      padding: 6px 8px;
+      cursor: pointer;
+      white-space: nowrap;
+      width: 100%;
+    }
+    .kebab-option:hover:not(:disabled) {
+      background: #2a2a4a;
+      color: #44ff88;
+    }
+    .kebab-option:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
     .progress-ring {
       transform: rotate(-90deg);
       flex-shrink: 0;

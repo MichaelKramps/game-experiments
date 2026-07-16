@@ -7,7 +7,6 @@ const PART_TIME_JOB_PAY = 900; // half of the entry-level job
 const INDEX_FUND_STARTING_PRICE = 100;
 const INDEX_FUND_GROWTH_RATE = 0.07; // 7% APR share price appreciation, compounds every tick
 const INDEX_FUND_DIVIDEND_YIELD = 0.02; // 2% APR dividend on current holdings value
-const EXTRA_PAYMENT_AMOUNTS = [100, 1000, 10000];
 const DEBT_INTEREST_RATE = 0.05; // 5% APR, compounds every tick
 const INFLATION_RATE = 0.03; // 3% APR cost-of-living / wage growth baseline
 const PROMOTION_BASE_CHANCE = 0.15; // 15%/year at neutral social life
@@ -36,6 +35,11 @@ const APARTMENT_RENT_AMOUNT = -900;
 const ADULT_DEPENDENT_COST = 600; // $/mo cost of living per adult dependent
 const CHILD_DEPENDENT_COST = 400; // $/mo cost of living per child dependent
 
+// Listing prices, not per-owned-property values — advanceSimulation grows
+// tier.price with inflation directly (mutated in place), so a newly bought
+// home/rental starts at whatever the current inflated listing price is.
+// Each owned property's own `value` then appreciates independently from
+// that starting point (see buyHome/buyRentalProperty).
 const HOME_TIERS = [
   { key: 'starter', label: 'Starter Home', price: 200000 },
   { key: 'midsize', label: 'Mid-size Home', price: 400000 },
@@ -54,7 +58,6 @@ const RENTAL_TIERS = [
 const RENTAL_DOWN_PAYMENT_RATIO = 0.25;
 const RENTAL_MORTGAGE_RATE = 0.065; // 6.5% APR, amortized like a 30-year fixed mortgage
 const RENTAL_MORTGAGE_TERM_YEARS = 30;
-const RENTAL_APPRECIATION_RATE = 0.035; // 3.5% APR value appreciation, compounds every tick
 const RENTAL_GROSS_RENT_YIELD = 0.09; // APR gross rent as a fraction of current property value
 const RENTAL_SELF_MANAGE_EXPENSE_RATIO = 0.2; // of gross rent, maintenance/vacancy
 const RENTAL_MANAGEMENT_FEE_RATIO = 0.15; // of gross rent, extra cut when paying a management company
@@ -142,15 +145,18 @@ const state = {
   parttimeJobRate: null,
   sideHustleAttempts: 0,
   businessAttempts: 0,
+  sideHustleCost: SIDE_HUSTLE_COST,
+  businessCost: BUSINESS_COST,
   indexFundPrice: INDEX_FUND_STARTING_PRICE,
   indexFundShares: 0,
   indexFundBuyQuantity: 1,
   adultDependents: 1, // the player themself
   childDependents: 0,
+  adultDependentCost: ADULT_DEPENDENT_COST,
+  childDependentCost: CHILD_DEPENDENT_COST,
   happiness: 'neutral',
   happinessScore: 6,
   happinessHours: { miserable: 0, unhappy: 0, neutral: 0, happy: 0, lovingLife: 0 },
-  extraPaymentAmount: 1000,
   graduatesAtAge: null,
   housedAfterGraduation: false,
   unlocked: { home: false, debt: false, assets: false, cashFlow: false },
@@ -363,7 +369,7 @@ function indexFundMonthlyDividend() {
 }
 
 function costOfLivingMonthly() {
-  return -((state.adultDependents * ADULT_DEPENDENT_COST) + (state.childDependents * CHILD_DEPENDENT_COST));
+  return -((state.adultDependents * state.adultDependentCost) + (state.childDependents * state.childDependentCost));
 }
 
 // Standard fixed-payment mortgage amortization, matching how a real 30-year
@@ -379,8 +385,9 @@ function rentalGrossRentMonthly(rental) {
   return (rental.value * RENTAL_GROSS_RENT_YIELD) / 12;
 }
 
-// Rent scales with the property's current (appreciated) value, same as how
-// index fund dividends scale with current share value.
+// Rent scales with the property's current value, which appreciates at
+// INFLATION_RATE (see advanceSimulation) — same rate as everything else,
+// rather than its own separate market-appreciation rate.
 function rentalNetIncomeMonthly(rental) {
   const expenseRatio = rental.selfManaged
     ? RENTAL_SELF_MANAGE_EXPENSE_RATIO
@@ -430,6 +437,57 @@ function fullTimeJobPay() {
   return FULLTIME_JOB_BASE_PAY * multiplier;
 }
 
+// Shared by the initial button build and refreshDynamicDescriptions (called
+// every tick) — a single source of truth so the two can't drift apart the
+// way separately-duplicated description strings did before.
+function fulltimeJobDescText() {
+  const wouldExceed = totalJobUnits() + FULLTIME_JOB_UNITS > MAX_JOB_UNITS;
+  if (wouldExceed) return `Counts as 1 job — would exceed your ${MAX_JOB_UNITS} job limit. Quit a job first.`;
+  if (isStudent()) return `Counts as 1 job. You're still in school — this job won't pay until you graduate in ${Math.max(0, state.graduatesAtAge - state.age).toFixed(2)} years.`;
+  const rate = state.fulltimeJobRate ?? fullTimeJobPay();
+  return `+${formatMoney(rate, '/mo')}. Counts as 1 job (max ${MAX_JOB_UNITS} at once).`;
+}
+
+function parttimeJobDescText() {
+  const wouldExceed = totalJobUnits() + PARTTIME_JOB_UNITS > MAX_JOB_UNITS;
+  const rate = state.parttimeJobRate ?? PART_TIME_JOB_PAY;
+  return wouldExceed
+    ? `+${formatMoney(rate, '/mo')}. Counts as 0.5 jobs — would exceed your ${MAX_JOB_UNITS} job limit. Quit a job first.`
+    : `+${formatMoney(rate, '/mo')}. Counts as 0.5 jobs (max ${MAX_JOB_UNITS} at once).`;
+}
+
+function sideHustleDescText() {
+  const wouldExceed = totalJobUnits() + SIDE_HUSTLE_UNITS > MAX_JOB_UNITS;
+  const failChance = ventureFailChance(totalVentureAttempts());
+  return wouldExceed
+    ? `Costs ${formatMoney(state.sideHustleCost)}. Counts as 0.5 jobs — would exceed your ${MAX_JOB_UNITS} job limit. Quit a job first.`
+    : `Costs ${formatMoney(state.sideHustleCost)}. Counts as 0.5 jobs. Takes ${SIDE_HUSTLE_DEVELOP_MONTHS} months to find out if it pans out — ${failChance}% chance it earns $0/mo. Odds improve each time you try.`;
+}
+
+function businessDescText() {
+  const wouldExceed = totalJobUnits() + BUSINESS_UNITS > MAX_JOB_UNITS;
+  const failChance = ventureFailChance(totalVentureAttempts());
+  return wouldExceed
+    ? `Costs ${formatMoney(state.businessCost)}. Counts as 1.5 jobs — would exceed your ${MAX_JOB_UNITS} job limit. Quit a job first.`
+    : `Costs ${formatMoney(state.businessCost)}. Counts as 1.5 jobs. Takes ${BUSINESS_DEVELOP_MONTHS} months to find out if it pans out — ${failChance}% chance it earns $0/mo. Odds improve each time you try.`;
+}
+
+function homeBuyDescText(tier) {
+  const downPayment = tier.price * HOME_DOWN_PAYMENT_RATIO;
+  return `${formatMoney(downPayment, '', 2)} down payment on ${formatMoney(tier.price, '', 2)}, financed at ${(HOME_MORTGAGE_RATE * 100).toFixed(1)}% APR. Ends your rent payments.`;
+}
+
+function rentalBuyDescText(tier) {
+  const downPayment = tier.price * RENTAL_DOWN_PAYMENT_RATIO;
+  const selfManaged = state.rentalManagementChoice === 'self';
+  const canSelfManageNew = totalJobUnits() + tier.selfManageJobUnits <= MAX_JOB_UNITS;
+  return selfManaged
+    ? (canSelfManageNew
+      ? `${formatMoney(downPayment, '', 2)} down payment on ${formatMoney(tier.price, '', 2)}. Uses ${tier.selfManageJobUnits} job units for better cash flow.`
+      : `${formatMoney(downPayment, '', 2)} down payment. Uses ${tier.selfManageJobUnits} job units — would exceed your ${MAX_JOB_UNITS} job limit.`)
+    : `${formatMoney(downPayment, '', 2)} down payment on ${formatMoney(tier.price, '', 2)}. No job units required, lower cash flow.`;
+}
+
 function getOrInitFulltimeRate(baseRate) {
   if (state.fulltimeJobRate == null) state.fulltimeJobRate = baseRate;
   return state.fulltimeJobRate;
@@ -448,37 +506,21 @@ function socialLifePromotionMultiplier() {
 
 let pendingCareerReviewMessage = null;
 
-// Applies once per crossed game-year boundary (see advanceSimulation).
-// Grows the persisted job rates via cost-of-living, rolls a promotion
-// chance for full-time work, and stages a summary for the annual review
-// modal. Returns whether anything changed (feeds needsFullRender).
-function applyAnnualCareerGrowth() {
-  const lines = [];
-  const holdsParttime = state.jobs.some((j) => j.type === 'parttime');
+// Cost-of-living growth for job rates now compounds continuously in
+// advanceSimulation, same as index fund price / property values. This is
+// the one remaining discrete yearly event: a promotion roll for full-time
+// work. Returns whether it happened (feeds needsFullRender).
+function applyAnnualPromotionCheck() {
   const holdsFulltime = state.jobs.some((j) => j.type === 'fulltime') && !isStudent();
+  if (!holdsFulltime || state.fulltimeJobRate == null) return false;
+  if (Math.random() >= PROMOTION_BASE_CHANCE * socialLifePromotionMultiplier()) return false;
 
-  if (holdsParttime && state.parttimeJobRate != null) {
-    state.parttimeJobRate *= 1 + INFLATION_RATE;
-    lines.push(`Part-Time Job: cost-of-living raise +${(INFLATION_RATE * 100).toFixed(1)}% → ${formatMoneyFull(state.parttimeJobRate, '/mo')}`);
-  }
-
-  if (holdsFulltime && state.fulltimeJobRate != null) {
-    state.fulltimeJobRate *= 1 + INFLATION_RATE;
-    lines.push(`Full-Time Job: cost-of-living raise +${(INFLATION_RATE * 100).toFixed(1)}% → ${formatMoneyFull(state.fulltimeJobRate, '/mo')}`);
-    if (Math.random() < PROMOTION_BASE_CHANCE * socialLifePromotionMultiplier()) {
-      state.fulltimeJobRate *= 1 + PROMOTION_PAY_BUMP;
-      lines.push(`Promoted! Extra +${(PROMOTION_PAY_BUMP * 100).toFixed(0)}% → ${formatMoneyFull(state.fulltimeJobRate, '/mo')}`);
-    }
-  }
-
-  if (!lines.length) return false;
-
+  state.fulltimeJobRate *= 1 + PROMOTION_PAY_BUMP;
   state.jobs.forEach((job) => {
-    if (job.type === 'parttime') job.amount = state.parttimeJobRate;
     if (job.type === 'fulltime' && !isStudent()) job.amount = state.fulltimeJobRate;
   });
 
-  pendingCareerReviewMessage = ['Year in Review', '', ...lines].join('\n');
+  pendingCareerReviewMessage = ['Promoted!', '', `Full-Time Job pay increased +${(PROMOTION_PAY_BUMP * 100).toFixed(0)}% → ${formatMoneyFull(state.fulltimeJobRate, '/mo')}`].join('\n');
   return true;
 }
 
@@ -698,6 +740,42 @@ function toggleRentalManagement(rental) {
   rental.selfManaged = true;
 }
 
+function buildRentalKebabMenu(rental) {
+  const canSelfManage = totalJobUnits() + rental.jobUnits <= MAX_JOB_UNITS;
+  const items = [];
+
+  items.push(rental.selfManaged
+    ? {
+      label: 'Hire a Management Company',
+      onClick: () => {
+        toggleRentalManagement(rental);
+        recomputeCashFlow();
+        render();
+      },
+    }
+    : {
+      label: `Self-Manage for ${rental.jobUnits} jobs`,
+      disabled: !canSelfManage,
+      onClick: () => {
+        toggleRentalManagement(rental);
+        recomputeCashFlow();
+        render();
+      },
+    });
+
+  items.push({
+    label: `Sell ${rental.label}`,
+    onClick: () => {
+      sellRentalProperty(rental);
+      recomputeCashFlow();
+      recomputeNetWorth();
+      render();
+    },
+  });
+
+  return buildKebabMenu(items);
+}
+
 function totalAssetsValue() {
   const assetsValue = state.assets.reduce((sum, a) => sum + (a.value || 0), 0);
   const venturesValue = state.jobs.filter(isVentureJob).reduce((sum, j) => sum + ventureValue(j), 0);
@@ -726,7 +804,21 @@ function advanceSimulation(deltaGameHours) {
     state.ownedHome.value += state.ownedHome.value * HOME_APPRECIATION_RATE * (deltaGameHours / HOURS_PER_YEAR);
   }
   state.rentalProperties.forEach((r) => {
-    r.value += r.value * RENTAL_APPRECIATION_RATE * (deltaGameHours / HOURS_PER_YEAR);
+    r.value += r.value * INFLATION_RATE * (deltaGameHours / HOURS_PER_YEAR);
+  });
+
+  // Cost of living and every real-estate/venture list price grows with
+  // inflation continuously, same mechanism as everything else above.
+  const inflationStep = INFLATION_RATE * (deltaGameHours / HOURS_PER_YEAR);
+  state.adultDependentCost += state.adultDependentCost * inflationStep;
+  state.childDependentCost += state.childDependentCost * inflationStep;
+  state.sideHustleCost += state.sideHustleCost * inflationStep;
+  state.businessCost += state.businessCost * inflationStep;
+  HOME_TIERS.forEach((tier) => {
+    tier.price += tier.price * inflationStep;
+  });
+  RENTAL_TIERS.forEach((tier) => {
+    tier.price += tier.price * inflationStep;
   });
 
   let debtPaidOff = false;
@@ -774,7 +866,23 @@ function advanceSimulation(deltaGameHours) {
     graduationOccurred = true;
   }
 
-  const careerGrowthOccurred = crossedYear && applyAnnualCareerGrowth();
+  // Cost-of-living raises compound continuously, same as index fund price
+  // and property values, while the job is actively held — only the
+  // promotion roll below stays a discrete once-a-year event.
+  const holdsParttime = state.jobs.some((j) => j.type === 'parttime');
+  const holdsFulltime = state.jobs.some((j) => j.type === 'fulltime') && !isStudent();
+  if (holdsParttime && state.parttimeJobRate != null) {
+    state.parttimeJobRate += state.parttimeJobRate * INFLATION_RATE * (deltaGameHours / HOURS_PER_YEAR);
+  }
+  if (holdsFulltime && state.fulltimeJobRate != null) {
+    state.fulltimeJobRate += state.fulltimeJobRate * INFLATION_RATE * (deltaGameHours / HOURS_PER_YEAR);
+  }
+  state.jobs.forEach((job) => {
+    if (job.type === 'parttime') job.amount = state.parttimeJobRate;
+    if (job.type === 'fulltime' && !isStudent()) job.amount = state.fulltimeJobRate;
+  });
+
+  const promotionOccurred = crossedYear && applyAnnualPromotionCheck();
 
   recomputeCashFlow();
 
@@ -788,7 +896,7 @@ function advanceSimulation(deltaGameHours) {
   state.cash += (state.cashFlow / HOURS_PER_MONTH) * deltaGameHours;
   recomputeNetWorth();
 
-  return debtPaidOff || ventureResolved || graduationOccurred || happinessLevelChanged || careerGrowthOccurred;
+  return debtPaidOff || ventureResolved || graduationOccurred || happinessLevelChanged || promotionOccurred;
 }
 
 function tick() {
@@ -814,6 +922,7 @@ function tick() {
     updateActionAvailability();
     updateInvestmentDisplays();
     updateHappinessDisplay();
+    refreshDynamicDescriptions();
     updateScrollIndicator();
   }
 
@@ -849,6 +958,89 @@ function buildSectionCard(title, linesHtml) {
   card.className = 'section-card';
   card.innerHTML = `<h3>${title}</h3>${linesHtml}`;
   return card;
+}
+
+// Only one kebab popover can be open at a time; this holds that popover's
+// own close function so closeAllKebabMenus() doesn't need to know how each
+// one was opened.
+let activeKebabClose = null;
+
+function closeAllKebabMenus() {
+  if (activeKebabClose) activeKebabClose();
+}
+document.addEventListener('click', closeAllKebabMenus);
+document.getElementById('col-right-scroll').addEventListener('scroll', closeAllKebabMenus);
+window.addEventListener('resize', closeAllKebabMenus);
+
+// Generic "..." action menu for moving per-line-item actions (debt extra
+// payments, and eventually stocks/real estate actions) off the middle
+// column and onto their line item in the right column. `items` is an array
+// of { label, disabled, onClick }.
+//
+// The popover is appended to <body> and positioned with `fixed` coordinates
+// computed from the toggle button's screen position, rather than living
+// inside the row via `absolute` — the right column scrolls
+// (`overflow-y: auto`, which per spec also clips the x-axis), and any
+// descendant of a clipping ancestor gets clipped regardless of its own
+// `position`, `fixed` included. Escaping to <body> is the only way out.
+function buildKebabMenu(items) {
+  const wrap = document.createElement('div');
+  wrap.className = 'kebab-menu';
+
+  const toggleBtn = document.createElement('button');
+  toggleBtn.className = 'kebab-toggle';
+  toggleBtn.textContent = '⋮';
+  toggleBtn.setAttribute('aria-label', 'Actions');
+
+  const popover = document.createElement('div');
+  popover.className = 'kebab-popover';
+  items.forEach((item) => {
+    const optionBtn = document.createElement('button');
+    optionBtn.className = 'kebab-option';
+    optionBtn.textContent = item.label;
+    optionBtn.disabled = Boolean(item.disabled);
+    optionBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closePopover();
+      item.onClick();
+    });
+    popover.appendChild(optionBtn);
+  });
+
+  function closePopover() {
+    popover.classList.remove('open');
+    if (popover.parentElement) popover.parentElement.removeChild(popover);
+    if (activeKebabClose === closePopover) activeKebabClose = null;
+  }
+
+  function openPopover() {
+    closeAllKebabMenus();
+    document.body.appendChild(popover);
+    popover.classList.add('open');
+
+    const rect = toggleBtn.getBoundingClientRect();
+    const width = popover.offsetWidth;
+    const height = popover.offsetHeight;
+    const left = Math.min(rect.right - width, window.innerWidth - width - 8);
+    const overflowsBottom = rect.bottom + 4 + height > window.innerHeight;
+    const top = overflowsBottom ? rect.top - height - 4 : rect.bottom + 4;
+    popover.style.left = `${Math.max(8, left)}px`;
+    popover.style.top = `${Math.max(8, top)}px`;
+
+    activeKebabClose = closePopover;
+  }
+
+  toggleBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (popover.classList.contains('open')) {
+      closePopover();
+    } else {
+      openPopover();
+    }
+  });
+
+  wrap.appendChild(toggleBtn);
+  return wrap;
 }
 
 function happinessLabel(key) {
@@ -928,6 +1120,59 @@ function buildAssetsTotalRow() {
   return row;
 }
 
+// options: { id, kebab } — both optional, mirrors buildDebtLine's shape.
+function buildAssetLine(label, value, options = {}) {
+  const row = document.createElement('div');
+  row.className = 'section-line';
+
+  const labelEl = document.createElement('span');
+  labelEl.textContent = label;
+
+  const valueWrap = document.createElement('span');
+  valueWrap.className = 'line-value-wrap';
+
+  const valueEl = document.createElement('span');
+  valueEl.className = 'neutral';
+  if (options.id) valueEl.id = options.id;
+  valueEl.textContent = formatMoney(value, '', 2);
+  applyMoneyDataAttrs(valueEl, value, '');
+  valueWrap.appendChild(valueEl);
+
+  if (options.kebab) valueWrap.appendChild(options.kebab);
+
+  row.appendChild(labelEl);
+  row.appendChild(valueWrap);
+  return row;
+}
+
+const INDEX_FUND_SELL_QUANTITIES = [1, 10, 100];
+
+function sellIndexFundShares(quantity) {
+  const shares = Math.min(quantity, state.indexFundShares);
+  if (shares <= 0) return;
+  state.cash += shares * state.indexFundPrice;
+  state.indexFundShares -= shares;
+  recomputeCashFlow();
+  recomputeNetWorth();
+  render();
+}
+
+function buildIndexFundKebabMenu() {
+  const items = INDEX_FUND_SELL_QUANTITIES.map((qty) => ({
+    label: `Sell ${qty} share${qty === 1 ? '' : 's'}`,
+    disabled: state.indexFundShares < qty,
+    onClick: () => sellIndexFundShares(qty),
+  }));
+
+  items.push({
+    label: 'Sell all shares',
+    disabled: state.indexFundShares <= 0,
+    onClick: () => sellIndexFundShares(state.indexFundShares),
+  });
+
+  return buildKebabMenu(items);
+}
+
 function buildDebtTotalRow() {
   const total = -totalDebtValue();
   const row = document.createElement('div');
@@ -936,18 +1181,72 @@ function buildDebtTotalRow() {
   return row;
 }
 
+const DEBT_EXTRA_PAYMENT_AMOUNTS = [1000, 10000];
+
+function payTowardDebt(debt, amount) {
+  const payment = Math.min(amount, state.cash, debt.principal);
+  if (payment <= 0) return;
+  state.cash -= payment;
+  debt.principal = Math.max(0, debt.principal - payment);
+  recomputeCashFlow();
+  recomputeNetWorth();
+  render();
+}
+
+function buildDebtKebabMenu(debt) {
+  const items = DEBT_EXTRA_PAYMENT_AMOUNTS.map((amount) => ({
+    label: `Pay extra ${formatMoney(amount)}`,
+    disabled: state.cash < amount,
+    onClick: () => payTowardDebt(debt, amount),
+  }));
+
+  items.push({
+    label: 'Pay in full',
+    disabled: state.cash < debt.principal,
+    onClick: () => payTowardDebt(debt, debt.principal),
+  });
+
+  return buildKebabMenu(items);
+}
+
+function buildDebtLine(debt, index) {
+  const row = document.createElement('div');
+  row.className = 'section-line';
+
+  const labelEl = document.createElement('span');
+  labelEl.dataset.tooltipType = 'debt-interest';
+  labelEl.dataset.debtIndex = index;
+  labelEl.textContent = debt.label;
+
+  const valueWrap = document.createElement('span');
+  valueWrap.className = 'line-value-wrap';
+
+  const valueEl = document.createElement('span');
+  valueEl.className = 'negative';
+  valueEl.id = `debt-balance-${index}`;
+  valueEl.textContent = formatMoney(-debt.principal);
+  applyMoneyDataAttrs(valueEl, -debt.principal, '');
+  valueWrap.appendChild(valueEl);
+
+  if (debt.principal > 0) valueWrap.appendChild(buildDebtKebabMenu(debt));
+
+  row.appendChild(labelEl);
+  row.appendChild(valueWrap);
+  return row;
+}
+
 // Builds the Cash Flow line items ordered biggest positive to biggest
 // negative, except a rental's mortgage payment always stays directly below
 // that rental's rent regardless of the payment's own size, since they're
 // really one purchase decision split into two lines.
 function buildCashFlowLines() {
-  const jobItems = state.jobs.map((j) => ({ label: ventureDisplayLabel(j), amount: j.amount }));
+  const jobItems = state.jobs.map((j) => ({ label: ventureDisplayLabel(j), amount: j.amount, id: `cashflow-job-${j.id}` }));
   const otherItems = state.cashFlowItems.map((item) => ({ label: item.label, amount: item.amount }));
   const dividendItems = state.indexFundShares > 0
     ? [{ label: 'Index Fund Dividends', amount: indexFundMonthlyDividend(), id: 'cashflow-index-fund-dividend' }]
     : [];
   const costOfLivingItems = (state.adultDependents + state.childDependents) > 0
-    ? [{ label: 'Cost of Living', amount: costOfLivingMonthly() }]
+    ? [{ label: 'Cost of Living', amount: costOfLivingMonthly(), id: 'cashflow-cost-of-living' }]
     : [];
 
   const rentalMortgageDebts = new Set(state.rentalProperties.map((r) => r.debt));
@@ -1012,39 +1311,54 @@ function renderSections() {
   if (state.unlocked.assets) {
     const assetItems = [];
     if (state.indexFundShares > 0) {
-      assetItems.push({ label: `Index Fund (${state.indexFundShares} shares)`, value: indexFundValue(), id: 'asset-value-index-fund' });
+      const value = indexFundValue();
+      assetItems.push({
+        value,
+        build: () => buildAssetLine(`Index Fund (${state.indexFundShares} shares)`, value, { id: 'asset-value-index-fund', kebab: buildIndexFundKebabMenu() }),
+      });
     }
     state.jobs.filter(isVentureJob).forEach((j) => {
-      assetItems.push({ label: ventureDisplayLabel(j), value: ventureValue(j) });
+      assetItems.push({ value: ventureValue(j), build: () => buildAssetLine(ventureDisplayLabel(j), ventureValue(j)) });
     });
     if (state.ownedHome) {
-      assetItems.push({ label: state.ownedHome.label, value: state.ownedHome.value, id: 'asset-value-home' });
+      assetItems.push({ value: state.ownedHome.value, build: () => buildAssetLine(state.ownedHome.label, state.ownedHome.value, { id: 'asset-value-home' }) });
     }
     state.rentalProperties.forEach((r) => {
-      assetItems.push({ label: r.label, value: r.value, id: `asset-value-rental-${r.id}` });
+      assetItems.push({
+        value: r.value,
+        build: () => buildAssetLine(`${r.label} (${r.selfManaged ? 'Self-Managed' : 'Managed'})`, r.value, { id: `asset-value-rental-${r.id}`, kebab: buildRentalKebabMenu(r) }),
+      });
     });
     state.assets.forEach((a) => {
-      assetItems.push({ label: a.label, value: a.value || 0 });
+      assetItems.push({ value: a.value || 0, build: () => buildAssetLine(a.label, a.value || 0) });
     });
     assetItems.sort((a, b) => b.value - a.value);
-    const lines = assetItems.length
-      ? assetItems.map((item) => {
-          const idAttr = item.id ? ` id="${item.id}"` : '';
-          return `<div class="section-line"><span>${item.label}</span><span class="neutral"${idAttr}${moneyDataAttr(item.value, '')}>${formatMoney(item.value, '', 2)}</span></div>`;
-        }).join('')
-      : '<div class="section-line"><span>No assets yet.</span></div>';
-    const card = buildSectionCard('Assets', lines);
+
+    const card = buildSectionCard('Assets', '');
+    if (assetItems.length) {
+      assetItems.forEach((item) => card.appendChild(item.build()));
+    } else {
+      const emptyLine = document.createElement('div');
+      emptyLine.className = 'section-line';
+      emptyLine.innerHTML = '<span>No assets yet.</span>';
+      card.appendChild(emptyLine);
+    }
     card.appendChild(buildAssetsTotalRow());
     rightEl.appendChild(card);
   }
 
   if (state.unlocked.debt) {
-    const debtItems = state.debts.map((d, i) => ({ label: d.label, principal: d.principal, index: i }));
-    debtItems.sort((a, b) => b.principal - a.principal);
-    const lines = debtItems.length
-      ? debtItems.map(({ label, principal, index }) => `<div class="section-line"><span data-tooltip-type="debt-interest" data-debt-index="${index}">${label}</span><span class="negative" id="debt-balance-${index}"${moneyDataAttr(-principal, '')}>${formatMoney(-principal)}</span></div>`).join('')
-      : '<div class="section-line"><span>No debt.</span></div>';
-    const card = buildSectionCard('Debt', lines);
+    const debtItems = state.debts.map((d, i) => ({ debt: d, index: i }));
+    debtItems.sort((a, b) => b.debt.principal - a.debt.principal);
+    const card = buildSectionCard('Debt', '');
+    if (debtItems.length) {
+      debtItems.forEach(({ debt, index }) => card.appendChild(buildDebtLine(debt, index)));
+    } else {
+      const emptyLine = document.createElement('div');
+      emptyLine.className = 'section-line';
+      emptyLine.innerHTML = '<span>No debt.</span>';
+      card.appendChild(emptyLine);
+    }
     card.appendChild(buildDebtTotalRow());
     rightEl.appendChild(card);
   }
@@ -1102,6 +1416,15 @@ function updateInvestmentDisplays() {
     applyMoneyDataAttrs(dividendEl, amount, period.suffix);
   }
 
+  const costOfLivingEl = document.getElementById('cashflow-cost-of-living');
+  if (costOfLivingEl) {
+    const period = CASH_FLOW_PERIODS[state.cashFlowPeriod];
+    const amount = convertMonthlyToPeriod(costOfLivingMonthly(), state.cashFlowPeriod);
+    costOfLivingEl.textContent = formatMoney(amount, period.suffix, period.decimals);
+    costOfLivingEl.className = valueClass(amount);
+    applyMoneyDataAttrs(costOfLivingEl, amount, period.suffix);
+  }
+
   state.rentalProperties.forEach((r) => {
     const rentalFlowEl = document.getElementById(`cashflow-rental-${r.id}`);
     if (rentalFlowEl) {
@@ -1134,13 +1457,28 @@ function updateDebtBalances() {
 
 function updateJobDevelopmentDisplays() {
   state.jobs.forEach((job) => {
-    if (!jobLineNeedsLiveUpdate(job)) return;
-    const el = document.getElementById(`job-line-${job.id}`);
-    if (el) el.textContent = jobLineText(job);
+    if (jobLineNeedsLiveUpdate(job)) {
+      const el = document.getElementById(`job-line-${job.id}`);
+      if (el) el.textContent = jobLineText(job);
 
-    if (job.developing) {
-      const ringEl = document.getElementById(`job-progress-${job.id}`);
-      if (ringEl) ringEl.setAttribute('stroke-dashoffset', progressRingOffset(developmentProgressFraction(job)));
+      if (job.developing) {
+        const ringEl = document.getElementById(`job-progress-${job.id}`);
+        if (ringEl) ringEl.setAttribute('stroke-dashoffset', progressRingOffset(developmentProgressFraction(job)));
+      }
+    }
+
+    // Full-time/part-time pay now compounds continuously (see
+    // advanceSimulation), so its Cash Flow line needs the same live-patch
+    // treatment already given to index fund dividends and rental income.
+    if (job.type === 'fulltime' || job.type === 'parttime') {
+      const cashFlowEl = document.getElementById(`cashflow-job-${job.id}`);
+      if (cashFlowEl) {
+        const period = CASH_FLOW_PERIODS[state.cashFlowPeriod];
+        const amount = convertMonthlyToPeriod(job.amount, state.cashFlowPeriod);
+        cashFlowEl.textContent = formatMoney(amount, period.suffix, period.decimals);
+        cashFlowEl.className = valueClass(amount);
+        applyMoneyDataAttrs(cashFlowEl, amount, period.suffix);
+      }
     }
   });
 }
@@ -1263,70 +1601,16 @@ function buildBuyIndexFundControl() {
     if (state.cash < totalCost) return;
     state.cash -= totalCost;
     state.indexFundShares += qty;
+    // Don't leave the control minimized on the now-unaffordable quantity
+    // that was just bought — drop back to the smallest option.
+    if (state.cash < state.indexFundPrice * state.indexFundBuyQuantity) {
+      state.indexFundBuyQuantity = 1;
+    }
     recomputeCashFlow();
     recomputeNetWorth();
     render();
   });
   const disabled = state.cash < cost;
-  btn.disabled = disabled;
-  btn.classList.toggle('locked', disabled);
-
-  return btn;
-}
-
-function buildExtraPaymentControl(debt, index) {
-  const btn = document.createElement('button');
-  btn.className = 'choice-btn';
-  btn.id = `action-extra-payment-${index}`;
-
-  const labelEl = document.createElement('div');
-  labelEl.className = 'choice-label';
-  labelEl.textContent = `Extra Payment on ${debt.label}`;
-
-  const amountSelect = document.createElement('select');
-  amountSelect.id = `extra-payment-amount-select-${index}`;
-  amountSelect.className = 'period-select';
-  EXTRA_PAYMENT_AMOUNTS.forEach((amt) => {
-    const option = document.createElement('option');
-    option.value = amt;
-    option.textContent = formatMoney(amt);
-    if (amt === state.extraPaymentAmount) option.selected = true;
-    amountSelect.appendChild(option);
-  });
-  // Nested inside the button for layout, but must not trigger a payment
-  // when the player is just opening/choosing from the dropdown.
-  ['click', 'mousedown', 'change'].forEach((eventName) => {
-    amountSelect.addEventListener(eventName, (e) => e.stopPropagation());
-  });
-  amountSelect.addEventListener('change', (e) => {
-    state.extraPaymentAmount = Number(e.target.value);
-    render();
-  });
-
-  const descEl = document.createElement('div');
-  descEl.className = 'choice-desc';
-  descEl.textContent = 'Pay toward the principal.';
-
-  const costEl = document.createElement('div');
-  costEl.className = 'choice-cost';
-  costEl.textContent = formatMoney(state.extraPaymentAmount, '', 2);
-  applyMoneyDataAttrs(costEl, state.extraPaymentAmount, '');
-
-  btn.appendChild(labelEl);
-  btn.appendChild(amountSelect);
-  btn.appendChild(descEl);
-  btn.appendChild(costEl);
-
-  btn.addEventListener('click', () => {
-    const payment = Math.min(state.extraPaymentAmount, state.cash, debt.principal);
-    if (payment <= 0) return;
-    state.cash -= payment;
-    debt.principal = Math.max(0, debt.principal - payment);
-    recomputeCashFlow();
-    recomputeNetWorth();
-    render();
-  });
-  const disabled = state.cash < state.extraPaymentAmount;
   btn.disabled = disabled;
   btn.classList.toggle('locked', disabled);
 
@@ -1431,15 +1715,10 @@ function buildJobGroup() {
 
   if (!state.jobs.some((j) => j.type === 'fulltime')) {
     const wouldExceed = units + FULLTIME_JOB_UNITS > MAX_JOB_UNITS;
-    const studying = isStudent();
     const btn = makeActionButton(
       'action-fulltime',
       'Get a Full-Time Job',
-      wouldExceed
-        ? `Counts as 1 job — would exceed your ${MAX_JOB_UNITS} job limit. Quit a job first.`
-        : studying
-          ? `Counts as 1 job. You're still in school — this job won't pay until you graduate in ${Math.max(0, state.graduatesAtAge - state.age).toFixed(2)} years.`
-          : `+${formatMoney(fullTimeJobPay(), '/mo')}. Counts as 1 job (max ${MAX_JOB_UNITS} at once).`,
+      fulltimeJobDescText(),
       () => {
         state.jobs.push({ id: state.nextJobId++, type: 'fulltime', label: 'Full-Time Job', units: FULLTIME_JOB_UNITS, amount: getOrInitFulltimeRate(fullTimeJobPay()) });
         recomputeCashFlow();
@@ -1460,9 +1739,7 @@ function buildJobGroup() {
     const btn = makeActionButton(
       'action-parttime',
       'Get a Part-Time Job',
-      wouldExceed
-        ? `+${formatMoney(PART_TIME_JOB_PAY, '/mo')}. Counts as 0.5 jobs — would exceed your ${MAX_JOB_UNITS} job limit. Quit a job first.`
-        : `+${formatMoney(PART_TIME_JOB_PAY, '/mo')}. Counts as 0.5 jobs (max ${MAX_JOB_UNITS} at once).`,
+      parttimeJobDescText(),
       () => {
         state.jobs.push({ id: state.nextJobId++, type: 'parttime', label: 'Part-Time Job', units: PARTTIME_JOB_UNITS, amount: getOrInitParttimeRate() });
         recomputeCashFlow();
@@ -1480,16 +1757,13 @@ function buildJobGroup() {
 
   if (!state.jobs.some((j) => j.type === 'sidehustle')) {
     const wouldExceed = units + SIDE_HUSTLE_UNITS > MAX_JOB_UNITS;
-    const failChance = ventureFailChance(totalVentureAttempts());
     const btn = makeActionButton(
       'action-sidehustle',
       'Start a Side Hustle',
-      wouldExceed
-        ? `Costs ${formatMoney(SIDE_HUSTLE_COST)}. Counts as 0.5 jobs — would exceed your ${MAX_JOB_UNITS} job limit. Quit a job first.`
-        : `Costs ${formatMoney(SIDE_HUSTLE_COST)}. Counts as 0.5 jobs. Takes ${SIDE_HUSTLE_DEVELOP_MONTHS} months to find out if it pans out — ${failChance}% chance it earns $0/mo. Odds improve each time you try.`,
+      sideHustleDescText(),
       () => {
-        if (state.cash < SIDE_HUSTLE_COST || totalJobUnits() + SIDE_HUSTLE_UNITS > MAX_JOB_UNITS) return;
-        state.cash -= SIDE_HUSTLE_COST;
+        if (state.cash < state.sideHustleCost || totalJobUnits() + SIDE_HUSTLE_UNITS > MAX_JOB_UNITS) return;
+        state.cash -= state.sideHustleCost;
         const { attemptsPrior, attemptNumber } = startVentureAttempt('sidehustle');
         state.jobs.push({
           id: state.nextJobId++,
@@ -1511,22 +1785,19 @@ function buildJobGroup() {
     costEl.className = 'choice-cost';
     costEl.id = 'sidehustle-cost-value';
     btn.appendChild(costEl);
-    applyVentureLockState(btn, costEl, SIDE_HUSTLE_COST, wouldExceed);
+    applyVentureLockState(btn, costEl, state.sideHustleCost, wouldExceed);
     jobGroup.appendChild(btn);
   }
 
   if (!state.jobs.some((j) => j.type === 'business')) {
     const wouldExceed = units + BUSINESS_UNITS > MAX_JOB_UNITS;
-    const failChance = ventureFailChance(totalVentureAttempts());
     const btn = makeActionButton(
       'action-business',
       'Start a Business',
-      wouldExceed
-        ? `Costs ${formatMoney(BUSINESS_COST)}. Counts as 1.5 jobs — would exceed your ${MAX_JOB_UNITS} job limit. Quit a job first.`
-        : `Costs ${formatMoney(BUSINESS_COST)}. Counts as 1.5 jobs. Takes ${BUSINESS_DEVELOP_MONTHS} months to find out if it pans out — ${failChance}% chance it earns $0/mo. Odds improve each time you try.`,
+      businessDescText(),
       () => {
-        if (state.cash < BUSINESS_COST || totalJobUnits() + BUSINESS_UNITS > MAX_JOB_UNITS) return;
-        state.cash -= BUSINESS_COST;
+        if (state.cash < state.businessCost || totalJobUnits() + BUSINESS_UNITS > MAX_JOB_UNITS) return;
+        state.cash -= state.businessCost;
         const { attemptsPrior, attemptNumber } = startVentureAttempt('business');
         state.jobs.push({
           id: state.nextJobId++,
@@ -1548,7 +1819,7 @@ function buildJobGroup() {
     costEl.className = 'choice-cost';
     costEl.id = 'business-cost-value';
     btn.appendChild(costEl);
-    applyVentureLockState(btn, costEl, BUSINESS_COST, wouldExceed);
+    applyVentureLockState(btn, costEl, state.businessCost, wouldExceed);
     jobGroup.appendChild(btn);
   }
 
@@ -1586,22 +1857,34 @@ function buildHousingGroup() {
     ));
   } else {
     HOME_TIERS.forEach((tier) => {
-      const downPayment = tier.price * HOME_DOWN_PAYMENT_RATIO;
-      const btn = makeActionButton(
-        `action-buy-home-${tier.key}`,
-        `Buy a ${tier.label}`,
-        `${formatMoney(downPayment, '', 2)} down payment on ${formatMoney(tier.price, '', 2)}, financed at ${(HOME_MORTGAGE_RATE * 100).toFixed(1)}% APR. Ends your rent payments.`,
-        () => {
-          buyHome(tier);
-          recomputeCashFlow();
-          recomputeNetWorth();
-          render();
-        },
-        downPayment,
-      );
-      const disabled = state.cash < downPayment;
-      btn.disabled = disabled;
-      btn.classList.toggle('locked', disabled);
+      const btn = document.createElement('button');
+      btn.className = 'choice-btn';
+      btn.id = `action-buy-home-${tier.key}`;
+
+      const labelEl = document.createElement('div');
+      labelEl.className = 'choice-label';
+      labelEl.textContent = `Buy a ${tier.label}`;
+
+      const descEl = document.createElement('div');
+      descEl.className = 'choice-desc';
+      descEl.textContent = homeBuyDescText(tier);
+
+      const costEl = document.createElement('div');
+      costEl.className = 'choice-cost';
+      costEl.id = `home-cost-${tier.key}`;
+
+      btn.appendChild(labelEl);
+      btn.appendChild(descEl);
+      btn.appendChild(costEl);
+
+      btn.addEventListener('click', () => {
+        buyHome(tier);
+        recomputeCashFlow();
+        recomputeNetWorth();
+        render();
+      });
+
+      applyHomeBuyLockState(btn, costEl, tier);
       group.appendChild(btn);
     });
   }
@@ -1649,18 +1932,9 @@ function buildRentalBuyButton(tier) {
     render();
   });
 
-  const downPayment = tier.price * RENTAL_DOWN_PAYMENT_RATIO;
-  const selfManaged = state.rentalManagementChoice === 'self';
-  const canSelfManageNew = totalJobUnits() + tier.selfManageJobUnits <= MAX_JOB_UNITS;
-  const canAfford = state.cash >= downPayment;
-
   const descEl = document.createElement('div');
   descEl.className = 'choice-desc';
-  descEl.textContent = selfManaged
-    ? (canSelfManageNew
-      ? `${formatMoney(downPayment, '', 2)} down payment on ${formatMoney(tier.price, '', 2)}. Uses ${tier.selfManageJobUnits} job units for better cash flow.`
-      : `${formatMoney(downPayment, '', 2)} down payment. Uses ${tier.selfManageJobUnits} job units — would exceed your ${MAX_JOB_UNITS} job limit.`)
-    : `${formatMoney(downPayment, '', 2)} down payment on ${formatMoney(tier.price, '', 2)}. No job units required, lower cash flow.`;
+  descEl.textContent = rentalBuyDescText(tier);
 
   const costEl = document.createElement('div');
   costEl.className = 'choice-cost';
@@ -1705,50 +1979,23 @@ function applyRentalBuyLockState(btn, costEl, tier) {
   btn.classList.toggle('locked', moneyGated);
 }
 
+function applyHomeBuyLockState(btn, costEl, tier) {
+  const downPayment = tier.price * HOME_DOWN_PAYMENT_RATIO;
+  const disabled = state.cash < downPayment;
+
+  if (disabled) {
+    costEl.textContent = formatMoney(downPayment, '', 2);
+    applyMoneyDataAttrs(costEl, downPayment, '');
+  }
+
+  btn.disabled = disabled;
+  btn.classList.toggle('locked', disabled);
+}
+
 function buildRealEstateGroup() {
   const group = document.createElement('div');
   group.className = 'action-group';
   group.innerHTML = '<h4>Real Estate</h4>';
-
-  state.rentalProperties.forEach((rental) => {
-    const netFlow = rentalNetIncomeMonthly(rental) - rental.debt.minPayment;
-    const line = document.createElement('div');
-    line.className = 'section-line';
-    line.innerHTML = `<span>${rental.label} (${rental.selfManaged ? 'Self-Managed' : 'Managed'})</span><span class="${valueClass(netFlow)}">${formatMoney(netFlow, '/mo', 2)}</span>`;
-    group.appendChild(line);
-
-    const canSelfManage = totalJobUnits() + rental.jobUnits <= MAX_JOB_UNITS;
-    const toggleBtn = makeActionButton(
-      `action-toggle-management-${rental.id}`,
-      rental.selfManaged ? 'Hire a Management Company' : 'Self-Manage This Property',
-      rental.selfManaged
-        ? 'Frees up job units, but reduces your cash flow.'
-        : `Uses ${rental.jobUnits} job units. Improves your cash flow.`,
-      () => {
-        if (!rental.selfManaged && !canSelfManage) {
-          showWarningModal(`You must quit a job before you can self-manage ${rental.label} — it would use ${rental.jobUnits} job units, exceeding your ${MAX_JOB_UNITS} job limit.`);
-          return;
-        }
-        toggleRentalManagement(rental);
-        recomputeCashFlow();
-        render();
-      },
-    );
-    group.appendChild(toggleBtn);
-
-    const equity = Math.max(0, rental.value - rental.debt.principal);
-    group.appendChild(makeActionButton(
-      `action-sell-rental-${rental.id}`,
-      `Sell ${rental.label}`,
-      `Adds ${formatMoney(equity, '', 2)} equity to your cash and pays off the remaining mortgage.`,
-      () => {
-        sellRentalProperty(rental);
-        recomputeCashFlow();
-        recomputeNetWorth();
-        render();
-      },
-    ));
-  });
 
   RENTAL_TIERS.forEach((tier) => {
     group.appendChild(buildRentalBuyButton(tier));
@@ -1773,18 +2020,38 @@ function renderIdleActions() {
   choicesEl.appendChild(investGroup);
 
   choicesEl.appendChild(buildRealEstateGroup());
+}
 
-  const activeDebts = state.debts.filter((d) => d.principal > 0);
-  if (activeDebts.length) {
-    const debtGroup = document.createElement('div');
-    debtGroup.className = 'action-group';
-    debtGroup.innerHTML = '<h4>Debt</h4>';
-    state.debts.forEach((d, i) => {
-      if (d.principal <= 0) return;
-      debtGroup.appendChild(buildExtraPaymentControl(d, i));
+// Every .choice-desc below embeds a dollar figure that now grows
+// continuously with inflation — this keeps that text current between full
+// renders, the same way updateInvestmentDisplays/updateJobDevelopmentDisplays
+// keep other continuously-changing numbers live. Reuses the same
+// description-builder functions the initial button build calls, so there's
+// one source of truth for each string.
+function refreshDynamicDescriptions() {
+  const fulltimeDesc = document.getElementById('action-fulltime')?.querySelector('.choice-desc');
+  if (fulltimeDesc) fulltimeDesc.textContent = fulltimeJobDescText();
+
+  const parttimeDesc = document.getElementById('action-parttime')?.querySelector('.choice-desc');
+  if (parttimeDesc) parttimeDesc.textContent = parttimeJobDescText();
+
+  const sideHustleDesc = document.getElementById('action-sidehustle')?.querySelector('.choice-desc');
+  if (sideHustleDesc) sideHustleDesc.textContent = sideHustleDescText();
+
+  const businessDesc = document.getElementById('action-business')?.querySelector('.choice-desc');
+  if (businessDesc) businessDesc.textContent = businessDescText();
+
+  if (!state.ownedHome) {
+    HOME_TIERS.forEach((tier) => {
+      const desc = document.getElementById(`action-buy-home-${tier.key}`)?.querySelector('.choice-desc');
+      if (desc) desc.textContent = homeBuyDescText(tier);
     });
-    choicesEl.appendChild(debtGroup);
   }
+
+  RENTAL_TIERS.forEach((tier) => {
+    const desc = document.getElementById(`action-buy-rental-${tier.key}`)?.querySelector('.choice-desc');
+    if (desc) desc.textContent = rentalBuyDescText(tier);
+  });
 }
 
 function updateActionAvailability() {
@@ -1795,15 +2062,6 @@ function updateActionAvailability() {
     buyBtn.disabled = disabled;
     buyBtn.classList.toggle('locked', disabled);
   }
-
-  state.debts.forEach((d, i) => {
-    const btn = document.getElementById(`action-extra-payment-${i}`);
-    if (btn) {
-      const cashGated = state.cash < state.extraPaymentAmount;
-      btn.disabled = cashGated || d.principal <= 0;
-      btn.classList.toggle('locked', cashGated && d.principal > 0);
-    }
-  });
 
   const units = totalJobUnits();
 
@@ -1823,23 +2081,22 @@ function updateActionAvailability() {
   const sideHustleCostEl = document.getElementById('sidehustle-cost-value');
   if (sideHustleBtn && sideHustleCostEl) {
     const wouldExceed = units + SIDE_HUSTLE_UNITS > MAX_JOB_UNITS;
-    applyVentureLockState(sideHustleBtn, sideHustleCostEl, SIDE_HUSTLE_COST, wouldExceed);
+    applyVentureLockState(sideHustleBtn, sideHustleCostEl, state.sideHustleCost, wouldExceed);
   }
 
   const businessBtn = document.getElementById('action-business');
   const businessCostEl = document.getElementById('business-cost-value');
   if (businessBtn && businessCostEl) {
     const wouldExceed = units + BUSINESS_UNITS > MAX_JOB_UNITS;
-    applyVentureLockState(businessBtn, businessCostEl, BUSINESS_COST, wouldExceed);
+    applyVentureLockState(businessBtn, businessCostEl, state.businessCost, wouldExceed);
   }
 
   if (!state.ownedHome) {
     HOME_TIERS.forEach((tier) => {
       const btn = document.getElementById(`action-buy-home-${tier.key}`);
-      if (btn) {
-        const disabled = state.cash < tier.price * HOME_DOWN_PAYMENT_RATIO;
-        btn.disabled = disabled;
-        btn.classList.toggle('locked', disabled);
+      const costEl = document.getElementById(`home-cost-${tier.key}`);
+      if (btn && costEl) {
+        applyHomeBuyLockState(btn, costEl, tier);
       }
     });
   }
@@ -1852,6 +2109,11 @@ function updateActionAvailability() {
 }
 
 function render() {
+  // A full re-render rebuilds the right column from scratch — close any
+  // open kebab popover first since it lives in <body>, not that column, and
+  // would otherwise survive as an orphan referencing stale row data.
+  closeAllKebabMenus();
+
   renderStats();
   renderSections();
 
