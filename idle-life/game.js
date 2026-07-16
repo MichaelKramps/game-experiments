@@ -9,6 +9,9 @@ const INDEX_FUND_GROWTH_RATE = 0.07; // 7% APR share price appreciation, compoun
 const INDEX_FUND_DIVIDEND_YIELD = 0.02; // 2% APR dividend on current holdings value
 const EXTRA_PAYMENT_AMOUNTS = [100, 1000, 10000];
 const DEBT_INTEREST_RATE = 0.05; // 5% APR, compounds every tick
+const INFLATION_RATE = 0.03; // 3% APR cost-of-living / wage growth baseline
+const PROMOTION_BASE_CHANCE = 0.15; // 15%/year at neutral social life
+const PROMOTION_PAY_BUMP = 0.12; // extra bump on top of the annual COLA raise when promoted
 
 const MAX_JOB_UNITS = 1.5;
 const JOB_UNIT_LOCKED_MESSAGE = 'You must quit a job';
@@ -26,7 +29,7 @@ const VENTURE_BUSINESS_MULTIPLIER = 25;
 const VENTURE_VALUE_MONTHS = 24; // a side hustle/business is valued at 2 years of its current monthly income
 const SIDE_HUSTLE_DEVELOP_MONTHS = 3; // time before a side hustle's outcome is known
 const BUSINESS_DEVELOP_MONTHS = 9; // time before a business's outcome is known
-const EDUCATION_VENTURE_MULTIPLIERS = { community: 2, state: 4, private: 6 };
+const EDUCATION_MULTIPLIERS = { community: 1.5, state: 2.5, private: 3 };
 const UNIVERSITY_ENROLLMENT_YEARS = { community: 2, state: 4, private: 4 };
 const FULLTIME_JOB_BASE_PAY = 1800; // no college
 const APARTMENT_RENT_AMOUNT = -900;
@@ -106,7 +109,6 @@ const HAPPINESS_MODIFIERS = [
     points: () => HOME_HAPPINESS_POINTS[state.home] ?? 0,
   },
 ];
-const FULLTIME_JOB_PAY_BY_EDUCATION = { community: 3600, state: 7200, private: 10800 };
 
 const CASH_FLOW_PERIODS = {
   second: { suffix: '/sec', hours: 1 / 3600, decimals: 6 },
@@ -136,6 +138,8 @@ const state = {
   cashFlowItems: [],
   jobs: [],
   nextJobId: 1,
+  fulltimeJobRate: null,
+  parttimeJobRate: null,
   sideHustleAttempts: 0,
   businessAttempts: 0,
   indexFundPrice: INDEX_FUND_STARTING_PRICE,
@@ -188,7 +192,7 @@ const scenes = {
         effect: (s) => {
           s.home = 'Childhood Home';
           s.unlocked.home = true;
-          s.jobs.push({ id: s.nextJobId++, type: 'fulltime', label: 'Entry-Level Job', units: FULLTIME_JOB_UNITS, amount: FULLTIME_JOB_BASE_PAY });
+          s.jobs.push({ id: s.nextJobId++, type: 'fulltime', label: 'Entry-Level Job', units: FULLTIME_JOB_UNITS, amount: getOrInitFulltimeRate(FULLTIME_JOB_BASE_PAY) });
           s.unlocked.cashFlow = true;
           s.unlocked.assets = true;
         },
@@ -200,7 +204,7 @@ const scenes = {
         effect: (s) => {
           s.home = 'Apartment';
           s.unlocked.home = true;
-          s.jobs.push({ id: s.nextJobId++, type: 'fulltime', label: 'Entry-Level Job', units: FULLTIME_JOB_UNITS, amount: FULLTIME_JOB_BASE_PAY });
+          s.jobs.push({ id: s.nextJobId++, type: 'fulltime', label: 'Entry-Level Job', units: FULLTIME_JOB_UNITS, amount: getOrInitFulltimeRate(FULLTIME_JOB_BASE_PAY) });
           s.cashFlowItems.push({ label: 'Apartment Rent', amount: APARTMENT_RENT_AMOUNT });
           s.unlocked.cashFlow = true;
           s.unlocked.assets = true;
@@ -422,7 +426,67 @@ function isDebtPaymentPaused(debt) {
 
 function fullTimeJobPay() {
   if (isStudent()) return 0;
-  return FULLTIME_JOB_PAY_BY_EDUCATION[state.flags.university] ?? FULLTIME_JOB_BASE_PAY;
+  const multiplier = EDUCATION_MULTIPLIERS[state.flags.university] ?? 1;
+  return FULLTIME_JOB_BASE_PAY * multiplier;
+}
+
+function getOrInitFulltimeRate(baseRate) {
+  if (state.fulltimeJobRate == null) state.fulltimeJobRate = baseRate;
+  return state.fulltimeJobRate;
+}
+
+function getOrInitParttimeRate() {
+  if (state.parttimeJobRate == null) state.parttimeJobRate = PART_TIME_JOB_PAY;
+  return state.parttimeJobRate;
+}
+
+// Stub — Phase 1 (Lifestyle/Social Life) will scale this based on the
+// player's social life tier. Neutral until then.
+function socialLifePromotionMultiplier() {
+  return 1;
+}
+
+let pendingCareerReviewMessage = null;
+
+// Applies once per crossed game-year boundary (see advanceSimulation).
+// Grows the persisted job rates via cost-of-living, rolls a promotion
+// chance for full-time work, and stages a summary for the annual review
+// modal. Returns whether anything changed (feeds needsFullRender).
+function applyAnnualCareerGrowth() {
+  const lines = [];
+  const holdsParttime = state.jobs.some((j) => j.type === 'parttime');
+  const holdsFulltime = state.jobs.some((j) => j.type === 'fulltime') && !isStudent();
+
+  if (holdsParttime && state.parttimeJobRate != null) {
+    state.parttimeJobRate *= 1 + INFLATION_RATE;
+    lines.push(`Part-Time Job: cost-of-living raise +${(INFLATION_RATE * 100).toFixed(1)}% → ${formatMoneyFull(state.parttimeJobRate, '/mo')}`);
+  }
+
+  if (holdsFulltime && state.fulltimeJobRate != null) {
+    state.fulltimeJobRate *= 1 + INFLATION_RATE;
+    lines.push(`Full-Time Job: cost-of-living raise +${(INFLATION_RATE * 100).toFixed(1)}% → ${formatMoneyFull(state.fulltimeJobRate, '/mo')}`);
+    if (Math.random() < PROMOTION_BASE_CHANCE * socialLifePromotionMultiplier()) {
+      state.fulltimeJobRate *= 1 + PROMOTION_PAY_BUMP;
+      lines.push(`Promoted! Extra +${(PROMOTION_PAY_BUMP * 100).toFixed(0)}% → ${formatMoneyFull(state.fulltimeJobRate, '/mo')}`);
+    }
+  }
+
+  if (!lines.length) return false;
+
+  state.jobs.forEach((job) => {
+    if (job.type === 'parttime') job.amount = state.parttimeJobRate;
+    if (job.type === 'fulltime' && !isStudent()) job.amount = state.fulltimeJobRate;
+  });
+
+  pendingCareerReviewMessage = ['Year in Review', '', ...lines].join('\n');
+  return true;
+}
+
+function flushPendingCareerReviewMessage() {
+  if (!pendingCareerReviewMessage) return;
+  const message = pendingCareerReviewMessage;
+  pendingCareerReviewMessage = null;
+  showWarningModal(message);
 }
 
 function ventureFailChance(attempts) {
@@ -466,7 +530,7 @@ function resolveVentureOutcome(kind, attemptsPrior) {
   const failChance = ventureFailChance(totalVentureAttempts());
   const failRoll = Math.random() * 100;
   const isFailure = failRoll < failChance;
-  const educationMultiplier = EDUCATION_VENTURE_MULTIPLIERS[state.flags.university] || 1;
+  const educationMultiplier = EDUCATION_MULTIPLIERS[state.flags.university] || 1;
 
   let baseRoll = { raw: 0, weighted: 0 };
   let attemptRoll = { raw: 0, weighted: 0 };
@@ -651,7 +715,10 @@ function recomputeNetWorth() {
 }
 
 function advanceSimulation(deltaGameHours) {
+  const wasStudent = isStudent();
+  const prevAgeYear = Math.floor(state.age);
   state.age += deltaGameHours / HOURS_PER_YEAR;
+  const crossedYear = Math.floor(state.age) > prevAgeYear;
 
   state.indexFundPrice += state.indexFundPrice * INDEX_FUND_GROWTH_RATE * (deltaGameHours / HOURS_PER_YEAR);
 
@@ -687,15 +754,18 @@ function advanceSimulation(deltaGameHours) {
     }
   });
 
+  // Full-time pay jumps exactly once, on the isStudent() transition, rather
+  // than diffing against fullTimeJobPay() every tick — once career growth
+  // (below) makes job.amount drift from fullTimeJobPay() by design, that
+  // diff would otherwise misfire as a "graduation" on every raise.
   let graduationOccurred = false;
-  state.jobs.forEach((job) => {
-    if (job.type !== 'fulltime') return;
-    const newPay = fullTimeJobPay();
-    if (newPay !== job.amount) {
-      job.amount = newPay;
-      graduationOccurred = true;
-    }
-  });
+  if (wasStudent && !isStudent()) {
+    state.fulltimeJobRate = fullTimeJobPay();
+    state.jobs.forEach((job) => {
+      if (job.type === 'fulltime') job.amount = state.fulltimeJobRate;
+    });
+    graduationOccurred = true;
+  }
 
   if (state.flags.university && !isStudent() && !state.housedAfterGraduation) {
     state.home = 'Apartment';
@@ -703,6 +773,8 @@ function advanceSimulation(deltaGameHours) {
     state.housedAfterGraduation = true;
     graduationOccurred = true;
   }
+
+  const careerGrowthOccurred = crossedYear && applyAnnualCareerGrowth();
 
   recomputeCashFlow();
 
@@ -716,10 +788,15 @@ function advanceSimulation(deltaGameHours) {
   state.cash += (state.cashFlow / HOURS_PER_MONTH) * deltaGameHours;
   recomputeNetWorth();
 
-  return debtPaidOff || ventureResolved || graduationOccurred || happinessLevelChanged;
+  return debtPaidOff || ventureResolved || graduationOccurred || happinessLevelChanged || careerGrowthOccurred;
 }
 
 function tick() {
+  if (modalOverlayEl.classList.contains('visible')) {
+    state.lastTick = performance.now();
+    return;
+  }
+
   const now = performance.now();
   const deltaGameHours = ((now - state.lastTick) / 1000) * HOURS_PER_DAY; // 1 real second = 1 game day
   state.lastTick = now;
@@ -739,6 +816,8 @@ function tick() {
     updateHappinessDisplay();
     updateScrollIndicator();
   }
+
+  flushPendingCareerReviewMessage();
 }
 
 const FAST_FORWARD_STEP_HOURS = 1; // simulate in small hourly steps so interest/growth compound the same as real-time ticking
@@ -752,6 +831,7 @@ function fastForward(totalHours) {
   }
   state.lastTick = performance.now();
   render();
+  flushPendingCareerReviewMessage();
 }
 
 function startIdle() {
@@ -1361,7 +1441,7 @@ function buildJobGroup() {
           ? `Counts as 1 job. You're still in school — this job won't pay until you graduate in ${Math.max(0, state.graduatesAtAge - state.age).toFixed(2)} years.`
           : `+${formatMoney(fullTimeJobPay(), '/mo')}. Counts as 1 job (max ${MAX_JOB_UNITS} at once).`,
       () => {
-        state.jobs.push({ id: state.nextJobId++, type: 'fulltime', label: 'Full-Time Job', units: FULLTIME_JOB_UNITS, amount: fullTimeJobPay() });
+        state.jobs.push({ id: state.nextJobId++, type: 'fulltime', label: 'Full-Time Job', units: FULLTIME_JOB_UNITS, amount: getOrInitFulltimeRate(fullTimeJobPay()) });
         recomputeCashFlow();
         recomputeNetWorth();
         render();
@@ -1384,7 +1464,7 @@ function buildJobGroup() {
         ? `+${formatMoney(PART_TIME_JOB_PAY, '/mo')}. Counts as 0.5 jobs — would exceed your ${MAX_JOB_UNITS} job limit. Quit a job first.`
         : `+${formatMoney(PART_TIME_JOB_PAY, '/mo')}. Counts as 0.5 jobs (max ${MAX_JOB_UNITS} at once).`,
       () => {
-        state.jobs.push({ id: state.nextJobId++, type: 'parttime', label: 'Part-Time Job', units: PARTTIME_JOB_UNITS, amount: PART_TIME_JOB_PAY });
+        state.jobs.push({ id: state.nextJobId++, type: 'parttime', label: 'Part-Time Job', units: PARTTIME_JOB_UNITS, amount: getOrInitParttimeRate() });
         recomputeCashFlow();
         recomputeNetWorth();
         render();
@@ -1784,8 +1864,16 @@ function render() {
   updateScrollIndicator();
 }
 
-document.getElementById('fast-forward-month').addEventListener('click', () => fastForward(HOURS_PER_MONTH));
-document.getElementById('fast-forward-year').addEventListener('click', () => fastForward(HOURS_PER_YEAR));
+// Never fast-forward past the next annual review — clamp to whatever's
+// left until the next whole-year boundary so "+ Year" from 42.8562 lands
+// exactly at 43.0000 instead of overshooting to 43.8562.
+function hoursUntilNextYearBoundary() {
+  const nextBoundaryAge = Math.floor(state.age) + 1;
+  return (nextBoundaryAge - state.age) * HOURS_PER_YEAR;
+}
+
+document.getElementById('fast-forward-month').addEventListener('click', () => fastForward(Math.min(HOURS_PER_MONTH, hoursUntilNextYearBoundary())));
+document.getElementById('fast-forward-year').addEventListener('click', () => fastForward(Math.min(HOURS_PER_YEAR, hoursUntilNextYearBoundary())));
 
 function setupScrollIndicator(scrollEl, indicatorEl) {
   const update = () => {
