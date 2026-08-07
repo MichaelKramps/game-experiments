@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>CorrMail</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      background: #0d0d1a;
+      color: #ffffff;
+      font-family: monospace;
+      height: 100%;
+      overflow: hidden;
+    }
+    #back-link {
+      color: #666;
+      text-decoration: none;
+      font-size: 0.85rem;
+      letter-spacing: 0.05em;
+      white-space: nowrap;
+    }
+    #back-link:hover { color: #44ff88; }
+
+    #app {
+      width: 100vw;
+      height: 100vh;
+      background: #12122080;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Top bar */
+    #topbar {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 12px 16px;
+      background: #1a1a2e;
+      border-bottom: 1px solid #2a2a4a;
+    }
+    #logo {
+      font-size: 1.1rem;
+      letter-spacing: 0.1em;
+      color: #44ff88;
+      white-space: nowrap;
+    }
+    #search {
+      flex: 1;
+      background: #0d0d1a;
+      border: 1px solid #2a2a4a;
+      border-radius: 4px;
+      padding: 8px 12px;
+      color: #fff;
+      font-family: monospace;
+      font-size: 0.85rem;
+    }
+    #search:focus { outline: none; border-color: #44ff88; }
+    #compose-btn {
+      background: #44ff88;
+      color: #0d0d1a;
+      border: none;
+      border-radius: 4px;
+      padding: 9px 16px;
+      font-family: monospace;
+      font-weight: bold;
+      font-size: 0.85rem;
+      letter-spacing: 0.05em;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    #compose-btn:hover { background: #6bffa3; }
+
+    /* Toolbar (feature toggles) */
+    #toolbar {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      flex-shrink: 0;
+    }
+    .toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .toggle input {
+      position: absolute;
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .toggle .switch {
+      width: 32px;
+      height: 18px;
+      flex-shrink: 0;
+      border-radius: 9px;
+      background: #0d0d1a;
+      border: 1px solid #2a2a4a;
+      position: relative;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .toggle .switch::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #666;
+      transition: transform 0.15s, background 0.15s;
+    }
+    .toggle input:checked + .switch {
+      background: #1e2a24;
+      border-color: #44ff88;
+    }
+    .toggle input:checked + .switch::after {
+      background: #44ff88;
+      transform: translateX(14px);
+    }
+    .toggle .toggle-label {
+      font-size: 0.78rem;
+      letter-spacing: 0.05em;
+      color: #999;
+    }
+    .toggle input:checked ~ .toggle-label {
+      color: #44ff88;
+    }
+
+    /* Body layout */
+    #body {
+      display: flex;
+      flex: 1;
+      min-height: 0;
+    }
+
+    /* Folder sidebar */
+    #folders {
+      width: 170px;
+      flex-shrink: 0;
+      border-right: 1px solid #2a2a4a;
+      padding: 12px 0;
+      overflow-y: auto;
+    }
+    .folder {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 9px 16px;
+      font-size: 0.85rem;
+      color: #aaa;
+      cursor: pointer;
+      letter-spacing: 0.03em;
+      border-left: 3px solid transparent;
+    }
+    .folder:hover { color: #fff; background: #1a1a2e; }
+    .folder.active {
+      color: #44ff88;
+      border-left-color: #44ff88;
+      background: #1a1a2e;
+    }
+    .folder.unread { font-weight: bold; color: #fff; }
+    .folder.unread.active { color: #44ff88; }
+    .folder .count {
+      font-size: 0.75rem;
+      color: #666;
+    }
+    .folder.active .count { color: #44ff88; }
+
+    /* Message list */
+    #list {
+      width: 320px;
+      flex-shrink: 0;
+      border-right: 1px solid #2a2a4a;
+      overflow-y: auto;
+    }
+    .msg {
+      display: flex;
+      gap: 10px;
+      padding: 12px 14px;
+      border-bottom: 1px solid #1e1e33;
+      cursor: pointer;
+    }
+    .msg:hover { background: #1a1a2e; }
+    .msg.selected { background: #1e2a24; }
+    .msg .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #44ff88;
+      margin-top: 5px;
+      flex-shrink: 0;
+      visibility: hidden;
+    }
+    .msg.unread .dot { visibility: visible; }
+    .msg .meta { flex: 1; min-width: 0; }
+    .msg .row1 {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 0.82rem;
+      color: #ccc;
+    }
+    .msg.unread .row1 .sender { color: #fff; font-weight: bold; }
+    .msg .time { color: #666; font-size: 0.72rem; white-space: nowrap; }
+    .msg .subject {
+      font-size: 0.8rem;
+      color: #999;
+      margin-top: 3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .msg.unread .subject { color: #ddd; }
+    .msg .snippet {
+      font-size: 0.75rem;
+      color: #555;
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .msg .star {
+      flex-shrink: 0;
+      color: #444;
+      font-size: 0.9rem;
+      cursor: pointer;
+      padding: 2px;
+    }
+    .msg .star.on { color: #ffcc44; }
+    #list .empty {
+      padding: 40px 16px;
+      text-align: center;
+      color: #555;
+      font-size: 0.8rem;
+    }
+
+    /* Reading pane */
+    #reading {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 28px;
+      min-width: 0;
+    }
+    #reading .placeholder {
+      color: #555;
+      font-size: 0.85rem;
+      text-align: center;
+      margin-top: 80px;
+    }
+    #reading h2 {
+      font-size: 1.1rem;
+      color: #fff;
+      margin-bottom: 12px;
+      letter-spacing: 0.02em;
+    }
+    #reading .headers {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      border-bottom: 1px solid #2a2a4a;
+      padding-bottom: 12px;
+      margin-bottom: 16px;
+    }
+    #reading .from {
+      font-size: 0.85rem;
+      color: #44ff88;
+    }
+    #reading .to {
+      font-size: 0.75rem;
+      color: #666;
+      margin-top: 2px;
+    }
+    #reading .date {
+      font-size: 0.75rem;
+      color: #666;
+    }
+    #reading .content {
+      font-size: 0.85rem;
+      line-height: 1.7;
+      color: #ccc;
+      white-space: pre-wrap;
+    }
+    #reading .content.cipher {
+      color: #6bffa3;
+      font-size: 0.8rem;
+      line-height: 1.5;
+      word-break: break-all;
+    }
+    #reading .actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 24px;
+      padding-top: 16px;
+      border-top: 1px solid #2a2a4a;
+    }
+    #reading .actions button {
+      background: #1a1a2e;
+      border: 1px solid #2a2a4a;
+      color: #ccc;
+      border-radius: 4px;
+      padding: 7px 14px;
+      font-family: monospace;
+      font-size: 0.78rem;
+      cursor: pointer;
+    }
+    #reading .actions button:hover { border-color: #44ff88; color: #44ff88; }
+    #reading .actions button.danger:hover { border-color: #ff4466; color: #ff4466; }
+    #reading .actions button.primary {
+      background: #44ff88;
+      color: #0d0d1a;
+      font-weight: bold;
+      border-color: #44ff88;
+    }
+    #reading .actions button.primary:hover {
+      background: #6bffa3;
+      color: #0d0d1a;
+    }
+    #reading .actions button:disabled {
+      opacity: 0.6;
+      cursor: default;
+    }
+    #reading .actions button.primary:disabled:hover {
+      background: #44ff88;
+    }
+    #reading .actions button.decrypting {
+      position: relative;
+      overflow: hidden;
+      background: #1a1a2e;
+      color: #ccc;
+      border-color: #2a2a4a;
+      opacity: 1;
+      min-width: 140px;
+    }
+    #reading .actions button.decrypting .fill {
+      position: absolute;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      width: 0%;
+      background: #1f4a30;
+      z-index: 0;
+    }
+    #reading .actions button.decrypting .label {
+      position: relative;
+      z-index: 1;
+      color: #6bffa3;
+    }
+
+    @media (max-width: 860px) {
+      #folders { width: 120px; }
+      #list { width: 240px; }
+    }
+    @media (max-width: 680px) {
+      #body { flex-direction: column; }
+      #folders { width: 100%; border-right: none; border-bottom: 1px solid #2a2a4a; display: flex; overflow-x: auto; padding: 8px; }
+      .folder { border-left: none; border-bottom: 3px solid transparent; flex-shrink: 0; }
+      .folder.active { border-left-color: transparent; border-bottom-color: #44ff88; }
+      #list { width: 100%; border-right: none; border-bottom: 1px solid #2a2a4a; max-height: 260px; }
+    }
+
+    /* Compose overlay */
+    #compose-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: #000000aa;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+    }
+    #compose-overlay.open { display: flex; }
+    #compose-modal {
+      width: 90%;
+      max-width: 520px;
+      background: #1a1a2e;
+      border: 1px solid #2a2a4a;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    #compose-modal .head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 16px;
+      background: #12122a;
+      border-bottom: 1px solid #2a2a4a;
+      font-size: 0.85rem;
+      letter-spacing: 0.05em;
+      color: #44ff88;
+    }
+    #compose-modal .head span.close {
+      color: #666;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    #compose-modal .head span.close:hover { color: #ff4466; }
+    #compose-modal .fields { padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+    #compose-modal input, #compose-modal textarea {
+      background: #0d0d1a;
+      border: 1px solid #2a2a4a;
+      border-radius: 4px;
+      padding: 8px 10px;
+      color: #fff;
+      font-family: monospace;
+      font-size: 0.82rem;
+      width: 100%;
+      resize: vertical;
+    }
+    #compose-modal input:focus, #compose-modal textarea:focus { outline: none; border-color: #44ff88; }
+    #compose-modal .foot {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      padding: 12px 16px;
+      border-top: 1px solid #2a2a4a;
+    }
+    #compose-modal .foot button {
+      border-radius: 4px;
+      padding: 8px 16px;
+      font-family: monospace;
+      font-size: 0.82rem;
+      cursor: pointer;
+      border: 1px solid #2a2a4a;
+      background: #0d0d1a;
+      color: #ccc;
+    }
+    #compose-modal .foot button.send {
+      background: #44ff88;
+      color: #0d0d1a;
+      font-weight: bold;
+      border-color: #44ff88;
+    }
+    #compose-modal .foot button.send:hover { background: #6bffa3; }
+    #compose-modal .foot button.cancel:hover { border-color: #ff4466; color: #ff4466; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div id="topbar">
+      <a id="back-link" href="../experiments.html">← back</a>
+      <div id="logo">CorrMail</div>
+      <input id="search" type="text" placeholder="Search mail...">
+      <div id="toolbar">
+        <label class="toggle">
+          <input type="checkbox" id="toggle-images">
+          <span class="switch"></span>
+          <span class="toggle-label">Images</span>
+        </label>
+        <label class="toggle">
+          <input type="checkbox" id="toggle-textmask" checked>
+          <span class="switch"></span>
+          <span class="toggle-label">Text Mask</span>
+        </label>
+      </div>
+      <button id="compose-btn">Compose</button>
+    </div>
+    <div id="body">
+      <div id="folders"></div>
+      <div id="list"></div>
+      <div id="reading"><div class="placeholder">Select a message to read it.</div></div>
+    </div>
+  </div>
+
+  <div id="compose-overlay">
+    <div id="compose-modal">
+      <div class="head">
+        <span>New Message</span>
+        <span class="close" id="compose-close">&times;</span>
+      </div>
+      <div class="fields">
+        <input id="compose-to" type="text" placeholder="To">
+        <input id="compose-subject" type="text" placeholder="Subject">
+        <textarea id="compose-body" rows="8" placeholder="Write your message..."></textarea>
+      </div>
+      <div class="foot">
+        <button class="cancel" id="compose-cancel">Cancel</button>
+        <button class="send" id="compose-send">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>
