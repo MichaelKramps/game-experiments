@@ -9,11 +9,11 @@
 const SAVE_KEY = 'corrmail-save';
 // Bump on any state-shape change. A prototype whose schema keeps moving
 // isn't worth a migration layer yet — a mismatch just wipes and restarts.
-const SAVE_VERSION = 4;
+const SAVE_VERSION = 5;
 
 const CORR_EMAIL = 'corr@corrmail.local';
 const NAT_EMAIL = 'nat@corrmail.remote';
-const KRAMPS_EMAIL = 'kramps@corrmail.remote';
+const HALLIDAY_EMAIL = 'halliday@corrmail.remote';
 
 // `gate` names the state boolean that must be true to unlock a tab, or
 // null for tabs that are never gated. Replying to Corr's first email sets
@@ -41,34 +41,169 @@ const HARDWARE_LABELS = {
   network: 'Network Card',
 };
 
-// Corr's starting hardware — old (early-90s), already installed, not
-// purchasable or removable. Always shown in Corr Status from the moment
-// it's unlocked, keyed by category so a purchased PARTS upgrade in the
-// same category can replace its line instead of just piling up alongside
-// it. cpu/ram/motherboard/psu/storage are the bare-minimum-to-run set;
-// gpu/network are non-essential slots Corr doesn't have yet.
+// Corr's starting hardware — tier 1 of every category, pre-owned and never
+// for sale in the Marketplace (see PARTS below). Always shown in Corr
+// Status from the moment it's unlocked, keyed by category so a purchased
+// PARTS upgrade in the same category replaces its line instead of piling
+// up alongside it. cpu/ram/motherboard/psu/storage/gpu are all real
+// starting hardware now — network is the one category Corr genuinely
+// doesn't have yet, since getting a network card at all is a story beat
+// (see "Network Card" section in DESIGN.md), not a purchase.
 const DEFAULT_HARDWARE = {
   cpu: 'Intel 486DX2 66MHz',
   ram: '8MB',
   motherboard: 'AT Motherboard (1993)',
   psu: '200W AT',
   storage: '340MB IDE Hard Drive',
-  gpu: 'none',
+  gpu: 'S3 Trio64',
   network: 'none',
 };
 
-// Marketplace upgrade catalog. `name` is the shop-listing text; `hardwareValue`
-// is what replaces the category's DEFAULT_HARDWARE value in Corr Status
-// once owned (no need to repeat the category label there).
+// Per-category CorrPower growth rate — each tier's multiplier is
+// growth^(tier-1), so tier 1 is always 1x (power-neutral, matches
+// DEFAULT_HARDWARE) and gains start at tier 2. Deliberately not uniform:
+// CPU/GPU/RAM are the "exciting" upgrade categories and compound faster
+// than Motherboard/PSU/Storage. Network Card has no entry here — it's
+// never purchased, so it has no cost/multiplier curve to derive.
+const HARDWARE_GROWTH = {
+  cpu: 5,
+  gpu: 4,
+  ram: 3,
+  motherboard: 2,
+  psu: 2,
+  storage: 2,
+};
+
+// Highest tier each category can reach. PARTS only ever contains tiers
+// 2..max for the six purchasable categories; Network Card's cap exists
+// for NETWORK_TIERS/display purposes even though it's never bought.
+// Every purchasable category caps at 10 — Network Card is the only
+// category with a shorter ladder, since it's a story-progression item
+// rather than a normal Marketplace upgrade (see DESIGN.md).
+const HARDWARE_MAX_TIER = {
+  cpu: 10,
+  ram: 10,
+  motherboard: 10,
+  gpu: 10,
+  psu: 10,
+  storage: 10,
+  network: 3,
+};
+
+// CorrCoin price of each category's tier 2 (its first purchasable tier).
+// Higher tiers scale from this via HARDWARE_COST_GROWTH — see
+// hardwarePartCost() — rather than being stored per-entry.
+const HARDWARE_TIER2_PRICE = {
+  cpu: 75,
+  gpu: 125,
+  ram: 50,
+  motherboard: 40,
+  storage: 30,
+  psu: 10,
+};
+
+// Cost growth factor, shared across every category on purpose (see
+// DESIGN.md's Marketplace "Pricing" section): buying tier 2 of all six
+// categories at once multiplies CorrPower by the product of
+// HARDWARE_GROWTH (5×4×3×2×2×2 = 480x), and that same jump repeats every
+// round since each category's per-tier growth is a fixed ratio and every
+// category now shares the same 10-tier ceiling. 800 sits above that
+// breakeven so each round is still a bigger grind than the last, not
+// just keeping pace with the income boost it just granted.
+const HARDWARE_COST_GROWTH = 800;
+
+function hardwareMultiplier(category, tier) {
+  const growth = HARDWARE_GROWTH[category];
+  return growth ? Math.pow(growth, tier - 1) : 1;
+}
+
+function hardwarePartCost(category, tier) {
+  return HARDWARE_TIER2_PRICE[category] * Math.pow(HARDWARE_COST_GROWTH, tier - 2);
+}
+
+// Marketplace upgrade catalog — tiers 2 and up only, for the six
+// categories that are ever purchasable. Tier 1 of every category is
+// DEFAULT_HARDWARE: pre-owned, never for sale. Buying a tier replaces
+// whatever tier is currently owned in that category (state.hardwareTiers)
+// rather than stacking. `name` is the shop-listing text; `hardwareValue`
+// is what replaces the category's line in Corr Status once owned.
 const PARTS = [
-  { id: 'ram-64k', category: 'ram', name: '32MB RAM Upgrade', hardwareValue: '32MB', cost: 10, effect: { miningRate: 0.05 } },
-  { id: 'cpu-286', category: 'cpu', name: 'Intel Pentium 100MHz CPU', hardwareValue: 'Intel Pentium 100MHz', cost: 50, effect: { miningRate: 0.15, power: 5 } },
-  { id: 'psu-200w', category: 'psu', name: '300W ATX Power Supply', hardwareValue: '300W ATX', cost: 120, effect: { miningRate: 0.25, power: 10 } },
-  { id: 'hdd-20mb', category: 'storage', name: '2GB IDE Hard Drive', hardwareValue: '2GB IDE Hard Drive', cost: 250, effect: { power: 20 } },
+  { category: 'cpu', tier: 2, name: 'Intel Pentium 100MHz CPU', hardwareValue: 'Intel Pentium 100MHz' },
+  { category: 'cpu', tier: 3, name: 'Intel Pentium II 300MHz CPU', hardwareValue: 'Pentium II 300MHz' },
+  { category: 'cpu', tier: 4, name: 'Intel Pentium III 600MHz CPU', hardwareValue: 'Pentium III 600MHz' },
+  { category: 'cpu', tier: 5, name: 'AMD Athlon 1.2GHz CPU', hardwareValue: 'AMD Athlon 1.2GHz' },
+  { category: 'cpu', tier: 6, name: 'Intel Pentium 4 2.4GHz CPU', hardwareValue: 'Pentium 4 2.4GHz' },
+  { category: 'cpu', tier: 7, name: 'Intel Core 2 Duo E6600 CPU', hardwareValue: 'Core 2 Duo E6600' },
+  { category: 'cpu', tier: 8, name: 'Intel Core i7-2600K CPU', hardwareValue: 'Core i7-2600K' },
+  { category: 'cpu', tier: 9, name: 'AMD Ryzen 9 5950X CPU', hardwareValue: 'Ryzen 9 5950X' },
+  { category: 'cpu', tier: 10, name: 'Prototype Neuromorphic Processor', hardwareValue: 'Prototype Neuromorphic Processor' },
+
+  { category: 'ram', tier: 2, name: '32MB RAM Upgrade', hardwareValue: '32MB' },
+  { category: 'ram', tier: 3, name: '128MB RAM Upgrade', hardwareValue: '128MB' },
+  { category: 'ram', tier: 4, name: '512MB RAM Upgrade', hardwareValue: '512MB' },
+  { category: 'ram', tier: 5, name: '2GB RAM Upgrade', hardwareValue: '2GB' },
+  { category: 'ram', tier: 6, name: '8GB RAM Upgrade', hardwareValue: '8GB' },
+  { category: 'ram', tier: 7, name: '16GB RAM Upgrade', hardwareValue: '16GB' },
+  { category: 'ram', tier: 8, name: '32GB ECC RAM Upgrade', hardwareValue: '32GB ECC' },
+  { category: 'ram', tier: 9, name: '1TB Distributed Memory Cluster', hardwareValue: '1TB Distributed Memory Cluster' },
+  { category: 'ram', tier: 10, name: 'Experimental Photonic Memory', hardwareValue: 'Experimental Photonic Memory' },
+
+  { category: 'motherboard', tier: 2, name: 'ATX Motherboard (1997)', hardwareValue: 'ATX Motherboard (1997)' },
+  { category: 'motherboard', tier: 3, name: 'Socket 370 Motherboard (1999)', hardwareValue: 'Socket 370 (1999)' },
+  { category: 'motherboard', tier: 4, name: 'Socket 478 Motherboard (2002)', hardwareValue: 'Socket 478 (2002)' },
+  { category: 'motherboard', tier: 5, name: 'LGA775 Motherboard (2005)', hardwareValue: 'LGA775 (2005)' },
+  { category: 'motherboard', tier: 6, name: 'LGA1156 Motherboard (2009)', hardwareValue: 'LGA1156 (2009)' },
+  { category: 'motherboard', tier: 7, name: 'AM4 Motherboard (2017)', hardwareValue: 'AM4 (2017)' },
+  { category: 'motherboard', tier: 8, name: 'LGA1700 Motherboard (2021)', hardwareValue: 'LGA1700 (2021)' },
+  { category: 'motherboard', tier: 9, name: 'Custom Server Backplane', hardwareValue: 'Custom Server Backplane' },
+  { category: 'motherboard', tier: 10, name: 'Fabricated Prototype Board', hardwareValue: 'Fabricated Prototype Board — No Manufacturer Listed' },
+
+  { category: 'gpu', tier: 2, name: '3dfx Voodoo2 GPU', hardwareValue: 'Voodoo2' },
+  { category: 'gpu', tier: 3, name: 'NVIDIA GeForce 256 GPU', hardwareValue: 'GeForce 256' },
+  { category: 'gpu', tier: 4, name: 'NVIDIA GeForce FX 5900 GPU', hardwareValue: 'GeForce FX 5900' },
+  { category: 'gpu', tier: 5, name: 'NVIDIA GeForce 8800 GTX GPU', hardwareValue: 'GeForce 8800 GTX' },
+  { category: 'gpu', tier: 6, name: 'NVIDIA GeForce GTX 580 GPU', hardwareValue: 'GeForce GTX 580' },
+  { category: 'gpu', tier: 7, name: 'NVIDIA GTX 1080 Ti GPU', hardwareValue: 'GTX 1080 Ti' },
+  { category: 'gpu', tier: 8, name: 'NVIDIA RTX 3090 GPU', hardwareValue: 'RTX 3090' },
+  { category: 'gpu', tier: 9, name: 'Distributed Mining Rig (12x cards)', hardwareValue: 'Distributed Mining Rig (12x)' },
+  { category: 'gpu', tier: 10, name: 'Custom ASIC Cluster', hardwareValue: 'Custom ASIC Cluster' },
+
+  { category: 'psu', tier: 2, name: '300W ATX Power Supply', hardwareValue: '300W ATX' },
+  { category: 'psu', tier: 3, name: '550W ATX Power Supply', hardwareValue: '550W ATX' },
+  { category: 'psu', tier: 4, name: '850W Modular Power Supply', hardwareValue: '850W Modular' },
+  { category: 'psu', tier: 5, name: '1200W Server Power Supply', hardwareValue: '1200W Server' },
+  { category: 'psu', tier: 6, name: '1600W Titanium Power Supply', hardwareValue: '1600W Titanium' },
+  { category: 'psu', tier: 7, name: 'Dual 2000W Redundant Power Supply', hardwareValue: 'Dual 2000W Redundant' },
+  { category: 'psu', tier: 8, name: 'Liquid-Cooled 3000W Power Supply', hardwareValue: 'Liquid-Cooled 3000W' },
+  { category: 'psu', tier: 9, name: 'Experimental Zero-Point Power Tap', hardwareValue: 'Zero-Point Power Tap' },
+  { category: 'psu', tier: 10, name: 'Fusion-Cell Power Cell', hardwareValue: 'Fusion-Cell Power Cell' },
+
+  { category: 'storage', tier: 2, name: '2GB IDE Hard Drive', hardwareValue: '2GB IDE Hard Drive' },
+  { category: 'storage', tier: 3, name: '40GB IDE Hard Drive', hardwareValue: '40GB IDE' },
+  { category: 'storage', tier: 4, name: '500GB SATA Hard Drive', hardwareValue: '500GB SATA' },
+  { category: 'storage', tier: 5, name: '2TB SSD Array', hardwareValue: '2TB SSD Array' },
+  { category: 'storage', tier: 6, name: '8TB NVMe Array', hardwareValue: '8TB NVMe Array' },
+  { category: 'storage', tier: 7, name: '100TB Distributed Storage Cluster', hardwareValue: '100TB Distributed Cluster' },
+  { category: 'storage', tier: 8, name: '1PB Holographic Storage', hardwareValue: '1PB Holographic Storage' },
+  { category: 'storage', tier: 9, name: 'Quantum Dot Storage Matrix', hardwareValue: 'Quantum Dot Matrix' },
+  { category: 'storage', tier: 10, name: 'Exabyte Crystal Storage Lattice', hardwareValue: 'Exabyte Crystal Storage Lattice' },
 ];
 
-// No seed content grants an algorithm yet, but hacking rewards and
-// recalcStats() both treat algorithms as a real, parallel-to-parts catalog.
+// Network Card tiers — name-only lookup, not a PARTS-style catalog, since
+// Network Card is never bought with CorrCoin (see DESIGN.md). Tier 1
+// unlocks Hacking and has to arrive via a story/terminal trigger, not a
+// hack reward (Hacking isn't unlocked yet to grant one from); where tiers
+// 2-3 come from isn't decided yet.
+const NETWORK_TIERS = {
+  1: '56k Dial-Up Modem',
+  2: 'Cable Modem / DSL Router',
+  3: 'Fiber Uplink — Dedicated Line',
+};
+
+// Hacking rewards/purchases only ever grant algorithms, never contribute
+// to CorrPower directly — per HACKING_DESIGN.md, algorithms are consumed
+// as actions during a hack attempt (basePower/actionCost), not a passive
+// stat bonus like hardware. No seed content grants one yet.
 const ALGORITHMS = [];
 
 // Commands the terminal recognizes, keyed by lowercased command text. Each
@@ -114,7 +249,7 @@ const HACKS = [
     description: 'An abandoned rack, still drawing power somewhere nearby.',
     unlock: { type: 'corrOnline' },
     durationMs: 25000,
-    reward: { type: 'part', partId: 'psu-200w' },
+    reward: { type: 'part', category: 'psu', tier: 2 },
   },
 ];
 
@@ -129,8 +264,8 @@ function defaultState() {
     coins: 0,
     baseMiningRate: 0.1,
     miningRate: 0,
-    power: 0,
-    ownedPartIds: [],
+    corrPower: 1,
+    hardwareTiers: { cpu: 1, ram: 1, motherboard: 1, gpu: 1, psu: 1, storage: 1, network: 0 },
     ownedAlgorithmIds: [],
     hacking: {},
     activeTab: 'inbox',
@@ -204,8 +339,16 @@ function escapeHtml(str) {
   return div.innerHTML;
 }
 
+// Hardware costs and CorrPower reach into the septillions by late tiers
+// (see DESIGN.md's Marketplace "Pricing" section) — plain toFixed() would
+// print 20+ digit strings, so anything ≥1000 gets a short-scale suffix
+// instead.
+const NUMBER_SUFFIXES = ['', 'K', 'M', 'B', 'T', 'Qd', 'Qn', 'Sx', 'Sp', 'Oc', 'No'];
+
 function formatCoins(n) {
-  return n.toFixed(1);
+  if (n < 1000) return n.toFixed(1);
+  const tier = Math.min(Math.floor(Math.log10(n) / 3), NUMBER_SUFFIXES.length - 1);
+  return `${(n / Math.pow(1000, tier)).toFixed(2)}${NUMBER_SUFFIXES[tier]}`;
 }
 
 function formatDuration(seconds) {
@@ -257,26 +400,20 @@ function pushEmail({ folder, from, fromEmail, to, subject, body, bodyHtml }) {
   state.emails.push(email);
 }
 
+// CorrPower is the product of every purchasable category's current
+// multiplier (Network Card excluded — it's never purchased, so it never
+// factors into CorrPower). It scales CorrCoin mining speed directly; see
+// HACKING_DESIGN.md for its other job (hacking effectiveness, not yet
+// wired up).
 function recalcStats() {
-  let miningRate = state.baseMiningRate;
-  let power = 0;
-
-  state.ownedPartIds.forEach((id) => {
-    const part = PARTS.find((p) => p.id === id);
-    if (!part) return;
-    miningRate += part.effect.miningRate || 0;
-    power += part.effect.power || 0;
+  let corrPower = 1;
+  Object.keys(HARDWARE_GROWTH).forEach((category) => {
+    const tier = state.hardwareTiers[category] || 1;
+    corrPower *= hardwareMultiplier(category, tier);
   });
 
-  state.ownedAlgorithmIds.forEach((id) => {
-    const algo = ALGORITHMS.find((a) => a.id === id);
-    if (!algo) return;
-    miningRate += algo.effect.miningRate || 0;
-    power += algo.effect.power || 0;
-  });
-
-  state.miningRate = miningRate;
-  state.power = power;
+  state.corrPower = corrPower;
+  state.miningRate = state.baseMiningRate * corrPower;
 }
 
 function markEmailRead(e) {
@@ -349,8 +486,8 @@ function sendMiningOnlineEmails() {
 
   pushEmail({
     folder: 'inbox',
-    from: 'Kramps',
-    fromEmail: KRAMPS_EMAIL,
+    from: 'Halliday',
+    fromEmail: HALLIDAY_EMAIL,
     to: 'you@corrmail.io',
     subject: 'who are you',
     body: "I just saw Corr show up online. I don't know who you are, but we need Corr fully operational again.\n" +
@@ -366,11 +503,14 @@ const EMAIL_TRIGGERS = {
   [CORR_EMAIL]: handleCorrFirstReply,
 };
 
-function buyPart(partId) {
-  const part = PARTS.find((p) => p.id === partId);
-  if (!part || state.ownedPartIds.includes(partId) || state.coins < part.cost) return;
-  state.coins -= part.cost;
-  state.ownedPartIds.push(partId);
+function buyPart(category) {
+  const maxTier = HARDWARE_MAX_TIER[category];
+  const nextTier = (state.hardwareTiers[category] || 1) + 1;
+  if (!maxTier || nextTier > maxTier) return;
+  const cost = hardwarePartCost(category, nextTier);
+  if (state.coins < cost) return;
+  state.coins -= cost;
+  state.hardwareTiers[category] = nextTier;
   recalcStats();
   renderAll();
 }
@@ -416,8 +556,9 @@ function deliverReward(reward) {
   if (reward.type === 'coins') {
     state.coins += reward.amount;
   } else if (reward.type === 'part') {
-    if (!state.ownedPartIds.includes(reward.partId)) {
-      state.ownedPartIds.push(reward.partId);
+    const current = state.hardwareTiers[reward.category] || 1;
+    if (reward.tier > current) {
+      state.hardwareTiers[reward.category] = reward.tier;
       recalcStats();
     }
   } else if (reward.type === 'algorithm') {
@@ -468,12 +609,13 @@ function tick() {
   if (state.miningActive) {
     state.coins += state.miningRate * deltaSec;
     updateCoinDisplay();
-    // Corr Status and Marketplace both show/depend on the live CorrCoin
-    // total — keep them current while parked on either tab instead of only
-    // refreshing on the next full render (e.g. a Buy button should enable
-    // itself the instant the player can afford it, not on their next click).
-    if (state.activeTab === 'status') renderStatusPanel();
-    if (state.activeTab === 'marketplace') renderMarketplacePanel();
+    // #reading itself (its HTML) only gets rebuilt on a nav click or a
+    // state-changing action (buy, hack start/resolve, etc.), not on every
+    // 100ms tick — rebuilding it continuously was what raced with clicks
+    // (see game history). updateMarketplaceAffordability() is the
+    // exception: it only flips `disabled` on buttons that already exist,
+    // never replaces them, so it's safe to run every tick.
+    updateMarketplaceAffordability();
   }
 }
 tick.lastTs = Date.now();
@@ -587,32 +729,41 @@ function renderReading() {
   }
 }
 
-// 10-square meter next to each Hardware row. Today it's just "has a part
-// installed or doesn't" (1/10 vs 0/10) — a placeholder for a real per-part
-// power tier later, once parts vary in strength within a category.
-function powerSquaresHtml(filledCount) {
-  const squares = Array.from({ length: 10 }, (_, i) =>
+// Box count is per-category (HARDWARE_MAX_TIER) rather than a hardcoded
+// 10 — every purchasable category is 10 tiers now, but Network Card
+// caps at 3, so this still needs to size itself per category rather
+// than assume 10. Filling by the literal tier number means tier 1 is
+// always "1 filled box," full stop, regardless of category.
+function powerSquaresHtml(filledCount, totalCount) {
+  const squares = Array.from({ length: totalCount }, (_, i) =>
     `<span class="power-square${i < filledCount ? ' filled' : ''}"></span>`
   ).join('');
   return `<span class="power-squares">${squares}</span>`;
 }
 
+// Tier 1 of every purchasable category is DEFAULT_HARDWARE — the
+// tier>=2 case only applies to categories with real PARTS entries.
+// Network Card (no PARTS entries, tier can be 0 meaning no card yet)
+// looks itself up in NETWORK_TIERS instead.
+function hardwareDisplayName(category, tier) {
+  if (category === 'network') return tier > 0 ? NETWORK_TIERS[tier] : 'none';
+  if (tier <= 1) return DEFAULT_HARDWARE[category];
+  const part = PARTS.find((p) => p.category === category && p.tier === tier);
+  return part ? part.hardwareValue : DEFAULT_HARDWARE[category];
+}
+
 function renderStatusPanel() {
-  const ownedParts = state.ownedPartIds.map((id) => PARTS.find((p) => p.id === id)).filter(Boolean);
   const ownedAlgorithms = state.ownedAlgorithmIds.map((id) => ALGORITHMS.find((a) => a.id === id)).filter(Boolean);
 
-  // Purchased upgrades replace the default line in their category instead
-  // of just stacking alongside it (buying a new PSU means Corr has one
-  // power supply, not two).
-  const hardwareByCategory = { ...DEFAULT_HARDWARE };
-  ownedParts.forEach((p) => { hardwareByCategory[p.category] = p.hardwareValue; });
-  const partsHtml = Object.entries(hardwareByCategory)
-    .map(([category, value]) => {
-      const hasPart = value.toLowerCase() !== 'none';
-      const filled = hasPart ? 1 : 0;
+  const partsHtml = Object.keys(HARDWARE_LABELS)
+    .map((category) => {
+      const tier = state.hardwareTiers[category] || 0;
+      const value = hardwareDisplayName(category, tier);
+      const multiplier = hardwareMultiplier(category, tier);
+      const maxTier = HARDWARE_MAX_TIER[category];
       return `<div class="stat-row">` +
-        `<span>${escapeHtml(HARDWARE_LABELS[category] || category)}: ${escapeHtml(value)}</span>` +
-        `<span class="power-meter">${powerSquaresHtml(filled)}<span class="power-score">${filled}/10</span></span>` +
+        `<span>${escapeHtml(HARDWARE_LABELS[category])}: ${escapeHtml(value)}</span>` +
+        `<span class="power-meter">${powerSquaresHtml(tier, maxTier)}<span class="power-score">${formatCoins(multiplier)}x</span></span>` +
         `</div>`;
     })
     .join('');
@@ -625,8 +776,8 @@ function renderStatusPanel() {
     <h2>Corr Status</h2>
     <div class="panel-section">
       <div class="stat-row"><span>CorrCoin</span><span>${formatCoins(state.coins)}</span></div>
-      <div class="stat-row"><span>Mining rate</span><span>${state.miningRate.toFixed(2)}/sec</span></div>
-      <div class="stat-row"><span>Power</span><span>${state.power}</span></div>
+      <div class="stat-row"><span>CorrCoin mining rate</span><span>${formatCoins(state.miningRate)}/sec</span></div>
+      <div class="stat-row"><span>CorrPower</span><span>${formatCoins(state.corrPower)}x</span></div>
     </div>
     <div class="panel-section">
       <h3>Hardware</h3>
@@ -639,23 +790,33 @@ function renderStatusPanel() {
   `;
 }
 
+// One row per purchasable category (Network Card excluded — never sold
+// here), showing what's currently installed and a Buy button for the
+// next tier, rather than one row per PARTS entry — buying replaces the
+// category's tier, it isn't a checklist of individual items.
 function renderMarketplacePanel() {
-  const rowsHtml = PARTS.map((part) => {
-    const owned = state.ownedPartIds.includes(part.id);
-    const canAfford = state.coins >= part.cost;
-    const effectParts = [];
-    if (part.effect.miningRate) effectParts.push(`+${part.effect.miningRate.toFixed(2)}/sec mining`);
-    if (part.effect.power) effectParts.push(`+${part.effect.power} power`);
+  const rowsHtml = Object.keys(HARDWARE_GROWTH).map((category) => {
+    const currentTier = state.hardwareTiers[category] || 1;
+    const maxTier = HARDWARE_MAX_TIER[category];
+    const currentName = hardwareDisplayName(category, currentTier);
+    const currentMultiplier = hardwareMultiplier(category, currentTier);
 
-    const buttonHtml = owned
-      ? `<button disabled>Installed</button>`
-      : `<button class="primary" data-part-id="${part.id}"${canAfford ? '' : ' disabled'}>Buy (${formatCoins(part.cost)})</button>`;
+    let buttonHtml;
+    if (currentTier >= maxTier) {
+      buttonHtml = `<button disabled>Maxed</button>`;
+    } else {
+      const nextTier = currentTier + 1;
+      const cost = hardwarePartCost(category, nextTier);
+      const canAfford = state.coins >= cost;
+      buttonHtml = `<button class="primary" data-category="${category}"${canAfford ? '' : ' disabled'}>` +
+        `Buy (${formatCoins(cost)}) — ${hardwareMultiplier(category, nextTier)}x</button>`;
+    }
 
     return `
       <div class="market-row">
         <div>
-          <div class="market-name">${escapeHtml(part.name)}</div>
-          <div class="market-effect">${escapeHtml(effectParts.join(', '))}</div>
+          <div class="market-name">${escapeHtml(HARDWARE_LABELS[category])}: ${escapeHtml(currentName)}</div>
+          <div class="market-effect">${formatCoins(currentMultiplier)}x CorrPower</div>
         </div>
         ${buttonHtml}
       </div>
@@ -667,8 +828,23 @@ function renderMarketplacePanel() {
     <div class="panel-section">${rowsHtml}</div>
   `;
 
-  readingEl.querySelectorAll('[data-part-id]').forEach((btn) => {
-    btn.addEventListener('click', () => buyPart(btn.dataset.partId));
+  readingEl.querySelectorAll('[data-category]').forEach((btn) => {
+    btn.addEventListener('click', () => buyPart(btn.dataset.category));
+  });
+}
+
+// Toggles each existing Buy button's `disabled` state as CorrCoin accrues,
+// without rebuilding the DOM — a full renderMarketplacePanel() every tick
+// was tried first, but replacing the buttons out from under an in-flight
+// click was the cause of a real bug (see game history), so this only ever
+// flips a boolean on nodes that already exist. "Maxed" buttons have no
+// data-category and are skipped, same as buyPart() ignores that category.
+function updateMarketplaceAffordability() {
+  if (state.activeTab !== 'marketplace') return;
+  readingEl.querySelectorAll('[data-category]').forEach((btn) => {
+    const category = btn.dataset.category;
+    const nextTier = (state.hardwareTiers[category] || 1) + 1;
+    btn.disabled = state.coins < hardwarePartCost(category, nextTier);
   });
 }
 

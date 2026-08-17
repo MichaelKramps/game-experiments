@@ -399,6 +399,35 @@
       font-size: 0.78rem;
       color: #888;
     }
+    #reading .market-row button {
+      background: #1a1a2e;
+      border: 1px solid #2a2a4a;
+      color: #ccc;
+      border-radius: 4px;
+      padding: 12px 24px;
+      font-family: monospace;
+      font-size: 0.78rem;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    #reading .market-row button:hover { border-color: #44ff88; color: #44ff88; }
+    #reading .market-row button.primary {
+      background: #44ff88;
+      color: #0d0d1a;
+      font-weight: bold;
+      border-color: #44ff88;
+    }
+    #reading .market-row button.primary:hover {
+      background: #6bffa3;
+      color: #0d0d1a;
+    }
+    #reading .market-row button:disabled {
+      opacity: 0.6;
+      cursor: default;
+    }
+    #reading .market-row button.primary:disabled:hover {
+      background: #44ff88;
+    }
 
     @media (max-width: 860px) {
       #nav { width: 120px; }
