@@ -4,7 +4,11 @@ This file documents the planned design for the real hacking minigame and
 the CorrPower/hardware system it depends on. It's a companion to
 `DESIGN.md` (general mechanics) and `STORY.md` (narrative) — split out
 because this system has enough of its own math and open questions to
-warrant its own space.
+warrant its own space. For what a story-flavored hack *reward* actually
+contains (as opposed to the attempt mechanics below), see
+`HACKING_REWARDS.md` — that file covers the reach model, cast, and
+per-network-tier content plan for the world-building layer; this file
+stays scoped to the minigame's math.
 
 **Status: planning only, not implemented.** The current code
 (`game.js`) has a stub — `resolveHackOutcome()` always succeeds after a

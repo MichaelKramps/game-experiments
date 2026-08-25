@@ -422,11 +422,17 @@
       color: #0d0d1a;
     }
     #reading .market-row button:disabled {
-      opacity: 0.6;
+      background: #888;
+      border-color: #44ff88;
+      color: #666;
+      opacity: 1;
       cursor: default;
     }
+    #reading .market-row button.primary:disabled,
     #reading .market-row button.primary:disabled:hover {
-      background: #44ff88;
+      background: #888;
+      border-color: #44ff88;
+      color: #666;
     }
 
     @media (max-width: 860px) {

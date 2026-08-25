@@ -226,11 +226,15 @@ already declares in `game.js` but leaves "not wired to anything yet" per
 its own comment. Since Hacking is locked until that happens, tier 1 can't
 be a hack reward (nothing to reward from yet); it has to arrive some other
 way — most likely a story email or a `TERMINAL_COMMANDS` entry, matching
-the existing `mine init`/`marketplace init` pattern. Tiers 2–3 (Cable
-Modem/DSL Router, Fiber Uplink) are open — **not yet decided** whether
-they come from hack rewards (`reward.type === 'part'`, which already
-exists as a delivery path) once Hacking is unlocked, or from another
-story beat.
+the existing `mine init`/`marketplace init` pattern.
+
+Tiers 2–3 (Cable Modem/DSL Router, Fiber Uplink) **do** come from hack
+rewards (`reward.type === 'part'`, which already exists as a delivery
+path) — this is now resolved, since `HACKING_REWARDS.md`'s reach model
+depends on Network Card tier gating which hacking-reward content pool is
+available (Dial-Up/Cable-DSL/Fiber). Not yet decided: whether a given tier
+upgrade comes from a general reward-pool draw or a dedicated hack, and at
+what point in the Hacking track's pacing each tier becomes obtainable.
 
 ### Pricing
 
