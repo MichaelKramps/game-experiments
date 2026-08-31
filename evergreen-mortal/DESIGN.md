@@ -4,7 +4,15 @@
 
 ## Overview
 
-EverSprint is the in-fiction "work tracking" app inside Evergreen Mortal — a kanban board where routine (and eventually plot-relevant) work is represented as a card battle. A sprint runs Monday–Friday. **Performance** (0–100) is the single win/loss meter: hit 100 and you're promoted (win), hit 0 and you're fired (loss). This part is unchanged from the current implementation.
+EverSprint is the in-fiction "work tracking" app inside Evergreen Mortal — a kanban board where routine (and eventually plot-relevant) work is represented as a card battle. A sprint runs Monday–Friday. **Performance** (0–100) is the single win/loss meter: hit 100 and you're promoted (win), hit 0 and you're fired (loss). See "Performance Timing" below for when it actually moves.
+
+## Performance Timing
+
+Performance mostly only actually changes once per sprint, at End Week — not incrementally as things happen during the week. Finishing a task, Reassigning a carried-over task, and the final loss for anything still open at week's end all queue their contribution rather than applying it immediately; the whole sprint's net change is calculated and applied in one shot when the week ends (revealed on the Sprint Summary screen as "Performance N/100 (±M)"). This is why **promotion can only happen at the end of a sprint** — hitting 100 requires that sprint-end lump sum, since gains never move Performance mid-week on their own.
+
+**Exception — Deadline Pressure.** Its daily loss tick is a deliberate carve-out: it applies for real, immediately, the moment it fires each day (on top of still getting hit again by the sprint-end lump sum if the task is still open then, per its "fires every day and again at sprint end" text). This means **firing (hitting 0) can still happen mid-sprint** — but only from this one live threat; every other source of Performance change is deferred to the week-end reveal.
+
+**Implementation note — Special Task / Business as Usual severity across a sprint**: since Performance doesn't move mid-sprint (Deadline Pressure aside), every task that gets its severity from Business as Usual — including every Special Task spawned during the same sprint — locks to the *same* number, whatever Performance was at that sprint's start. Multiple Special Tasks in one sprint will all share identical severity; it only changes once the next sprint's opening Performance is revealed.
 
 ## Core Loop / Board Columns
 
@@ -41,11 +49,12 @@ Moves into Played when picked. No manual trigger — it reacts automatically to 
 The only curse card in the game. **Never appears in a starting deck** — it only enters a deck via the Infectious task ability (see below).
 
 - Drafted and **picked** → destroyed permanently.
-- Drafted and **declined** (a different card picked instead) → the copy returns to the deck, plus **2 new copies are added** (1 becomes 3).
+- Drafted and **declined** (a different card picked instead) → the copy returns to the deck, plus **1 new copy is added** (1 becomes 2).
 - Multiple copies can appear in the same day's 3-card draft simultaneously if things spiral — this is intentional ("outbreak" days are acceptable).
 - **All copies are wiped from the deck at sprint's end**, regardless of how many exist.
+- **Finishing the Infectious task that spawned them also wipes every copy immediately** — you don't have to wait for sprint end if you clear the source.
 
-**Implementation note**: the drafted/declined split applies inside a bonus Draft-from-N too, not just the daily 3-card Draft. If a Virus is one of the N sampled cards and you play something else, that Virus counts as declined (returns + 2 new copies). If you decline the whole bonus prompt, every sampled card — Virus included — is treated as declined the same way. A Virus can also come up as one of the 2 cards an untyped "play N random cards from your deck" effect (e.g. Batch Job) forces into play; since there's no decline option there, it simply resolves as picked (destroyed).
+**Implementation note**: the drafted/declined split applies inside a bonus Draft-from-N too, not just the daily 3-card Draft. If a Virus is one of the N sampled cards and you play something else, that Virus counts as declined (returns + 1 new copy). If you decline the whole bonus prompt, every sampled card — Virus included — is treated as declined the same way. A Virus can also come up as one of the 2 cards an untyped "play N random cards from your deck" effect (e.g. Batch Job) forces into play; since there's no decline option there, it simply resolves as picked (destroyed).
 
 ## The "Play" Keyword
 
@@ -61,6 +70,8 @@ Several cards trigger a bonus mini-draft: **immediately sample N random cards fr
 - **The player may always decline any bonus Draft-from-N prompt** and play nothing from it. This is both a genuine player choice and the built-in safety valve against decks that could otherwise force an infinite chain.
 
 **Implementation note**: the Draft Squeeze task ability (see below) only shrinks the day's mandatory 3-card Draft — bonus Draft-from-N prompts always sample the card's own stated N regardless of Draft Squeeze.
+
+**Implementation note — simultaneous triggers queue, they don't clobber each other**: some effects can trigger more than one bonus draft in the same instant — e.g. an 'all'-kind effect like Broadcast Ping finishing two tasks at once with Task Manager ("when you finish a task, Draft from 3") deployed fires it twice. Each trigger gets its own separate Draft-from-N prompt, shown one after another (the UI shows "(+N more queued)" when there's a backlog) — none of them are dropped or merged into one.
 
 ## Rarity & Reward Odds
 
@@ -84,6 +95,10 @@ Each of the 40 cards below is a single unique named card, not a stack — the on
 
 No starting-deck composition was specified in the original design session, so a 10-card placeholder was chosen for the first sprint: **2× Quick Patch, 2× Broadcast Ping, 2× Debugger, 1× Priority Queue, 1× Background Sync, 1× Garbage Collection, 1× Force Quit**. This is first-draft content, same status as the rest of the numeric balance (see Open Items) — expect it to change. It's edited via the same Deck / Unused Cards editor as every other sprint's deck, so once Sprint 1 is underway, "starting deck" and "current deck" are the same folder.
 
+### Deck Size Cap
+
+The Deck folder in the deckbuilder is capped at **20 cards** — the editor won't let you drag a card from Unused Cards into an already-full Deck (shown as "Deck (20/20)" in the header), and a drag toward it shows a "not allowed" cursor rather than the usual drop highlight once it's full. This cap only applies to that deliberate, player-driven curation step. It doesn't constrain the *live* sprint deck during play, which can already legitimately exceed 20 through gameplay mechanics that add cards directly (Computer Virus's outbreak duplication, Played cards folding back in at sprint's end) — those are unaffected.
+
 ### Common — Script (12)
 
 1. **Parallel Execution** — Target task loses 5 severity for each Played card you have.
@@ -93,7 +108,7 @@ No starting-deck composition was specified in the original design session, so a 
 5. **Quick Patch** — Target task loses 15 severity.
 6. **Broadcast Ping** — All tasks lose 5 severity.
 7. **Deep Scan** — Draft from 5 (pick 1 of 5 random cards from your deck to play).
-8. **Cascade Failure** — All tasks lose 5 severity for each card you Activated today.
+8. **Cascade Failure** — All tasks lose 5 severity for each Activate effect you triggered today.
 9. **Force Quit** — Finish target task with severity 30 or less.
 10. **Kill Top Process** — The task with the highest severity loses 25 severity.
 11. **Garbage Collection** — The task with the lowest severity loses 50 severity.
@@ -152,7 +167,7 @@ No starting-deck composition was specified in the original design session, so a 
 
 **Implementation note — multi-play auto-targeting**: Batch Job and Root Access can each cause more than one card to resolve back-to-back, which breaks down if two of them need a target at once (there's only one "choose a task" prompt at a time). Any target-needing card resolved this way auto-targets the current highest-severity eligible task instead of prompting the player — this only applies to the *other* cards a multi-play triggers, never to a card you draft and pick normally.
 
-**Implementation note — Fork Bomb / Recursive Call scope**: these duplicate only the specific card's own effect body. They don't cause *other* Daemons' reactions (Background Sync, Retaliation, etc.) to also fire twice — those still trigger exactly once per real Activation or Script run, regardless of how many times Fork Bomb/Recursive Call replay the triggering card's own effect.
+**Implementation note — Fork Bomb / Recursive Call scope**: these duplicate only the specific card's own effect body. They don't cause *other* Daemons' reactions (Background Sync, Retaliation, etc.) to also fire twice, and don't restart the card's own cooldown a second time — those still trigger exactly once per real Activation or Script run, regardless of how many times Fork Bomb/Recursive Call replay the triggering card's own effect. **Exception**: a Fork Bomb replay does count as a real Activate for Cascade Failure's "Activate effects triggered today" tally — "Activate it twice" means two Activates happened, even though everything else about the Activation (cooldown, Retaliation, other Daemons) only fires once.
 
 ## Task / Enemy Agency
 
@@ -174,10 +189,10 @@ Each sprint's task lineup is generated fresh at sprint start using a fixed algor
    | 75 | ~307 |
    | 100 | ~519 |
 
-4. **Split** — each task gets a floor of 5 severity; the remaining budget is divided across all tasks using normalized random weights (an uneven, organic split, not an even one), then rounded to whole numbers with drift correction so the total still matches.
+4. **Split** — each task gets a floor of 5 severity; the remaining budget is divided across all tasks using normalized random weights (an uneven, organic split, not an even one), then rounded to whole numbers with drift correction so the total still matches. **A single task's severity is capped at 100** — at high Performance the budget (see the table above) can suggest more than that for one task, and any excess from the split is simply not applied rather than pushed onto the task.
 5. **Ability assignment** — one task is guaranteed the **Business as Usual** ability. Each remaining task gets a unique ability (no repeats within a sprint), drawn with equal probability from whichever of the other 11 abilities are currently eligible.
 6. **Severity overrides** — a task with Business as Usual or Layered discards whatever severity the random split gave it and uses its own formula instead (see table below). This isn't compensated elsewhere — a sprint's realized total severity can end up under the nominal budget when either ability appears.
-7. **Gain / loss** — independent of severity and ability: every task gets its own **gain** and **loss** values, each an independent random integer from 1 to 5. **Gain** is the Performance awarded when the task is finished (severity reaches 0). **Loss** is the Performance penalty applied if the task is still unresolved (per the existing passive end-of-sprint penalty described above; see Deadline Pressure for the ability that changes when it fires).
+7. **Gain / loss** — independent of severity and ability: every task gets its own **gain** and **loss** values, each an independent random integer from 1 to 5. **Gain** is the Performance awarded when the task is finished (severity reaches 0). **Loss** is the Performance penalty applied if the task is still unresolved at sprint's end — and it fires **every sprint** the task remains open, not just once (see Deadline Pressure for the ability that fires it more often still, and Carrying tasks between sprints below for how a task can end up unresolved across more than one sprint in the first place).
 
 #### The 12 task abilities
 
@@ -188,7 +203,7 @@ Each ability also gets a flavor name for the task card itself, distinct from the
 | 1 | Business as Usual | Routine Maintenance | Severity = Performance, calculated once at sprint start (overrides the random split); behaves as normal severity after that (can be raised/lowered like any other task) | all levels |
 | 2 | Escalation | Runaway Process | Severity +x/day left unfinished, x = round(Performance/10) | all levels |
 | 3 | Retaliation | Defensive Firewall | On any Utility Activation, severity +x, x = round(Performance/10) | all levels |
-| 4 | Infectious | Compromised Server | At sprint start, adds x Computer Virus cards (1 under 50, 2 at 51–75, 3 over 75) | all levels |
+| 4 | Infectious | Compromised Server | At sprint start, adds x Computer Virus cards (1 under 50, 2 at 51–75, 3 over 75). Finishing this task removes every Computer Virus copy currently in the deck | all levels |
 | 5 | Armored | Hardened Legacy System | Takes half damage, universally, from any effect type | >35 |
 | 6 | Absorption | Load Aggregator | Gains 10 severity whenever any other task's severity is lowered | >40 |
 | 7 | Draft Squeeze | Resource Contention | Day's Draft samples 2 cards instead of 3 while alive | >50 |
@@ -202,7 +217,57 @@ Performance gates are checked once, at the moment a sprint's tasks are generated
 
 **Implementation note — locked magnitudes, not just gates**: the same "checked once, locked for the task's life" rule extends to the *x* values above, not only to whether the ability is eligible in the first place. Escalation's and Retaliation's `x = round(Performance/10)`, and Infectious's virus count, are all rolled once at task generation and stored on the task — they do **not** silently recompute from Performance's current value later in the sprint (Performance can move a lot in five days). This also means the in-game ability description on a task always states its exact locked number (e.g. "Gains 6 severity every day it stays unfinished") rather than the general formula. Deadline Pressure's daily penalty is likewise just the task's own `loss` stat, already fixed at generation.
 
-**Implementation note — severity display ceiling**: the severity budget formula routinely produces individual task severities well past 100 at high Performance (see the budget table above) — that's intended, not a bug. Each task's health-bar reference value (`maxSeverity`) tracks its own starting severity rather than a fixed 100, and only clamps the *bar's rendered width* at 100%; it never caps how much a task's real severity can grow from Contagious/Absorption/Retaliation/Escalation.
+**Implementation note — 100 is a hard severity cap**: a task's severity can never exceed 100, full stop. This is enforced at every point severity can increase — the initial budget split, Escalation's daily gain, Retaliation's per-Activation gain, Contagious's daily spread, and Absorption's +10 — not just at generation. Each task's health-bar reference value (`maxSeverity`) tracks its own (already-capped) starting severity, so a task that starts below 100 and gets pushed upward by these abilities shows its bar filling in past the point it started at, capped visually at 100% once severity reaches the ceiling.
+
+### Carrying tasks between sprints
+
+A task that's still unfinished when a sprint ends doesn't just disappear —
+it stays a live task into the next sprint, **prepended ahead of that
+sprint's own freshly-generated lineup** (so it's first in My Tasks). It keeps
+whatever severity/abilities/locked ability amounts it already had, and
+continues ticking normally (Escalation/Contagious/Retaliation keep applying
+to it every day it's open, same as any other task — severity is still
+capped at 100, see above). Its `loss` penalty fires again at the *new*
+sprint's end if it's still unresolved then too, on top of whatever it's
+already cost — carrying a task doesn't cap how many times it can drain
+Performance, only how much each individual hit costs.
+
+Because that carryover has no ceiling on its own — the backlog can only ever
+grow, and an old task both keeps growing itself *and* keeps re-costing
+Performance every sprint it survives — carried-over tasks get one thing
+freshly-generated tasks don't: **Reassign**. At the cost of **2× that task's
+`loss`** in Performance, the player can give up on a carried-over task and
+remove it from My Tasks on the spot. This is a clean forfeit, not a shortcut
+to finishing it — no gain, no card reward, no Infectious deck-wipe. It's
+deliberately pricier than a single sprint's worth of loss so it's a real
+tradeoff (cut losses now at a premium vs. keep grinding and risk the
+recurring cost), not a free out — though per Performance Timing above, the
+cost is queued like any other mid-sprint Performance change and only
+actually lands (and can only end the game) at that sprint's End Week, not
+the instant you click Reassign. Only tasks that actually carried over from a
+previous sprint have this option; this sprint's own newly-generated tasks
+don't.
+
+### Clearing the board early — Special Task
+
+Checked once per day, at End Day: if My Tasks is empty at the end of Monday,
+Tuesday, Wednesday, or Thursday, one more task queues up for the day that's
+just starting — **Special Task**. It's generated exactly like a Business as
+Usual task — severity locked to current Performance, gain/loss rolled 1–5 as
+usual, behaves as normal severity after that — with two differences: its
+name, and its reward. Finishing a Special Task skips the normal 74/25/1
+Common/Uncommon/Rare odds entirely and rolls a straight **50/50 between Rare
+and Uncommon** — never Common, never nothing.
+
+This is the answer to "what happens if you clear the board early": instead
+of idle downtime, an empty board at day's end converts into one more
+(better-rewarding) task rather than nothing. Checking only once per day (at
+the End Day transition, not per-finish mid-day) is what naturally caps it at
+one per day — clearing the board twice in the same day doesn't queue two.
+Friday itself is never one of the four checked days (Friday's end is End
+Week, not a day-to-day transition), but a Special Task queued from
+Thursday's check is still there to work on through Friday like any other
+task.
 
 ### Story / scripted sprints
 Tied to the Jo/Marcus/Evergreen narrative, using the existing (currently empty) `SCRIPTED_TASKS_BY_WEEK` hook in `game.js`. These are hand-authored tasks that **can stack multiple effects**, unlike random-sprint tasks which get at most one — reserved for bigger, more memorable narrative set-pieces.
@@ -210,5 +275,5 @@ Tied to the Jo/Marcus/Evergreen narrative, using the existing (currently empty) 
 ## Open / Unresolved Items
 
 - No concrete story-sprint task has been designed yet (what it looks like tied to an actual plot beat, and how multi-ability stacking should read to the player).
-- No numeric balance pass has been done — severity thresholds, cooldown lengths, ability gate thresholds, the severity-budget formula's constants, the starting deck, and the gain/loss 1–5 range are all first-draft guesses.
+- No numeric balance pass has been done — severity thresholds, cooldown lengths, ability gate thresholds, the severity-budget formula's constants, the starting deck, the gain/loss 1–5 range, Reassign's 2× cost multiplier, Special Task's 50/50 Rare/Uncommon split, and the 20-card deck size cap are all first-draft guesses.
 - The whole system has been smoke-tested (full sprint loop, deck editor persistence, Virus outbreak, high-Performance task generation) but not actually playtested for fun/balance versus just working correctly on paper.
