@@ -533,9 +533,13 @@ function shuffle(arr) {
 const CARD_DEFS = [
   // -- Common Script (12) --
   {
-    id: 'parallel-execution', name: 'Parallel Execution', type: 'script', rarity: 'common', kind: 'target',
-    description: 'Target task loses 5 severity for each Played card you have.',
-    apply: (taskId) => { const t = findTask(taskId); if (t) lowerTaskSeverity(t, 5 * sprintState.played.length); },
+    id: 'live-patch', name: 'Live Patch', type: 'script', rarity: 'common', kind: 'target',
+    description: 'Target task loses 5 severity, then Draft from 3.',
+    apply: (taskId) => {
+      const t = findTask(taskId);
+      if (t) lowerTaskSeverity(t, 5);
+      openDraftFrom(3);
+    },
   },
   {
     id: 'binary-split', name: 'Binary Split', type: 'script', rarity: 'common', kind: 'target',
@@ -695,17 +699,9 @@ const CARD_DEFS = [
 
   // -- Uncommon Utility (4) --
   {
-    id: 'hot-swap', name: 'Hot Swap', type: 'utility', rarity: 'uncommon', kind: 'target-card', cooldown: 2,
-    description: 'Activate 2: Put a Played card back in your deck, then Draft from 3.',
-    apply: (instanceId) => {
-      const idx = sprintState.played.findIndex((c) => c.instanceId === instanceId);
-      if (idx !== -1) {
-        const [c] = sprintState.played.splice(idx, 1);
-        c.cooldownRemaining = 0;
-        sprintState.deck.push(c);
-      }
-      openDraftFrom(3);
-    },
+    id: 'hot-swap', name: 'Hot Swap', type: 'utility', rarity: 'uncommon', kind: 'draft-from', draftN: 3, cooldown: 3,
+    description: 'Activate 3: Draft from 3.',
+    apply: () => openDraftFrom(3),
   },
   {
     id: 'batch-job', name: 'Batch Job', type: 'utility', rarity: 'uncommon', kind: 'none', cooldown: 4,
@@ -735,8 +731,8 @@ const CARD_DEFS = [
 
   // -- Uncommon Daemon (2) --
   {
-    id: 'just-in-time-compiler', name: 'Just-In-Time Compiler', type: 'daemon', rarity: 'uncommon', kind: 'daemon',
-    description: 'When you run a Script, lower the Activate timer of a random card.',
+    id: 'query-sweep', name: 'Query Sweep', type: 'daemon', rarity: 'uncommon', kind: 'daemon',
+    description: 'Each time you Draft, all tasks lose 5 severity.',
   },
   {
     id: 'recursive-call', name: 'Recursive Call', type: 'daemon', rarity: 'uncommon', kind: 'daemon',
@@ -1171,7 +1167,8 @@ function getEligiblePlayedCards(template, excludeInstanceId) {
 }
 
 // -- Deck sampling --
-// Autoloader ("when you Draft, add 2 cards to the Draft") applies to any
+// Autoloader ("when you Draft, add 2 cards to the Draft") and Query Sweep
+// ("each time you Draft, all tasks lose 5 severity") both apply to any
 // sampling from the deck, daily or bonus. Type-filtered sampling (used by
 // "play a random Script/Utility/Daemon" effects) naturally excludes Computer
 // Virus since it isn't any of those three types.
@@ -1183,6 +1180,7 @@ function sampleAnyFromDeck(n) {
     const idx = sprintState.deck.findIndex((d) => d.instanceId === c.instanceId);
     sprintState.deck.splice(idx, 1);
   });
+  if (hasDaemon('query-sweep')) dealDamageToAll(5);
   return pool;
 }
 
@@ -1239,13 +1237,6 @@ function advanceBonusDraftQueue() {
 function runDaemonHook(hookName) {
   if (hookName === 'afterActivateUtility' && hasDaemon('background-sync')) {
     dealDamageToAll(2);
-  }
-  if (hookName === 'afterRunScript' && hasDaemon('just-in-time-compiler')) {
-    const utilities = sprintState.played.filter((c) => CARD_DEFS_BY_ID[c.templateId].type === 'utility' && c.cooldownRemaining > 0);
-    if (utilities.length) {
-      const pick = utilities[Math.floor(Math.random() * utilities.length)];
-      pick.cooldownRemaining = Math.max(0, pick.cooldownRemaining - 1);
-    }
   }
 }
 

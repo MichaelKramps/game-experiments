@@ -101,7 +101,7 @@ The Deck folder in the deckbuilder is capped at **20 cards** — the editor won'
 
 ### Common — Script (12)
 
-1. **Parallel Execution** — Target task loses 5 severity for each Played card you have.
+1. **Live Patch** — Target task loses 5 severity, then Draft from 3.
 2. **Binary Split** — Target task loses half its severity (rounded up).
 3. **Prefetch** — Add two new cards to your draft, then select another card to play. (Implemented as Draft from 2 — see "Draft from N" above.)
 4. **Refresh Query** — Draw a new set of three cards to draft from, then select another card to play. (Implemented as Draft from 3.)
@@ -143,14 +143,14 @@ The Deck folder in the deckbuilder is capped at **20 cards** — the editor won'
 
 ### Uncommon — Utility (4)
 
-1. **Hot Swap** — Activate 2: Put a Played card back in your deck, then Draft from 3.
+1. **Hot Swap** — Activate 3: Draft from 3.
 2. **Batch Job** — Activate 4: Play 2 random cards from your deck.
 3. **Load Shedding** — Activate 2: Lower the severity of all tasks by 5.
 4. **Watchdog Timer** — Activate 1: The task with the highest severity loses 10 severity.
 
 ### Uncommon — Daemon (2)
 
-1. **Just-In-Time Compiler** — When you run a Script, lower the Activate timer of a random card.
+1. **Query Sweep** — Each time you Draft, all tasks lose 5 severity.
 2. **Recursive Call** — When you run a Script, run it twice.
 
 ### Rare — Script (1)
