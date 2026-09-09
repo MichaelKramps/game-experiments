@@ -719,9 +719,9 @@ const CARD_DEFS = [
     },
   },
   {
-    id: 'load-shedding', name: 'Load Shedding', type: 'utility', rarity: 'uncommon', kind: 'all', cooldown: 2,
-    description: 'Activate 2: Lower the severity of all tasks by 5.',
-    apply: () => dealDamageToAll(5),
+    id: 'load-shedding', name: 'Load Shedding', type: 'utility', rarity: 'uncommon', kind: 'none', cooldown: 2,
+    description: 'Activate 2: Lower the severity of a random task by 25.',
+    apply: () => dealDamageToRandom(25),
   },
   {
     id: 'watchdog-timer', name: 'Watchdog Timer', type: 'utility', rarity: 'uncommon', kind: 'highest', cooldown: 1,
@@ -1081,7 +1081,7 @@ function finishTaskDirect(task) {
   // every Computer Virus copy currently in the deck is removed, not just the
   // ones it originally added.
   if (hasAbility(task, 'infectious')) {
-    sprintState.deck = sprintState.deck.filter((c) => CARD_DEFS_BY_ID[c.templateId].type !== 'virus');
+    purgeVirusCards();
   }
 }
 
@@ -1141,6 +1141,13 @@ function dealDamageToLowest(amount, filterFn) {
   const tasks = sprintState.tasks.filter((t) => !t.finished && (!filterFn || filterFn(t)));
   const target = tasks.reduce((a, b) => (!a || b.severity < a.severity ? b : a), null);
   if (target) lowerTaskSeverity(target, amount);
+}
+
+function dealDamageToRandom(amount, filterFn) {
+  const tasks = sprintState.tasks.filter((t) => !t.finished && (!filterFn || filterFn(t)));
+  if (tasks.length === 0) return;
+  const target = tasks[Math.floor(Math.random() * tasks.length)];
+  lowerTaskSeverity(target, amount);
 }
 
 function finishAllUnder(threshold) {
@@ -1208,6 +1215,26 @@ function resolveDraftOutcome(cards) {
       sprintState.deck.push(makeCard('computer-virus'));
     }
   });
+}
+
+// Removes every Computer Virus copy from the deck, plus any that are
+// currently sitting in a bonus draft's options — those cards were spliced
+// out of the deck array the moment the draft opened, so a plain deck filter
+// misses copies that are mid-draft (showing, or queued behind another one)
+// when the Infectious task that spawned them gets finished.
+function purgeVirusCards() {
+  const isVirus = (c) => CARD_DEFS_BY_ID[c.templateId].type === 'virus';
+  sprintState.deck = sprintState.deck.filter((c) => !isVirus(c));
+  sprintState.bonusDraftQueue = sprintState.bonusDraftQueue
+    .map((entry) => ({ options: entry.options.filter((c) => !isVirus(c)) }))
+    .filter((entry) => entry.options.length > 0);
+  if (sprintState.bonusDraft) {
+    sprintState.bonusDraft.options = sprintState.bonusDraft.options.filter((c) => !isVirus(c));
+    if (sprintState.bonusDraft.options.length === 0) {
+      sprintState.bonusDraft = null;
+      advanceBonusDraftQueue();
+    }
+  }
 }
 
 // If a bonus draft is already showing, queue this one instead of clobbering
@@ -1532,7 +1559,7 @@ function endDay() {
   sprintState.played.forEach((c) => { c.cooldownRemaining = 0; });
   sprintState.deck.push(...sprintState.played);
   sprintState.played = [];
-  sprintState.deck = sprintState.deck.filter((c) => CARD_DEFS_BY_ID[c.templateId].type !== 'virus');
+  purgeVirusCards();
 
   if (!sprintState.gameOver) {
     sprintState.summary = {

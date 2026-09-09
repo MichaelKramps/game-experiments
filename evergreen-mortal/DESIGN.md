@@ -145,7 +145,7 @@ The Deck folder in the deckbuilder is capped at **20 cards** — the editor won'
 
 1. **Hot Swap** — Activate 3: Draft from 3.
 2. **Batch Job** — Activate 4: Play 2 random cards from your deck.
-3. **Load Shedding** — Activate 2: Lower the severity of all tasks by 5.
+3. **Load Shedding** — Activate 2: Lower the severity of a random task by 25.
 4. **Watchdog Timer** — Activate 1: The task with the highest severity loses 10 severity.
 
 ### Uncommon — Daemon (2)
