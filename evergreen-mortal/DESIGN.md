@@ -73,6 +73,15 @@ Several cards trigger a bonus mini-draft: **immediately sample N random cards fr
 
 **Implementation note — simultaneous triggers queue, they don't clobber each other**: some effects can trigger more than one bonus draft in the same instant — e.g. an 'all'-kind effect like Broadcast Ping finishing two tasks at once with Task Manager ("when you finish a task, Draft from 3") deployed fires it twice. Each trigger gets its own separate Draft-from-N prompt, shown one after another (the UI shows "(+N more queued)" when there's a backlog) — none of them are dropped or merged into one.
 
+## Automation
+
+Several cards let the player attack a task indirectly: instead of lowering its severity outright, they add **Automation** to it — a plain stacking counter on the task, separate from severity — which then ticks the task's severity down on its own every day.
+
+- **Granting**: a card that "Adds N Automation" to a task simply adds N to that task's current total — cumulative, so a task already holding some just gets more. Granting is not itself a severity change, so unlike lowering severity it does **not** interact with Armored, Layered, Signal Amplifier, or Absorption; those only come into play at the daily tick (below). Targeting rules follow the same convention as everything else: a `target`-kind grant (e.g. Provision Task) is blocked by Distraction like any other single-target effect, while an `all`-kind grant (e.g. Rollout) still lands on Distraction tasks.
+- **Daily tick**: once per day, at the same point in `endDay()` where Escalation and Contagious already apply, every task with Automation > 0 loses severity equal to its own Automation total. This *does* go through the shared severity-lowering path, so Signal Amplifier (+3), Armored (half, rounded up), Layered (max 1 per hit), and Absorption (triggers on other tasks) all apply to it exactly like any other source of damage — a heavily-Automated Layered task still only loses 1/day, and an Armored task only loses half your invested total each day.
+- **Carryover**: a task's Automation persists if it carries over unfinished into the next sprint, same as its locked ability amounts — investment in a task isn't lost just because the sprint ended before it died.
+- **General mechanic**: Automation is real task state (not a locked per-ability `abilityAmounts` slot), so any card or Daemon can read or add to it. Continuous Deployment (Daemon) and Fleet Sync (Utility) both top up Automation on tasks that already have some, on top of the Script cards that seed it in the first place.
+
 ## Rarity & Reward Odds
 
 When a task is finished, the reward roll uses these odds:
@@ -83,54 +92,65 @@ When a task is finished, the reward roll uses these odds:
 | Uncommon | 25% |
 | Rare | 1% |
 
-Pool composition: **24 Common** (12 Script / 8 Utility / 4 Daemon), **12 Uncommon** (6 Script / 4 Utility / 2 Daemon), **3 Rare** (1 of each type), plus **Computer Virus as card #40** (outside the normal reward pool — see above for how it actually enters a deck). Total: 40 cards.
+Pool composition: **23 Common** (11 Script / 8 Utility / 4 Daemon), **12 Uncommon** (6 Script / 4 Utility / 2 Daemon), **3 Rare** (1 of each type), plus **Computer Virus** (outside the normal reward pool — see above for how it actually enters a deck). Total: 39 cards.
 
-Each of the 40 cards below is a single unique named card, not a stack — the only way to end up with more than one copy of the same card is rolling it as a reward twice (or, for Computer Virus, the outbreak mechanic).
+Each of the 39 cards below is a single unique named card, not a stack — the only way to end up with more than one copy of the same card is rolling it as a reward twice (or, for Computer Virus, the outbreak mechanic).
 
 **Reward delivery**: finishing a task grants exactly **one** card, rolled against the odds above. The new card goes to the **Unused Cards** folder (the existing deckbuilder pool of owned-but-not-in-this-sprint cards, `sprintState.unused`) — not directly into the sprint's Deck.
 
 **"Play a random X from your deck" with no eligible X**: if the deck contains no card of the required type, the effect simply does nothing (no fizzle penalty, no substitution).
 
+### Copy Limits & Reward Exhaustion
+
+Ownership of any single named card — counted across Deck, Unused Cards, and Played combined, since all three are cards the player currently owns — is capped by rarity: **Common max 10, Uncommon max 5, Rare max 2**. Computer Virus is exempt (it's outside the reward pool entirely; see above).
+
+The cap only constrains *collecting* copies, never *deploying* them — a player below the cap can always put every owned copy of a card into the Deck, subject only to the Deck's own size limit (see Deck Size below). There is no separate "copy limit" check on the Deck folder itself; it's enforced entirely at the point a reward is granted:
+
+1. Roll the intended rarity as normal (74/25/1, or Special Task's 50/50 Rare/Uncommon — see below).
+2. If any card of that rarity is below its cap, grant a random one of those eligible cards, same as today.
+3. If *every* card of that rarity is at its cap, fall back to a substitute rarity: **Common → Uncommon, Uncommon → Rare, Rare → Uncommon**. (Not a symmetric cycle — Rare's fallback is Uncommon, not Common.)
+4. If the substitute rarity is also fully maxed, the one rarity that is neither the original roll nor the substitute is guaranteed instead.
+5. If all three rarities are fully maxed out, no reward is granted at all.
+
 ### Starting Deck
 
-No starting-deck composition was specified in the original design session, so a 10-card placeholder was chosen for the first sprint: **2× Quick Patch, 2× Broadcast Ping, 2× Debugger, 1× Priority Queue, 1× Background Sync, 1× Garbage Collection, 1× Force Quit**. This is first-draft content, same status as the rest of the numeric balance (see Open Items) — expect it to change. It's edited via the same Deck / Unused Cards editor as every other sprint's deck, so once Sprint 1 is underway, "starting deck" and "current deck" are the same folder.
+No starting-deck composition was specified in the original design session, so a 10-card placeholder was chosen for the first sprint: **2× Quick Patch, 2× Broadcast Ping, 2× Debugger, 1× Priority Queue, 1× Background Sync, 1× Garbage Collection, 1× Force Quit**. This is first-draft content, same status as the rest of the numeric balance (see Open Items) — expect it to change. It's edited via the same Deck / Unused Cards editor as every other sprint's deck, so once Sprint 1 is underway, "starting deck" and "current deck" are the same folder. It sits exactly at the Deck's minimum size (see below), so it leaves no headroom below the floor.
 
-### Deck Size Cap
+### Deck Size
 
-The Deck folder in the deckbuilder is capped at **20 cards** — the editor won't let you drag a card from Unused Cards into an already-full Deck (shown as "Deck (20/20)" in the header), and a drag toward it shows a "not allowed" cursor rather than the usual drop highlight once it's full. This cap only applies to that deliberate, player-driven curation step. It doesn't constrain the *live* sprint deck during play, which can already legitimately exceed 20 through gameplay mechanics that add cards directly (Computer Virus's outbreak duplication, Played cards folding back in at sprint's end) — those are unaffected.
+The Deck folder in the deckbuilder is bounded on both ends: a **minimum of 10** and a **maximum of 40** cards. The editor won't let you drag a card from Unused Cards into an already-full Deck (shown as "Deck (40/40)" in the header), and won't let you drag a card out of the Deck once it's down to 10 — both attempts show a "not allowed" cursor rather than the usual drop highlight. Both bounds only apply to that deliberate, player-driven curation step. Neither constrains the *live* sprint deck during play, which can already legitimately fall below 10 (cards out in Played) or exceed 40 (Computer Virus's outbreak duplication, Played cards folding back in at sprint's end) — those are unaffected.
 
-### Common — Script (12)
+### Common — Script (11)
 
-1. **Live Patch** — Target task loses 5 severity, then Draft from 3.
-2. **Binary Split** — Target task loses half its severity (rounded up).
+1. **Provision Task** — Add 10 Automation to target task.
+2. **Rollout** — Add 2 Automation to all tasks.
 3. **Prefetch** — Add two new cards to your draft, then select another card to play. (Implemented as Draft from 2 — see "Draft from N" above.)
-4. **Refresh Query** — Draw a new set of three cards to draft from, then select another card to play. (Implemented as Draft from 3.)
+4. **Run Pipeline** — All tasks with at least 1 Automation lose 50 severity.
 5. **Quick Patch** — Target task loses 15 severity.
 6. **Broadcast Ping** — All tasks lose 5 severity.
-7. **Deep Scan** — Draft from 5 (pick 1 of 5 random cards from your deck to play).
-8. **Cascade Failure** — All tasks lose 5 severity for each Activate effect you triggered today.
-9. **Force Quit** — Finish target task with severity 30 or less.
-10. **Kill Top Process** — The task with the highest severity loses 25 severity.
-11. **Garbage Collection** — The task with the lowest severity loses 50 severity.
-12. **Buffer Overflow** — Target task with more than 70 severity loses 70 severity.
+7. **Deep Scan** — Random task gains 5 severity, then Draft from 5 (pick 1 of 5 random cards from your deck to play).
+8. **Force Quit** — Finish target task with severity 30 or less.
+9. **Kill Top Process** — The task with the highest severity loses 50 severity.
+10. **Garbage Collection** — The task with the lowest severity loses 50 severity.
+11. **Buffer Overflow** — Target task with more than 70 severity loses 70 severity.
 
 ### Common — Utility (8)
 
 1. **Debugger** — Activate 1: target task loses 5 severity.
-2. **Search Index** — Activate 3: Draft from 2.
+2. **Deploy Agent** — Activate 2: Add 5 Automation to target task.
 3. **Task Scheduler** — Activate 1: lower the Activate timer of another card by 1.
 4. **Load Balancer** — Activate 2: All tasks lose 5 severity.
 5. **Priority Queue** — Activate 2: The task with the highest severity loses 15 severity.
 6. **Auto-Cleanup** — Activate 1: Finish all tasks under 10 severity.
-7. **Cron Reset** — Activate 3: Lower the Activate timer of all cards by 1.
-8. **Macro Runner** — Activate 3: Play a random Script card from your deck.
+7. **Fleet Sync** — Activate 1: Add 5 Automation to all tasks with at least 1 Automation.
+8. **Auto Resolve** — Activate 3: Finish target task with severity 20 or less.
 
 ### Common — Daemon (4)
 
 1. **Background Sync** — When you Activate a Utility, all tasks lose 2 severity.
 2. **Signal Amplifier** — Whenever you lower the severity of a task, lower its severity by 3 more. (Must not trigger itself — this just adds 3 to whatever amount is being lowered, it doesn't re-fire on its own bonus.)
 3. **Task Manager** — When you finish a task, Draft from 3.
-4. **Autoloader** — When you Draft, add 2 cards to the Draft.
+4. **Autoloader** — When you Draft, add 1 card to the Draft.
 
 ### Uncommon — Script (6)
 
@@ -138,20 +158,20 @@ The Deck folder in the deckbuilder is capped at **20 cards** — the editor won'
 2. **Full System Scan** — All tasks lose 1 severity for each card in your deck.
 3. **Hard Reset** — Lower the Activate timer of all cards to 0.
 4. **Purge** — All tasks with more than 50 severity lose 25 severity.
-5. **Spawn Process** — Play a random Daemon from your deck.
-6. **Auto-Install** — Play a random Utility from your deck.
+5. **Cascade Failure** — All tasks lose 5 severity for each Activate effect you triggered today.
+6. **Remote Trigger** — Activate target Utility. Can target any Utility currently in Played, even one on cooldown — that's the point (an early/bonus trigger) — and the target's cooldown is left completely unaffected either way. Everything else about a real Activate still happens (Cascade Failure's tally, Retaliation, Activate-triggered Daemons).
 
 ### Uncommon — Utility (4)
 
 1. **Hot Swap** — Activate 3: Draft from 3.
 2. **Batch Job** — Activate 4: Play 2 random cards from your deck.
-3. **Load Shedding** — Activate 2: Lower the severity of a random task by 25.
+3. **Load Shedding** — Activate 2: Lower the severity of a random task by 30.
 4. **Watchdog Timer** — Activate 1: The task with the highest severity loses 10 severity.
 
 ### Uncommon — Daemon (2)
 
-1. **Query Sweep** — Each time you Draft, all tasks lose 5 severity.
-2. **Recursive Call** — When you run a Script, run it twice.
+1. **Continuous Deployment** — Each time you Activate a Utility, add 1 Automation to all tasks.
+2. **Chain Reaction** — When you run a Script, all tasks lose 5 severity.
 
 ### Rare — Script (1)
 
@@ -163,11 +183,9 @@ The Deck folder in the deckbuilder is capped at **20 cards** — the editor won'
 
 ### Rare — Daemon (1)
 
-1. **Fork Bomb** — When you Activate a card, Activate it twice.
+1. **Query Sweep** — Each time you Draft, all tasks lose 5 severity.
 
 **Implementation note — multi-play auto-targeting**: Batch Job and Root Access can each cause more than one card to resolve back-to-back, which breaks down if two of them need a target at once (there's only one "choose a task" prompt at a time). Any target-needing card resolved this way auto-targets the current highest-severity eligible task instead of prompting the player — this only applies to the *other* cards a multi-play triggers, never to a card you draft and pick normally.
-
-**Implementation note — Fork Bomb / Recursive Call scope**: these duplicate only the specific card's own effect body. They don't cause *other* Daemons' reactions (Background Sync, Retaliation, etc.) to also fire twice, and don't restart the card's own cooldown a second time — those still trigger exactly once per real Activation or Script run, regardless of how many times Fork Bomb/Recursive Call replay the triggering card's own effect. **Exception**: a Fork Bomb replay does count as a real Activate for Cascade Failure's "Activate effects triggered today" tally — "Activate it twice" means two Activates happened, even though everything else about the Activation (cooldown, Retaliation, other Daemons) only fires once.
 
 ## Task / Enemy Agency
 
@@ -205,7 +223,7 @@ Each ability also gets a flavor name for the task card itself, distinct from the
 | 3 | Retaliation | Defensive Firewall | On any Utility Activation, severity +x, x = round(Performance/10) | all levels |
 | 4 | Infectious | Compromised Server | At sprint start, adds x Computer Virus cards (1 under 50, 2 at 51–75, 3 over 75). Finishing this task removes every Computer Virus copy currently in the deck | all levels |
 | 5 | Armored | Hardened Legacy System | Takes half damage, universally, from any effect type | >35 |
-| 6 | Absorption | Load Aggregator | Gains 10 severity whenever any other task's severity is lowered | >40 |
+| 6 | Absorption | Load Aggregator | Gains x severity whenever any other task's severity is lowered, x = round(Performance/10) | >40 |
 | 7 | Draft Squeeze | Resource Contention | Day's Draft samples 2 cards instead of 3 while alive | >50 |
 | 8 | Sluggish Systems | Throttled Pipeline | All Utility cooldowns +1 while alive | >50 |
 | 9 | Contagious | Spreading Outage | Every other task's severity +5/day while alive | >50 |
@@ -215,9 +233,9 @@ Each ability also gets a flavor name for the task card itself, distinct from the
 
 Performance gates are checked once, at the moment a sprint's tasks are generated — an ability stays locked in for that task's whole life even if Performance later crosses back over the threshold.
 
-**Implementation note — locked magnitudes, not just gates**: the same "checked once, locked for the task's life" rule extends to the *x* values above, not only to whether the ability is eligible in the first place. Escalation's and Retaliation's `x = round(Performance/10)`, and Infectious's virus count, are all rolled once at task generation and stored on the task — they do **not** silently recompute from Performance's current value later in the sprint (Performance can move a lot in five days). This also means the in-game ability description on a task always states its exact locked number (e.g. "Gains 6 severity every day it stays unfinished") rather than the general formula. Deadline Pressure's daily penalty is likewise just the task's own `loss` stat, already fixed at generation.
+**Implementation note — locked magnitudes, not just gates**: the same "checked once, locked for the task's life" rule extends to the *x* values above, not only to whether the ability is eligible in the first place. Escalation's, Retaliation's, and Absorption's `x = round(Performance/10)`, and Infectious's virus count, are all rolled once at task generation and stored on the task — they do **not** silently recompute from Performance's current value later in the sprint (Performance can move a lot in five days). This also means the in-game ability description on a task always states its exact locked number (e.g. "Gains 6 severity every day it stays unfinished") rather than the general formula. Deadline Pressure's daily penalty is likewise just the task's own `loss` stat, already fixed at generation.
 
-**Implementation note — 100 is a hard severity cap**: a task's severity can never exceed 100, full stop. This is enforced at every point severity can increase — the initial budget split, Escalation's daily gain, Retaliation's per-Activation gain, Contagious's daily spread, and Absorption's +10 — not just at generation. Each task's health-bar reference value (`maxSeverity`) tracks its own (already-capped) starting severity, so a task that starts below 100 and gets pushed upward by these abilities shows its bar filling in past the point it started at, capped visually at 100% once severity reaches the ceiling.
+**Implementation note — 100 is a hard severity cap**: a task's severity can never exceed 100, full stop. This is enforced at every point severity can increase — the initial budget split, Escalation's daily gain, Retaliation's per-Activation gain, Contagious's daily spread, and Absorption's per-trigger gain — not just at generation. Each task's health-bar reference value (`maxSeverity`) tracks its own (already-capped) starting severity, so a task that starts below 100 and gets pushed upward by these abilities shows its bar filling in past the point it started at, capped visually at 100% once severity reaches the ceiling.
 
 ### Carrying tasks between sprints
 
@@ -275,5 +293,5 @@ Tied to the Jo/Marcus/Evergreen narrative, using the existing (currently empty) 
 ## Open / Unresolved Items
 
 - No concrete story-sprint task has been designed yet (what it looks like tied to an actual plot beat, and how multi-ability stacking should read to the player).
-- No numeric balance pass has been done — severity thresholds, cooldown lengths, ability gate thresholds, the severity-budget formula's constants, the starting deck, the gain/loss 1–5 range, Reassign's 2× cost multiplier, Special Task's 50/50 Rare/Uncommon split, and the 20-card deck size cap are all first-draft guesses.
+- No numeric balance pass has been done — severity thresholds, cooldown lengths, ability gate thresholds, the severity-budget formula's constants, the starting deck, the gain/loss 1–5 range, Reassign's 2× cost multiplier, Special Task's 50/50 Rare/Uncommon split, the 10–40 deck size range, the 10/5/2 copy limits, and Automation's grant/payoff amounts are all first-draft guesses undergoing active playtesting revision.
 - The whole system has been smoke-tested (full sprint loop, deck editor persistence, Virus outbreak, high-Performance task generation) but not actually playtested for fun/balance versus just working correctly on paper.

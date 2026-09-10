@@ -531,30 +531,26 @@ function shuffle(arr) {
 //     'play-random' / 'play-all-others' / 'none') resolves immediately with
 //     no player choice beyond having picked/activated the card itself
 const CARD_DEFS = [
-  // -- Common Script (12) --
+  // -- Common Script (11) --
   {
-    id: 'live-patch', name: 'Live Patch', type: 'script', rarity: 'common', kind: 'target',
-    description: 'Target task loses 5 severity, then Draft from 3.',
-    apply: (taskId) => {
-      const t = findTask(taskId);
-      if (t) lowerTaskSeverity(t, 5);
-      openDraftFrom(3);
-    },
+    id: 'auto-install', name: 'Provision Task', type: 'script', rarity: 'common', kind: 'target',
+    description: 'Add 10 Automation to target task.',
+    apply: (taskId) => addAutomation(findTask(taskId), 10),
   },
   {
-    id: 'binary-split', name: 'Binary Split', type: 'script', rarity: 'common', kind: 'target',
-    description: "Target task loses half its severity (rounded up).",
-    apply: (taskId) => { const t = findTask(taskId); if (t) lowerTaskSeverity(t, Math.ceil(t.severity / 2)); },
+    id: 'binary-split', name: 'Rollout', type: 'script', rarity: 'common', kind: 'all',
+    description: 'Add 2 Automation to all tasks.',
+    apply: () => addAutomationToAll(2),
   },
   {
     id: 'prefetch', name: 'Prefetch', type: 'script', rarity: 'common', kind: 'draft-from', draftN: 2,
-    description: 'Add two new cards to your draft, then select another card to play.',
+    description: 'Draft from 2.',
     apply: () => openDraftFrom(2),
   },
   {
-    id: 'refresh-query', name: 'Refresh Query', type: 'script', rarity: 'common', kind: 'draft-from', draftN: 3,
-    description: 'Draw a new set of three cards to draft from, then select another card to play.',
-    apply: () => openDraftFrom(3),
+    id: 'refresh-query', name: 'Run Pipeline', type: 'script', rarity: 'common', kind: 'all',
+    description: 'All tasks with at least 1 Automation lose 50 severity.',
+    apply: () => dealDamageToAll(50, (t) => (t.automation || 0) >= 1),
   },
   {
     id: 'quick-patch', name: 'Quick Patch', type: 'script', rarity: 'common', kind: 'target',
@@ -568,13 +564,12 @@ const CARD_DEFS = [
   },
   {
     id: 'deep-scan', name: 'Deep Scan', type: 'script', rarity: 'common', kind: 'draft-from', draftN: 5,
-    description: 'Draft from 5 (pick 1 of 5 random cards from your deck to play).',
-    apply: () => openDraftFrom(5),
-  },
-  {
-    id: 'cascade-failure', name: 'Cascade Failure', type: 'script', rarity: 'common', kind: 'all',
-    description: 'All tasks lose 5 severity for each Activate effect you triggered today.',
-    apply: () => dealDamageToAll(5 * sprintState.activationsToday),
+    description: 'Random task gains 5 severity, then Draft from 5.',
+    apply: () => {
+      const tasks = sprintState.tasks.filter((t) => !t.finished);
+      if (tasks.length > 0) raiseTaskSeverity(tasks[Math.floor(Math.random() * tasks.length)], 5);
+      openDraftFrom(5);
+    },
   },
   {
     id: 'force-quit', name: 'Force Quit', type: 'script', rarity: 'common', kind: 'target',
@@ -584,8 +579,8 @@ const CARD_DEFS = [
   },
   {
     id: 'kill-top-process', name: 'Kill Top Process', type: 'script', rarity: 'common', kind: 'highest',
-    description: 'The task with the highest severity loses 25 severity.',
-    apply: () => dealDamageToHighest(25),
+    description: 'The task with the highest severity loses 50 severity.',
+    apply: () => dealDamageToHighest(50),
   },
   {
     id: 'garbage-collection', name: 'Garbage Collection', type: 'script', rarity: 'common', kind: 'lowest',
@@ -606,9 +601,9 @@ const CARD_DEFS = [
     apply: (taskId) => { const t = findTask(taskId); if (t) lowerTaskSeverity(t, 5); },
   },
   {
-    id: 'search-index', name: 'Search Index', type: 'utility', rarity: 'common', kind: 'draft-from', draftN: 2, cooldown: 3,
-    description: 'Activate 3: Draft from 2.',
-    apply: () => openDraftFrom(2),
+    id: 'search-index', name: 'Deploy Agent', type: 'utility', rarity: 'common', kind: 'target', cooldown: 2,
+    description: 'Activate 2: Add 5 Automation to target task.',
+    apply: (taskId) => addAutomation(findTask(taskId), 5),
   },
   {
     id: 'task-scheduler', name: 'Task Scheduler', type: 'utility', rarity: 'common', kind: 'target-card', cooldown: 1,
@@ -632,16 +627,15 @@ const CARD_DEFS = [
     apply: () => finishAllUnder(10),
   },
   {
-    id: 'cron-reset', name: 'Cron Reset', type: 'utility', rarity: 'common', kind: 'none', cooldown: 3,
-    description: 'Activate 3: Lower the Activate timer of all cards by 1.',
-    apply: () => sprintState.played.forEach((c) => {
-      if (CARD_DEFS_BY_ID[c.templateId].type === 'utility') c.cooldownRemaining = Math.max(0, c.cooldownRemaining - 1);
-    }),
+    id: 'cron-reset', name: 'Fleet Sync', type: 'utility', rarity: 'common', kind: 'all', cooldown: 1,
+    description: 'Activate 1: Add 5 Automation to all tasks with at least 1 Automation.',
+    apply: () => addAutomationToAll(5, (t) => (t.automation || 0) >= 1),
   },
   {
-    id: 'macro-runner', name: 'Macro Runner', type: 'utility', rarity: 'common', kind: 'none', cooldown: 3,
-    description: 'Activate 3: Play a random Script card from your deck.',
-    apply: () => playRandomFromDeck('script'),
+    id: 'macro-runner', name: 'Auto Resolve', type: 'utility', rarity: 'common', kind: 'target', cooldown: 3,
+    description: 'Activate 3: Finish target task with severity 20 or less.',
+    eligibleTask: (t) => t.severity <= 20,
+    apply: (taskId) => { const t = findTask(taskId); if (t) finishTaskDirect(t); },
   },
 
   // -- Common Daemon (4) --
@@ -659,7 +653,7 @@ const CARD_DEFS = [
   },
   {
     id: 'autoloader', name: 'Autoloader', type: 'daemon', rarity: 'common', kind: 'daemon',
-    description: 'When you Draft, add 2 cards to the Draft.',
+    description: 'When you Draft, add 1 card to the Draft.',
   },
 
   // -- Uncommon Script (6) --
@@ -687,14 +681,18 @@ const CARD_DEFS = [
     apply: () => dealDamageToAll(25, (t) => t.severity > 50),
   },
   {
-    id: 'spawn-process', name: 'Spawn Process', type: 'script', rarity: 'uncommon', kind: 'none',
-    description: 'Play a random Daemon from your deck.',
-    apply: () => playRandomFromDeck('daemon'),
+    id: 'cascade-failure', name: 'Cascade Failure', type: 'script', rarity: 'uncommon', kind: 'all',
+    description: () => `All tasks lose 5 severity for each Activate effect you triggered today (currently ${5 * sprintState.activationsToday} severity).`,
+    apply: () => dealDamageToAll(5 * sprintState.activationsToday),
   },
   {
-    id: 'auto-install', name: 'Auto-Install', type: 'script', rarity: 'uncommon', kind: 'none',
-    description: 'Play a random Utility from your deck.',
-    apply: () => playRandomFromDeck('utility'),
+    id: 'live-patch', name: 'Remote Trigger', type: 'script', rarity: 'uncommon', kind: 'target-card',
+    description: 'Activate target Utility.',
+    playedFilter: (c) => CARD_DEFS_BY_ID[c.templateId].type === 'utility',
+    apply: (instanceId) => {
+      const c = findPlayed(instanceId);
+      if (c) runUtilityEffect(c, CARD_DEFS_BY_ID[c.templateId], { skipCooldown: true });
+    },
   },
 
   // -- Uncommon Utility (4) --
@@ -720,8 +718,8 @@ const CARD_DEFS = [
   },
   {
     id: 'load-shedding', name: 'Load Shedding', type: 'utility', rarity: 'uncommon', kind: 'none', cooldown: 2,
-    description: 'Activate 2: Lower the severity of a random task by 25.',
-    apply: () => dealDamageToRandom(25),
+    description: 'Activate 2: Lower the severity of a random task by 30.',
+    apply: () => dealDamageToRandom(30),
   },
   {
     id: 'watchdog-timer', name: 'Watchdog Timer', type: 'utility', rarity: 'uncommon', kind: 'highest', cooldown: 1,
@@ -731,12 +729,12 @@ const CARD_DEFS = [
 
   // -- Uncommon Daemon (2) --
   {
-    id: 'query-sweep', name: 'Query Sweep', type: 'daemon', rarity: 'uncommon', kind: 'daemon',
-    description: 'Each time you Draft, all tasks lose 5 severity.',
+    id: 'continuous-deployment', name: 'Continuous Deployment', type: 'daemon', rarity: 'uncommon', kind: 'daemon',
+    description: 'Each time you Activate a Utility, add 1 Automation to all tasks.',
   },
   {
-    id: 'recursive-call', name: 'Recursive Call', type: 'daemon', rarity: 'uncommon', kind: 'daemon',
-    description: 'When you run a Script, run it twice.',
+    id: 'chain-reaction', name: 'Chain Reaction', type: 'daemon', rarity: 'uncommon', kind: 'daemon',
+    description: 'When you run a Script, all tasks lose 5 severity.',
   },
 
   // -- Rare (1 each) --
@@ -751,8 +749,8 @@ const CARD_DEFS = [
     apply: () => openDraftFrom(2),
   },
   {
-    id: 'fork-bomb', name: 'Fork Bomb', type: 'daemon', rarity: 'rare', kind: 'daemon',
-    description: 'When you Activate a card, Activate it twice.',
+    id: 'query-sweep', name: 'Query Sweep', type: 'daemon', rarity: 'rare', kind: 'daemon',
+    description: 'Each time you Draft, all tasks lose 5 severity.',
   },
 
   // -- Virus --
@@ -777,7 +775,28 @@ const STARTER_DECK = [
 
 const SPRINT_DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
-const MAX_DECK_SIZE = 20;
+const MIN_DECK_SIZE = 10;
+const MAX_DECK_SIZE = 40;
+
+// Ownership cap per rarity, counted across Deck + Unused Cards + Played
+// combined (all three are cards the player currently owns). Computer Virus
+// is exempt — it's outside the reward pool entirely (see below).
+const COPY_CAPS = { common: 10, uncommon: 5, rare: 2 };
+
+// Fallback rarity to draw from when a reward roll's own rarity is fully
+// maxed out — not a symmetric cycle, Rare's fallback is Uncommon, not Common.
+const RARITY_FALLBACK = { common: 'uncommon', uncommon: 'rare', rare: 'uncommon' };
+const RARITIES = ['common', 'uncommon', 'rare'];
+
+function ownedCopyCount(templateId) {
+  const count = (list) => list.filter((c) => c.templateId === templateId).length;
+  return count(sprintState.deck) + count(sprintState.unused) + count(sprintState.played);
+}
+
+function isCardMaxed(templateId) {
+  const cap = COPY_CAPS[CARD_DEFS_BY_ID[templateId].rarity];
+  return cap != null && ownedCopyCount(templateId) >= cap;
+}
 
 // ---- Card rewards ----
 // Finishing a task rolls a rarity, then grants one random unique card of
@@ -800,8 +819,26 @@ function rollRarity() {
   return REWARD_ODDS[REWARD_ODDS.length - 1][0];
 }
 
+function eligibleRewardPool(rarity) {
+  return CARD_DEFS.filter((c) => c.type !== 'virus' && c.rarity === rarity && !isCardMaxed(c.id));
+}
+
+// Cards at their ownership cap are removed from the reward pool. If a whole
+// rarity is exhausted, the roll falls back per RARITY_FALLBACK; if that's
+// also exhausted, the one remaining rarity is guaranteed; if all three are
+// exhausted, no reward is granted at all. See DESIGN.md "Copy Limits &
+// Reward Exhaustion".
 function grantCardReward(rarity) {
-  const pool = CARD_DEFS.filter((c) => c.type !== 'virus' && c.rarity === rarity);
+  let pool = eligibleRewardPool(rarity);
+  if (pool.length === 0) {
+    const fallback = RARITY_FALLBACK[rarity];
+    pool = eligibleRewardPool(fallback);
+    if (pool.length === 0) {
+      const third = RARITIES.find((r) => r !== rarity && r !== fallback);
+      pool = eligibleRewardPool(third);
+    }
+  }
+  if (pool.length === 0) return;
   const template = pool[Math.floor(Math.random() * pool.length)];
   sprintState.unused.push(makeCard(template.id));
   sprintState.weekRewards.push({ templateId: template.id });
@@ -858,7 +895,7 @@ const TASK_ABILITIES = [
   },
   {
     id: 'absorption', name: 'Absorption', gate: (p) => p > 40,
-    description: () => "Gains 10 severity whenever another task's severity is lowered.",
+    description: (task) => `Gains ${task.abilityAmounts.absorption} severity whenever another task's severity is lowered.`,
   },
   {
     id: 'draft-squeeze', name: 'Draft Squeeze', gate: (p) => p > 50,
@@ -968,13 +1005,13 @@ function assignTasksForSprint(carriedOverTasks = []) {
     if (abilityId === 'layered') severity = 5;
 
     // Performance-derived ability magnitudes (Escalation's per-day gain,
-    // Retaliation's per-activation gain, Infectious's virus count) are
-    // rolled once here and locked to the task for its whole life — same as
-    // the ability gate itself — so the number shown in its description and
-    // the number actually applied always match, even as performance moves
-    // over the course of the sprint.
+    // Retaliation's per-activation gain, Absorption's per-trigger gain,
+    // Infectious's virus count) are rolled once here and locked to the task
+    // for its whole life — same as the ability gate itself — so the number
+    // shown in its description and the number actually applied always
+    // match, even as performance moves over the course of the sprint.
     const abilityAmounts = {};
-    if (abilityId === 'escalation' || abilityId === 'retaliation') {
+    if (abilityId === 'escalation' || abilityId === 'retaliation' || abilityId === 'absorption') {
       abilityAmounts[abilityId] = Math.round(performance / 10);
     }
     if (abilityId === 'infectious') {
@@ -995,6 +1032,7 @@ function assignTasksForSprint(carriedOverTasks = []) {
       loss: randInt(1, 5),
       abilities: [abilityId],
       abilityAmounts,
+      automation: 0,
       finished: false,
     });
     if (abilityId === 'infectious') {
@@ -1014,6 +1052,7 @@ function assignTasksForSprint(carriedOverTasks = []) {
       loss: def.loss,
       abilities: def.abilities || [],
       abilityAmounts: def.abilityAmounts || {},
+      automation: def.automation || 0,
       finished: false,
     };
   });
@@ -1061,11 +1100,31 @@ function lowerTaskSeverity(task, baseAmount) {
   if (task.severity < before) {
     sprintState.tasks.forEach((t) => {
       if (t.id !== task.id && !t.finished && hasAbility(t, 'absorption')) {
-        t.severity = Math.min(TASK_SEVERITY_CAP, t.severity + 10);
+        t.severity = Math.min(TASK_SEVERITY_CAP, t.severity + t.abilityAmounts.absorption);
       }
     });
   }
   if (task.severity <= 0) finishTaskDirect(task);
+}
+
+function raiseTaskSeverity(task, amount) {
+  if (!task || task.finished) return;
+  task.severity = Math.min(TASK_SEVERITY_CAP, task.severity + amount);
+}
+
+// Automation is a plain stacking counter on a task (like severity) that
+// ticks that task's severity down by its current amount once per day, via
+// applyDailyAbilityTicks — see DESIGN.md "Automation". Granting Automation
+// isn't itself a severity change, so unlike lowerTaskSeverity it does not
+// go through Armored/Layered/Signal Amplifier/Absorption; only the daily
+// tick (which does call lowerTaskSeverity) interacts with those.
+function addAutomation(task, amount) {
+  if (!task || task.finished) return;
+  task.automation = (task.automation || 0) + amount;
+}
+
+function addAutomationToAll(amount, filterFn) {
+  sprintState.tasks.filter((t) => !t.finished && (!filterFn || filterFn(t))).forEach((t) => addAutomation(t, amount));
 }
 
 function finishTaskDirect(task) {
@@ -1262,8 +1321,12 @@ function advanceBonusDraftQueue() {
 // -- Playing / activating cards --
 
 function runDaemonHook(hookName) {
-  if (hookName === 'afterActivateUtility' && hasDaemon('background-sync')) {
-    dealDamageToAll(2);
+  if (hookName === 'afterActivateUtility') {
+    if (hasDaemon('background-sync')) dealDamageToAll(2);
+    if (hasDaemon('continuous-deployment')) addAutomationToAll(1);
+  }
+  if (hookName === 'afterRunScript' && hasDaemon('chain-reaction')) {
+    dealDamageToAll(5);
   }
 }
 
@@ -1285,68 +1348,76 @@ function runScriptEffect(card, template, opts = {}) {
     if (opts.autoTarget) {
       const target = eligible.reduce((a, b) => (!a || b.severity > a.severity ? b : a), null);
       if (target) template.apply(target.id);
-      afterScriptRun(card, template, opts);
+      afterScriptRun(card);
       return;
     }
-    if (eligible.length === 0) { afterScriptRun(card, template, opts); return; }
+    if (eligible.length === 0) { afterScriptRun(card); return; }
     sprintState.pendingTarget = {
       eligibleTaskIds: eligible.map((t) => t.id),
       apply: (taskId) => template.apply(taskId),
-      onDone: () => afterScriptRun(card, template, opts),
-    };
-    return;
-  }
-  template.apply();
-  afterScriptRun(card, template, opts);
-}
-
-// Per DESIGN.md: a Script "returns to the Deck" after resolving, just like
-// the cards that weren't picked — it never sits in Played and is never
-// consumed permanently (only a picked/declined Computer Virus is).
-function afterScriptRun(card, template, opts) {
-  if (opts.isReplay) return;
-  runDaemonHook('afterRunScript');
-  if (hasDaemon('recursive-call')) runScriptEffect(card, template, { ...opts, isReplay: true });
-  sprintState.deck.push(card);
-}
-
-function runUtilityEffect(card, template, opts = {}) {
-  // Cascade Failure counts real Activate events, and a Fork Bomb replay is a
-  // real second Activate of this same card ("Activate it twice") — it just
-  // doesn't re-trigger cooldown/Retaliation/other Daemons a second time.
-  sprintState.activationsToday += 1;
-  if (!opts.isReplay) {
-    card.cooldownRemaining = template.cooldown + (isAbilityAliveAnywhere('sluggish-systems') ? 1 : 0);
-    applyRetaliation();
-  }
-  if (template.kind === 'target') {
-    const eligible = getEligibleTargets(template);
-    if (eligible.length === 0) { afterUtilityRun(card, template, opts); return; }
-    sprintState.pendingTarget = {
-      eligibleTaskIds: eligible.map((t) => t.id),
-      apply: (taskId) => template.apply(taskId),
-      onDone: () => afterUtilityRun(card, template, opts),
+      onDone: () => afterScriptRun(card),
     };
     return;
   }
   if (template.kind === 'target-card') {
     const eligible = getEligiblePlayedCards(template, card.instanceId);
-    if (eligible.length === 0) { afterUtilityRun(card, template, opts); return; }
+    if (eligible.length === 0) { afterScriptRun(card); return; }
     sprintState.pendingCardTarget = {
       eligibleInstanceIds: eligible.map((c) => c.instanceId),
       apply: (instanceId) => template.apply(instanceId),
-      onDone: () => afterUtilityRun(card, template, opts),
+      onDone: () => afterScriptRun(card),
     };
     return;
   }
   template.apply();
-  afterUtilityRun(card, template, opts);
+  afterScriptRun(card);
 }
 
-function afterUtilityRun(card, template, opts) {
-  if (opts.isReplay) return;
+// Per DESIGN.md: a Script "returns to the Deck" after resolving, just like
+// the cards that weren't picked — it never sits in Played and is never
+// consumed permanently (only a picked/declined Computer Virus is).
+function afterScriptRun(card) {
+  runDaemonHook('afterRunScript');
+  sprintState.deck.push(card);
+}
+
+function runUtilityEffect(card, template, opts = {}) {
+  // Cascade Failure counts real Activate events regardless of source.
+  sprintState.activationsToday += 1;
+  // Remote Trigger (a Script that runs a target Utility's effect on demand)
+  // passes skipCooldown so the target's own cooldown is left exactly as it
+  // was — everything else about a real Activate (this increment,
+  // Retaliation, afterUtilityRun's daemon hooks) still fires normally.
+  if (!opts.skipCooldown) {
+    card.cooldownRemaining = template.cooldown + (isAbilityAliveAnywhere('sluggish-systems') ? 1 : 0);
+  }
+  applyRetaliation();
+  if (template.kind === 'target') {
+    const eligible = getEligibleTargets(template);
+    if (eligible.length === 0) { afterUtilityRun(); return; }
+    sprintState.pendingTarget = {
+      eligibleTaskIds: eligible.map((t) => t.id),
+      apply: (taskId) => template.apply(taskId),
+      onDone: () => afterUtilityRun(),
+    };
+    return;
+  }
+  if (template.kind === 'target-card') {
+    const eligible = getEligiblePlayedCards(template, card.instanceId);
+    if (eligible.length === 0) { afterUtilityRun(); return; }
+    sprintState.pendingCardTarget = {
+      eligibleInstanceIds: eligible.map((c) => c.instanceId),
+      apply: (instanceId) => template.apply(instanceId),
+      onDone: () => afterUtilityRun(),
+    };
+    return;
+  }
+  template.apply();
+  afterUtilityRun();
+}
+
+function afterUtilityRun() {
   runDaemonHook('afterActivateUtility');
-  if (hasDaemon('fork-bomb')) runUtilityEffect(card, template, { isReplay: true });
 }
 
 function activateUtilityCard(instanceId) {
@@ -1513,6 +1584,9 @@ function applyDailyAbilityTicks() {
       });
     }
   });
+  tasks.forEach((t) => {
+    if (t.automation > 0) lowerTaskSeverity(t, t.automation);
+  });
 }
 
 function tickCooldowns() {
@@ -1596,8 +1670,18 @@ function advanceToNextSprint() {
   renderEverSprintBoard();
 }
 
+// Both bounds only apply to the deckbuilder's curation step (dragging
+// between Deck and Unused Cards) — the live sprint deck can already
+// legitimately fall below the min (cards out in Played) or exceed the max
+// (Virus outbreak, Played folding back in at sprint end).
+function isFolderDropBlocked(folderKey) {
+  if (folderKey === 'deck') return sprintState.deck.length >= MAX_DECK_SIZE;
+  if (folderKey === 'unused') return sprintState.deck.length <= MIN_DECK_SIZE;
+  return false;
+}
+
 function moveCardBetweenFolders(instanceId, fromKey, toKey) {
-  if (toKey === 'deck' && sprintState.deck.length >= MAX_DECK_SIZE) return;
+  if (isFolderDropBlocked(toKey)) return;
   const from = sprintState[fromKey];
   const idx = from.findIndex((c) => c.instanceId === instanceId);
   if (idx === -1) return;
@@ -1614,6 +1698,13 @@ function renderCardTag(template) {
   return `<div class="sprint-card-type-tag">${template.type}${template.rarity ? ' &middot; ' + template.rarity : ''}</div>`;
 }
 
+// A card's description is normally a static string, but a few (e.g. Cascade
+// Failure) depend on live sprint state, matching the same static-or-function
+// convention TASK_ABILITIES uses for its description field.
+function cardDescription(template) {
+  return typeof template.description === 'function' ? template.description() : template.description;
+}
+
 function renderLibraryCard(card) {
   const template = CARD_DEFS_BY_ID[card.templateId];
   const el = document.createElement('div');
@@ -1623,7 +1714,7 @@ function renderLibraryCard(card) {
   el.innerHTML = `
     ${renderCardTag(template)}
     <div class="sprint-card-name">${template.name}</div>
-    <div class="sprint-card-desc">${template.description}</div>
+    <div class="sprint-card-desc">${cardDescription(template)}</div>
   `;
   return el;
 }
@@ -1637,7 +1728,7 @@ function renderDraftOptionCard(card, onPick) {
   el.innerHTML = `
     ${renderCardTag(template)}
     <div class="sprint-card-name">${template.name}</div>
-    <div class="sprint-card-desc">${template.description}</div>
+    <div class="sprint-card-desc">${cardDescription(template)}</div>
   `;
   const btn = document.createElement('button');
   btn.textContent = 'Pick';
@@ -1656,7 +1747,7 @@ function renderPlayedCard(card) {
   el.innerHTML = `
     ${renderCardTag(template)}
     <div class="sprint-card-name">${template.name}</div>
-    <div class="sprint-card-desc">${template.description}</div>
+    <div class="sprint-card-desc">${cardDescription(template)}</div>
   `;
 
   if (template.type === 'daemon') {
@@ -1697,7 +1788,7 @@ function renderSprintTask(task) {
   el.innerHTML = `
     <div class="sprint-task-name">${task.name}${task.carriedOver ? ' <span class="carried-badge">Carried Over</span>' : ''}</div>
     <div class="severity-bar"><div class="severity-bar-fill" style="width:${pct}%"></div></div>
-    <div class="sprint-task-meta">Severity ${task.severity} &middot; +${task.gain} / -${task.loss}</div>
+    <div class="sprint-task-meta">Severity ${task.severity} &middot; +${task.gain} / -${task.loss}${task.automation > 0 ? ` <span class="automation-badge">Automation ${task.automation}</span>` : ''}</div>
     ${abilityBlocks}
   `;
   if (task.carriedOver) {
@@ -2000,7 +2091,7 @@ function positionCardTooltip(wrap) {
   tooltip.className = 'file-tooltip';
   tooltip.innerHTML = `
     <div class="file-tooltip-name">${template.name}</div>
-    <div class="file-tooltip-desc">${template.description}</div>
+    <div class="file-tooltip-desc">${cardDescription(template)}</div>
   `;
   wrap.appendChild(tooltip);
 
@@ -2033,9 +2124,9 @@ function renderFolder(label, cards, folderKey, maxCount) {
     groupCardsByTemplate(cards).forEach((group) => body.appendChild(fileTile(group, folderKey)));
   }
 
-  const isFull = folderKey === 'deck' && cards.length >= MAX_DECK_SIZE;
+  const dropBlocked = isFolderDropBlocked(folderKey);
   body.addEventListener('dragover', (e) => {
-    if (isFull) return; // no preventDefault -> browser shows a "not allowed" cursor
+    if (dropBlocked) return; // no preventDefault -> browser shows a "not allowed" cursor
     e.preventDefault();
     body.classList.add('drag-over');
   });
