@@ -257,6 +257,7 @@ function createMailClient(rootEl, config) {
 
 const PROGRESS_KEY = 'evergreen-mortal-progress';
 let currentScreen = 'cybermail';
+let sprintTutorialSeen = false;
 
 function loadProgress() {
   try {
@@ -278,6 +279,7 @@ function applyProgress(progress) {
     }
   });
   if (progress.sunitaRead) SUNITA_ONBOARDING_EMAIL.read = true;
+  if (progress.sprintTutorialSeen) sprintTutorialSeen = true;
   (progress.evergreenMail || []).forEach((saved) => {
     const email = EVERGREEN_MAIL_SEEDS.find((e) => e.id === saved.id);
     if (email) {
@@ -293,6 +295,7 @@ function saveProgress() {
     cyberMail: CYBER_MAIL_SEEDS.map((e) => ({ id: e.id, read: e.read, viewed: e.viewed })),
     sunitaRead: SUNITA_ONBOARDING_EMAIL.read,
     evergreenMail: EVERGREEN_MAIL_SEEDS.map((e) => ({ id: e.id, read: e.read, viewed: e.viewed })),
+    sprintTutorialSeen,
   };
   try {
     localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress));
@@ -597,43 +600,43 @@ const CARD_DEFS = [
   // -- Common Utility (8) --
   {
     id: 'debugger', name: 'Debugger', type: 'utility', rarity: 'common', kind: 'target', cooldown: 1,
-    description: 'Activate 1: target task loses 5 severity.',
+    description: 'Cooldown 1: target task loses 5 severity.',
     apply: (taskId) => { const t = findTask(taskId); if (t) lowerTaskSeverity(t, 5); },
   },
   {
     id: 'search-index', name: 'Deploy Agent', type: 'utility', rarity: 'common', kind: 'target', cooldown: 2,
-    description: 'Activate 2: Add 5 Automation to target task.',
+    description: 'Cooldown 2: Add 5 Automation to target task.',
     apply: (taskId) => addAutomation(findTask(taskId), 5),
   },
   {
     id: 'task-scheduler', name: 'Task Scheduler', type: 'utility', rarity: 'common', kind: 'target-card', cooldown: 1,
-    description: 'Activate 1: lower the Activate timer of another card by 1.',
+    description: 'Cooldown 1: lower the Activate timer of another card by 1.',
     playedFilter: (c) => CARD_DEFS_BY_ID[c.templateId].type === 'utility' && c.cooldownRemaining > 0,
     apply: (instanceId) => { const c = findPlayed(instanceId); if (c) c.cooldownRemaining = Math.max(0, c.cooldownRemaining - 1); },
   },
   {
     id: 'load-balancer', name: 'Load Balancer', type: 'utility', rarity: 'common', kind: 'all', cooldown: 2,
-    description: 'Activate 2: All tasks lose 5 severity.',
+    description: 'Cooldown 2: All tasks lose 5 severity.',
     apply: () => dealDamageToAll(5),
   },
   {
     id: 'priority-queue', name: 'Priority Queue', type: 'utility', rarity: 'common', kind: 'highest', cooldown: 2,
-    description: 'Activate 2: The task with the highest severity loses 15 severity.',
+    description: 'Cooldown 2: The task with the highest severity loses 15 severity.',
     apply: () => dealDamageToHighest(15),
   },
   {
     id: 'auto-cleanup', name: 'Auto-Cleanup', type: 'utility', rarity: 'common', kind: 'none', cooldown: 1,
-    description: 'Activate 1: Finish all tasks under 10 severity.',
+    description: 'Cooldown 1: Finish all tasks under 10 severity.',
     apply: () => finishAllUnder(10),
   },
   {
     id: 'cron-reset', name: 'Fleet Sync', type: 'utility', rarity: 'common', kind: 'all', cooldown: 1,
-    description: 'Activate 1: Add 5 Automation to all tasks with at least 1 Automation.',
+    description: 'Cooldown 1: Add 5 Automation to all tasks with at least 1 Automation.',
     apply: () => addAutomationToAll(5, (t) => (t.automation || 0) >= 1),
   },
   {
     id: 'macro-runner', name: 'Auto Resolve', type: 'utility', rarity: 'common', kind: 'target', cooldown: 3,
-    description: 'Activate 3: Finish target task with severity 20 or less.',
+    description: 'Cooldown 3: Finish target task with severity 20 or less.',
     eligibleTask: (t) => t.severity <= 20,
     apply: (taskId) => { const t = findTask(taskId); if (t) finishTaskDirect(t); },
   },
@@ -698,12 +701,12 @@ const CARD_DEFS = [
   // -- Uncommon Utility (4) --
   {
     id: 'hot-swap', name: 'Hot Swap', type: 'utility', rarity: 'uncommon', kind: 'draft-from', draftN: 3, cooldown: 3,
-    description: 'Activate 3: Draft from 3.',
+    description: 'Cooldown 3: Draft from 3.',
     apply: () => openDraftFrom(3),
   },
   {
     id: 'batch-job', name: 'Batch Job', type: 'utility', rarity: 'uncommon', kind: 'none', cooldown: 4,
-    description: 'Activate 4: Play 2 random cards from your deck.',
+    description: 'Cooldown 4: Play 2 random cards from your deck.',
     apply: () => {
       for (let i = 0; i < 2; i++) {
         if (sprintState.deck.length === 0) break;
@@ -718,13 +721,13 @@ const CARD_DEFS = [
   },
   {
     id: 'load-shedding', name: 'Load Shedding', type: 'utility', rarity: 'uncommon', kind: 'none', cooldown: 2,
-    description: 'Activate 2: Lower the severity of a random task by 30.',
+    description: 'Cooldown 2: Lower the severity of a random task by 30.',
     apply: () => dealDamageToRandom(30),
   },
   {
     id: 'watchdog-timer', name: 'Watchdog Timer', type: 'utility', rarity: 'uncommon', kind: 'highest', cooldown: 1,
-    description: 'Activate 1: The task with the highest severity loses 10 severity.',
-    apply: () => dealDamageToHighest(10),
+    description: 'Cooldown 1: Add 5 automation to the task with the highest severity.',
+    apply: () => addAutomationToHighest(5),
   },
 
   // -- Uncommon Daemon (2) --
@@ -745,7 +748,7 @@ const CARD_DEFS = [
   },
   {
     id: 'master-key', name: 'Master Key', type: 'utility', rarity: 'rare', kind: 'none', cooldown: 1,
-    description: 'Activate 1: Draft from 2.',
+    description: 'Cooldown 1: Draft from 2.',
     apply: () => openDraftFrom(2),
   },
   {
@@ -778,7 +781,7 @@ const SPRINT_DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'
 const MIN_DECK_SIZE = 10;
 const MAX_DECK_SIZE = 40;
 
-// Ownership cap per rarity, counted across Deck + Unused Cards + Played
+// Ownership cap per rarity, counted across Deck + Collection + Played
 // combined (all three are cards the player currently owns). Computer Virus
 // is exempt — it's outside the reward pool entirely (see below).
 const COPY_CAPS = { common: 10, uncommon: 5, rare: 2 };
@@ -1028,8 +1031,8 @@ function assignTasksForSprint(carriedOverTasks = []) {
       // starting severity rather than a fixed ceiling. It's a display
       // reference for the health bar, not a cap on how much severity can grow.
       maxSeverity: severity,
-      gain: randInt(1, 5),
-      loss: randInt(1, 5),
+      gain: 1,
+      loss: 1,
       abilities: [abilityId],
       abilityAmounts,
       automation: 0,
@@ -1064,6 +1067,7 @@ function assignTasksForSprint(carriedOverTasks = []) {
 
   sprintState.tasks = [...carriedOverTasks, ...scripted, ...tasks];
   sprintState.deck.push(...virusCards);
+  logEvent(`Tasks assigned: ${tasks.map((t) => t.name).join(', ') || 'none'}${scripted.length > 0 ? `; scripted: ${scripted.map((t) => t.name).join(', ')}` : ''}.`);
 }
 
 let cardInstanceCounter = 0;
@@ -1080,8 +1084,11 @@ function findPlayed(instanceId) {
   return sprintState.played.find((c) => c.instanceId === instanceId);
 }
 
-function hasDaemon(id) {
-  return sprintState.played.some((c) => c.templateId === id);
+// Multiple copies of the same Daemon stack their effect — see DESIGN.md
+// "Stacking rule" — so every call site scales its effect by this count
+// rather than treating the Daemon's presence as a plain boolean.
+function daemonCount(id) {
+  return sprintState.played.filter((c) => c.templateId === id).length;
 }
 
 // -- Core damage / finish primitives --
@@ -1091,7 +1098,7 @@ function hasDaemon(id) {
 function lowerTaskSeverity(task, baseAmount) {
   if (!task || task.finished || baseAmount <= 0) return;
   let amount = baseAmount;
-  if (hasDaemon('signal-amplifier')) amount += 3;
+  amount += 3 * daemonCount('signal-amplifier');
   if (hasAbility(task, 'armored')) amount = Math.ceil(amount / 2);
   if (hasAbility(task, 'layered')) amount = Math.min(amount, 1);
 
@@ -1127,6 +1134,12 @@ function addAutomationToAll(amount, filterFn) {
   sprintState.tasks.filter((t) => !t.finished && (!filterFn || filterFn(t))).forEach((t) => addAutomation(t, amount));
 }
 
+function addAutomationToHighest(amount, filterFn) {
+  const tasks = sprintState.tasks.filter((t) => !t.finished && (!filterFn || filterFn(t)));
+  const target = tasks.reduce((a, b) => (!a || b.severity > a.severity ? b : a), null);
+  if (target) addAutomation(target, amount);
+}
+
 function finishTaskDirect(task) {
   if (task.finished) return;
   task.finished = true;
@@ -1134,8 +1147,12 @@ function finishTaskDirect(task) {
   sprintState.finished.push(task);
   sprintState.finishedThisWeek.push(task);
   queuePerformanceChange(task.gain);
+  logEvent(`Finished task "${task.name}" (+${task.gain} Performance queued).`);
   if (task.isSpecialTask) rollSpecialTaskReward(); else rollCardReward();
-  if (hasDaemon('task-manager')) openDraftFrom(3);
+  // One "Draft from 3" prompt per copy — multiple copies queue multiple
+  // bonus drafts back-to-back via openDraftFrom's existing queueing (see
+  // its comment above), same as any other stacked-trigger source.
+  for (let i = 0; i < daemonCount('task-manager'); i++) openDraftFrom(3);
   // Finishing the Infectious task itself clears out the outbreak it caused —
   // every Computer Virus copy currently in the deck is removed, not just the
   // ones it originally added.
@@ -1160,13 +1177,14 @@ function spawnSpecialTask() {
     name: 'Special Task',
     severity: sprintState.performance,
     maxSeverity: sprintState.performance,
-    gain: randInt(1, 5),
-    loss: randInt(1, 5),
+    gain: 1,
+    loss: 1,
     abilities: ['business-as-usual'],
     abilityAmounts: {},
     finished: false,
     isSpecialTask: true,
   });
+  logEvent('Board cleared early — Special Task spawned.');
 }
 
 // The escape valve for a backlog that's grown unmanageable: give up on a
@@ -1183,6 +1201,7 @@ function reassignTask(taskId) {
   task.finished = true;
   sprintState.tasks = sprintState.tasks.filter((t) => t.id !== task.id);
   queuePerformanceChange(-2 * task.loss);
+  logEvent(`Reassigned "${task.name}" (-${2 * task.loss} Performance queued).`);
   renderEverSprintBoard();
 }
 
@@ -1233,20 +1252,21 @@ function getEligiblePlayedCards(template, excludeInstanceId) {
 }
 
 // -- Deck sampling --
-// Autoloader ("when you Draft, add 2 cards to the Draft") and Query Sweep
+// Autoloader ("when you Draft, add 1 card to the Draft") and Query Sweep
 // ("each time you Draft, all tasks lose 5 severity") both apply to any
 // sampling from the deck, daily or bonus. Type-filtered sampling (used by
 // "play a random Script/Utility/Daemon" effects) naturally excludes Computer
 // Virus since it isn't any of those three types.
 function sampleAnyFromDeck(n) {
-  let count = n + (hasDaemon('autoloader') ? 2 : 0);
+  let count = n + 1 * daemonCount('autoloader');
   count = Math.min(count, sprintState.deck.length);
   const pool = shuffle([...sprintState.deck]).slice(0, count);
   pool.forEach((c) => {
     const idx = sprintState.deck.findIndex((d) => d.instanceId === c.instanceId);
     sprintState.deck.splice(idx, 1);
   });
-  if (hasDaemon('query-sweep')) dealDamageToAll(5);
+  const querySweepCount = daemonCount('query-sweep');
+  if (querySweepCount > 0) dealDamageToAll(5 * querySweepCount);
   return pool;
 }
 
@@ -1272,21 +1292,22 @@ function resolveDraftOutcome(cards) {
     sprintState.deck.push(card);
     if (CARD_DEFS_BY_ID[card.templateId].type === 'virus') {
       sprintState.deck.push(makeCard('computer-virus'));
+      logEvent('Declined Computer Virus — 1 new copy added to the deck.');
     }
   });
 }
 
 // Removes every Computer Virus copy from the deck, plus any that are
-// currently sitting in a bonus draft's options — those cards were spliced
-// out of the deck array the moment the draft opened, so a plain deck filter
-// misses copies that are mid-draft (showing, or queued behind another one)
-// when the Infectious task that spawned them gets finished.
+// currently sitting in the active bonus draft's options — those cards were
+// spliced out of the deck array the moment that draft opened, so a plain
+// deck filter misses copies that are mid-draft when the Infectious task that
+// spawned them gets finished. Queued-but-not-yet-open drafts (bonusDraftQueue)
+// hold no cards of their own — see openDraftFrom — so there's nothing to
+// purge there; whatever virus copies they'd have drawn are simply gone from
+// the deck by the time they're actually sampled.
 function purgeVirusCards() {
   const isVirus = (c) => CARD_DEFS_BY_ID[c.templateId].type === 'virus';
   sprintState.deck = sprintState.deck.filter((c) => !isVirus(c));
-  sprintState.bonusDraftQueue = sprintState.bonusDraftQueue
-    .map((entry) => ({ options: entry.options.filter((c) => !isVirus(c)) }))
-    .filter((entry) => entry.options.length > 0);
   if (sprintState.bonusDraft) {
     sprintState.bonusDraft.options = sprintState.bonusDraft.options.filter((c) => !isVirus(c));
     if (sprintState.bonusDraft.options.length === 0) {
@@ -1296,25 +1317,47 @@ function purgeVirusCards() {
   }
 }
 
-// If a bonus draft is already showing, queue this one instead of clobbering
-// it — e.g. an 'all'-kind effect (Broadcast Ping) can finish 2+ tasks in one
-// pass, and Task Manager ("when you finish a task, Draft from 3") fires once
-// per finish, so multiple bonus drafts can trigger in the same instant.
+// If a bonus draft is already showing, queue the request itself (just the
+// N) rather than clobbering it — e.g. an 'all'-kind effect (Broadcast Ping)
+// can finish 2+ tasks in one pass, and Task Manager ("when you finish a
+// task, Draft from 3") fires once per finish, so multiple bonus drafts can
+// trigger in the same instant. Deliberately NOT sampling from the deck yet
+// for a queued request: only the draft actually on screen should hold cards
+// pulled from the deck. A queued draft samples its own cards only once it's
+// promoted (see advanceBonusDraftQueue), by which point the currently-
+// showing draft has already resolved and returned its cards to the deck.
 function openDraftFrom(n) {
-  const options = sampleAnyFromDeck(n);
-  if (options.length === 0) return;
   if (sprintState.bonusDraft) {
-    sprintState.bonusDraftQueue.push({ options });
-  } else {
-    sprintState.bonusDraft = { options };
+    sprintState.bonusDraftQueue.push({ n });
+    logEvent(`Bonus draft (from ${n}) queued behind the one already showing.`);
+    return;
   }
+  const options = sampleAnyFromDeck(n);
+  if (options.length === 0) {
+    logEvent(`Bonus draft (from ${n}) fizzled — deck was empty.`);
+    return;
+  }
+  sprintState.bonusDraft = { options };
+  logEvent(`Bonus draft opened — choose 1 of ${options.length}.`);
 }
 
 // Promotes the next queued bonus draft into view once the current one is
 // resolved — unless resolving it already opened a new one itself (chaining).
+// Sampling happens here, now, from whatever the deck currently holds (which
+// already includes the just-resolved draft's returned cards) — not at the
+// time the draft was originally queued. If the deck has run dry by the time
+// a queued entry comes up (options.length === 0), skip it rather than
+// showing an empty draft, and keep trying the rest of the queue.
 function advanceBonusDraftQueue() {
-  if (!sprintState.bonusDraft && sprintState.bonusDraftQueue.length > 0) {
-    sprintState.bonusDraft = sprintState.bonusDraftQueue.shift();
+  while (!sprintState.bonusDraft && sprintState.bonusDraftQueue.length > 0) {
+    const { n } = sprintState.bonusDraftQueue.shift();
+    const options = sampleAnyFromDeck(n);
+    if (options.length > 0) {
+      sprintState.bonusDraft = { options };
+      logEvent(`Queued bonus draft promoted — choose 1 of ${options.length}.`);
+    } else {
+      logEvent(`Queued bonus draft (from ${n}) skipped — deck was empty.`);
+    }
   }
 }
 
@@ -1322,11 +1365,14 @@ function advanceBonusDraftQueue() {
 
 function runDaemonHook(hookName) {
   if (hookName === 'afterActivateUtility') {
-    if (hasDaemon('background-sync')) dealDamageToAll(2);
-    if (hasDaemon('continuous-deployment')) addAutomationToAll(1);
+    const backgroundSyncCount = daemonCount('background-sync');
+    if (backgroundSyncCount > 0) dealDamageToAll(2 * backgroundSyncCount);
+    const continuousDeploymentCount = daemonCount('continuous-deployment');
+    if (continuousDeploymentCount > 0) addAutomationToAll(1 * continuousDeploymentCount);
   }
-  if (hookName === 'afterRunScript' && hasDaemon('chain-reaction')) {
-    dealDamageToAll(5);
+  const chainReactionCount = daemonCount('chain-reaction');
+  if (hookName === 'afterRunScript' && chainReactionCount > 0) {
+    dealDamageToAll(5 * chainReactionCount);
   }
 }
 
@@ -1426,6 +1472,7 @@ function activateUtilityCard(instanceId) {
   if (!card) return;
   const template = CARD_DEFS_BY_ID[card.templateId];
   if (template.type !== 'utility' || card.cooldownRemaining > 0) return;
+  logEvent(`Activated "${template.name}".`);
   runUtilityEffect(card, template, {});
   renderEverSprintBoard();
 }
@@ -1468,6 +1515,7 @@ function pickFromDailyDraft(instanceId) {
   const remaining = sprintState.dailyDraft;
   sprintState.dailyDraft = [];
   sprintState.dailyDraftResolved = true;
+  logEvent(`Daily draft: picked "${CARD_DEFS_BY_ID[chosen.templateId].name}".`);
   resolveDraftPick(chosen, remaining, 'daily-draft');
   renderEverSprintBoard();
 }
@@ -1479,6 +1527,7 @@ function pickFromBonusDraft(instanceId) {
   if (idx === -1) return;
   const [chosen] = options.splice(idx, 1);
   sprintState.bonusDraft = null;
+  logEvent(`Bonus draft: picked "${CARD_DEFS_BY_ID[chosen.templateId].name}".`);
   resolveDraftPick(chosen, options, 'bonus-draft'); // may open a new bonusDraft itself (chaining)
   advanceBonusDraftQueue();
   renderEverSprintBoard();
@@ -1486,6 +1535,7 @@ function pickFromBonusDraft(instanceId) {
 
 function declineBonusDraft() {
   if (!sprintState.bonusDraft) return;
+  logEvent('Bonus draft: declined.');
   resolveDraftOutcome(sprintState.bonusDraft.options);
   sprintState.bonusDraft = null;
   advanceBonusDraftQueue();
@@ -1498,6 +1548,8 @@ function startDailyDraft() {
   sprintState.dailyDraftResolved = false;
   const squeezed = sprintState.tasks.some((t) => !t.finished && hasAbility(t, 'draft-squeeze'));
   sprintState.dailyDraft = sampleAnyFromDeck(squeezed ? 2 : 3);
+  const names = sprintState.dailyDraft.map((c) => CARD_DEFS_BY_ID[c.templateId].name).join(', ');
+  logEvent(`Daily draft ready: ${names || '(nothing — deck is empty)'}.`);
 }
 
 function createSprintState() {
@@ -1523,8 +1575,9 @@ function createSprintState() {
     pendingTarget: null,
     pendingCardTarget: null,
     bonusDraft: null,
-    bonusDraftQueue: [], // additional bonus drafts triggered while one's already showing
+    bonusDraftQueue: [], // { n } entries — additional bonus drafts triggered while one's already showing; see openDraftFrom for why these don't hold sampled cards yet
     gameOver: null, // null | 'promoted' | 'fired'
+    log: [], // { week, day, text } entries — see logEvent / the Sprint Log panel
   };
 }
 
@@ -1538,11 +1591,92 @@ function ensureSprintState() {
   return sprintState;
 }
 
+// -- Sprint log --
+// A running, human-readable record of what happened during the sprint(s) so
+// far — added so a stuck/confusing board state can be traced back after the
+// fact instead of just guessed at. Capped rather than unbounded so a long
+// play session can't grow this forever; oldest entries drop off first.
+const SPRINT_LOG_MAX_ENTRIES = 300;
+let sprintLogOpen = false;
+
+function logEvent(message) {
+  if (!sprintState) return;
+  sprintState.log.push({
+    week: sprintState.weekNumber,
+    day: SPRINT_DAY_NAMES[sprintState.dayIndex],
+    text: message,
+  });
+  if (sprintState.log.length > SPRINT_LOG_MAX_ENTRIES) {
+    sprintState.log.splice(0, sprintState.log.length - SPRINT_LOG_MAX_ENTRIES);
+  }
+}
+
+function toggleSprintLog() {
+  sprintLogOpen = !sprintLogOpen;
+  renderEverSprintBoard();
+}
+
+// Appended fresh into whichever container each renderEverSprintBoard branch
+// builds (game over / summary / deck editor / active board) — that
+// container gets wiped and rebuilt on every render, so this has to be
+// re-added every time too, not just once. The toggle *button* lives outside
+// all of this, in the window titlebar (see addSprintLogToggleButton) so it
+// survives phase changes without needing to be re-added at all.
+function appendSprintLogPanel(container) {
+  if (!sprintLogOpen) return;
+  const overlay = document.createElement('div');
+  overlay.className = 'sprint-log-overlay';
+  const entries = sprintState ? sprintState.log : [];
+  overlay.innerHTML = `
+    <div class="sprint-log-card">
+      <div class="sprint-log-header">
+        <div class="sprint-log-title">Sprint Log</div>
+        <button class="sprint-log-close">Close</button>
+      </div>
+      <div class="sprint-log-body">
+        ${entries.length === 0
+          ? '<div class="sprint-log-empty">Nothing logged yet.</div>'
+          : entries.map((e) => `<div class="sprint-log-entry"><span class="sprint-log-tag">[Sprint ${e.week} &middot; ${e.day}]</span>${e.text}</div>`).join('')}
+      </div>
+    </div>
+  `;
+  overlay.querySelector('.sprint-log-close').addEventListener('click', () => toggleSprintLog());
+  container.appendChild(overlay);
+  const body = overlay.querySelector('.sprint-log-body');
+  body.scrollTop = body.scrollHeight;
+}
+
+// The log toggle lives in the window titlebar (not inside everSprintBoardEl,
+// which gets fully wiped and rebuilt on every board render) so it's always
+// present regardless of which EverSprint screen is showing, and never needs
+// re-adding itself. buildEverSprintApp calls this on every window
+// open/restore, so guard against inserting a second copy of the button.
+function addSprintLogToggleButton(contentEl) {
+  const win = contentEl.closest('.window');
+  const controls = win && win.querySelector('.window-controls');
+  if (!controls || controls.querySelector('.sprint-log-toggle')) return;
+  const btn = document.createElement('button');
+  btn.className = 'window-btn sprint-log-toggle';
+  btn.title = 'Sprint Log';
+  btn.textContent = '☰';
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    toggleSprintLog();
+  });
+  controls.insertBefore(btn, controls.firstChild);
+}
+
 function changePerformance(amount) {
   if (sprintState.gameOver) return;
   sprintState.performance = Math.max(0, Math.min(100, sprintState.performance + amount));
-  if (sprintState.performance >= 100) sprintState.gameOver = 'promoted';
-  else if (sprintState.performance <= 0) sprintState.gameOver = 'fired';
+  logEvent(`Performance ${amount >= 0 ? '+' : ''}${amount} → ${sprintState.performance}/100.`);
+  if (sprintState.performance >= 100) {
+    sprintState.gameOver = 'promoted';
+    logEvent('Performance hit 100 — promoted.');
+  } else if (sprintState.performance <= 0) {
+    sprintState.gameOver = 'fired';
+    logEvent('Performance hit 0 — fired.');
+  }
 }
 
 // Performance mostly only actually moves once per sprint, at End Week —
@@ -1602,6 +1736,7 @@ function endDay() {
   tickCooldowns();
 
   if (sprintState.dayIndex < 4) {
+    logEvent(`End Day — advancing to ${SPRINT_DAY_NAMES[sprintState.dayIndex + 1]}.`);
     sprintState.dayIndex += 1;
     sprintState.activationsToday = 0;
     // Board empty at the end of Mon/Tue/Wed/Thu (this covers all four —
@@ -1628,6 +1763,7 @@ function endDay() {
   // tick is the one way firing (0) can already have happened earlier.
   const totalDelta = sprintState.pendingPerformanceDelta - carriedOverTasks.reduce((sum, t) => sum + t.loss, 0);
   sprintState.pendingPerformanceDelta = 0;
+  logEvent(`End Week — Sprint ${sprintState.weekNumber} complete. Carried over: ${carriedOverTasks.length === 0 ? 'none' : carriedOverTasks.map((t) => t.name).join(', ')}.`);
   changePerformance(totalDelta);
 
   sprintState.played.forEach((c) => { c.cooldownRemaining = 0; });
@@ -1654,7 +1790,7 @@ function endDay() {
 // Fires from the Deck Editor's "Go to Next Sprint" button — commits
 // whatever's currently in the Deck folder as next week's live queue.
 function advanceToNextSprint() {
-  if (sprintState.gameOver) return;
+  if (sprintState.gameOver || sprintState.deck.length < MIN_DECK_SIZE) return;
   // Read from the live task list, not the summary's frozen snapshot — a
   // task Reassigned while viewing the summary must actually stay gone.
   const carriedOverTasks = sprintState.tasks.filter((t) => !t.finished);
@@ -1665,18 +1801,20 @@ function advanceToNextSprint() {
   sprintState.editingDeck = false;
   sprintState.activationsToday = 0;
   sprintState.finished = [];
+  logEvent(`Sprint ${sprintState.weekNumber} begins (deck committed at ${sprintState.deck.length} cards).`);
   assignTasksForSprint(carriedOverTasks);
   startDailyDraft();
   renderEverSprintBoard();
 }
 
-// Both bounds only apply to the deckbuilder's curation step (dragging
-// between Deck and Unused Cards) — the live sprint deck can already
-// legitimately fall below the min (cards out in Played) or exceed the max
-// (Virus outbreak, Played folding back in at sprint end).
+// Only the max bound blocks a drop — the deckbuilder lets the player take
+// the Deck below MIN_DECK_SIZE freely (see the "Go to Next Sprint" button in
+// renderDeckEditor, which is what actually enforces the minimum, by
+// disabling advancement rather than blocking removal). The live sprint deck
+// can already legitimately fall below the min (cards out in Played) or
+// exceed the max (Virus outbreak, Played folding back in at sprint end).
 function isFolderDropBlocked(folderKey) {
   if (folderKey === 'deck') return sprintState.deck.length >= MAX_DECK_SIZE;
-  if (folderKey === 'unused') return sprintState.deck.length <= MIN_DECK_SIZE;
   return false;
 }
 
@@ -1777,7 +1915,7 @@ function renderPlayedCard(card) {
 function renderSprintTask(task) {
   const targetable = !!(sprintState.pendingTarget && sprintState.pendingTarget.eligibleTaskIds.includes(task.id));
   const el = document.createElement('div');
-  el.className = 'sprint-task' + (targetable ? ' targetable' : '');
+  el.className = 'sprint-task' + (task.isSpecialTask ? ' special-task' : '') + (targetable ? ' targetable' : '');
   const pct = Math.min(100, Math.round((task.severity / task.maxSeverity) * 100));
   const abilityBlocks = (task.abilities || []).map((id) => `
     <div class="ability-block">
@@ -1786,9 +1924,9 @@ function renderSprintTask(task) {
     </div>
   `).join('');
   el.innerHTML = `
-    <div class="sprint-task-name">${task.name}${task.carriedOver ? ' <span class="carried-badge">Carried Over</span>' : ''}</div>
+    <div class="sprint-task-name">${task.name}${task.isSpecialTask ? ' <span class="special-badge">Special</span>' : ''}${task.carriedOver ? ' <span class="carried-badge">Carried Over</span>' : ''}</div>
     <div class="severity-bar"><div class="severity-bar-fill" style="width:${pct}%"></div></div>
-    <div class="sprint-task-meta">Severity ${task.severity} &middot; +${task.gain} / -${task.loss}${task.automation > 0 ? ` <span class="automation-badge">Automation ${task.automation}</span>` : ''}</div>
+    <div class="sprint-task-meta">Severity ${task.severity}${task.automation > 0 ? ` <span class="automation-badge">Automation ${task.automation}</span>` : ''}</div>
     ${abilityBlocks}
   `;
   if (task.carriedOver) {
@@ -1809,7 +1947,7 @@ function renderSprintTask(task) {
 // informative instead of losing everything but the name once a task clears.
 function renderFinishedTask(task) {
   const el = document.createElement('div');
-  el.className = 'sprint-task sprint-task-cleared';
+  el.className = 'sprint-task sprint-task-cleared' + (task.isSpecialTask ? ' special-task' : '');
   const abilityBlocks = (task.abilities || []).map((id) => `
     <div class="ability-block">
       <span class="ability-badge">${abilityDisplayName(id)}</span>
@@ -1817,9 +1955,9 @@ function renderFinishedTask(task) {
     </div>
   `).join('');
   el.innerHTML = `
-    <div class="sprint-task-name">${task.name} <span class="task-status-tag summary-positive">Cleared &middot; +${task.gain}</span></div>
+    <div class="sprint-task-name">${task.name}${task.isSpecialTask ? ' <span class="special-badge">Special</span>' : ''} <span class="task-status-tag summary-positive">Cleared</span></div>
     <div class="severity-bar"><div class="severity-bar-fill" style="width:100%"></div></div>
-    <div class="sprint-task-meta">Severity ${task.maxSeverity} &middot; +${task.gain} / -${task.loss}</div>
+    <div class="sprint-task-meta">Severity ${task.maxSeverity}</div>
     ${abilityBlocks}
   `;
   return el;
@@ -1878,6 +2016,7 @@ function renderEverSprintBoard() {
         <div>${msg}</div>
       </div>
     `;
+    appendSprintLogPanel(everSprintBoardEl);
     return;
   }
 
@@ -1887,18 +2026,13 @@ function renderEverSprintBoard() {
     } else {
       renderSprintSummaryView(everSprintBoardEl);
     }
+    appendSprintLogPanel(everSprintBoardEl);
     return;
   }
 
   const dayDots = SPRINT_DAY_NAMES.map((_, i) =>
     `<span class="sprint-day-dot${i <= sprintState.dayIndex ? ' filled' : ''}"></span>`
   ).join('');
-
-  let hint = '';
-  if (sprintState.pendingTarget) hint = 'Choose a task to target.';
-  else if (sprintState.pendingCardTarget) hint = 'Choose a card to target.';
-  else if (sprintState.bonusDraft) hint = 'Bonus draft available — pick one or decline.';
-  else if (!sprintState.dailyDraftResolved) hint = "Pick one card from today's Draft to continue.";
 
   const header = document.createElement('div');
   header.className = 'sprint-header';
@@ -1908,7 +2042,7 @@ function renderEverSprintBoard() {
       <strong>${sprintState.performance}/100</strong>
       <div class="severity-bar performance-bar"><div class="severity-bar-fill" style="width:${sprintState.performance}%"></div></div>
     </div>
-    <div class="sprint-hint">${hint}</div>
+    <div class="sprint-hint">${SPRINT_TIPS[tipRotationIndex]}</div>
     <div class="sprint-header-stat">
       <div class="sprint-day">Sprint ${sprintState.weekNumber} &middot; ${SPRINT_DAY_NAMES[sprintState.dayIndex]}</div>
       <div class="sprint-day-dots">${dayDots}</div>
@@ -1919,17 +2053,28 @@ function renderEverSprintBoard() {
   const board = document.createElement('div');
   board.className = 'board';
 
+  // A bonus draft is shown inside the Draft column too (see
+  // renderDraftColumnBody), so "drafting" covers both the daily mandatory
+  // pick and any active bonus draft — either way, the Draft column is where
+  // the player needs to look. "Available abilities" reuses hasAvailableActions
+  // (also what the End Day button's own color already keys off of) so the
+  // two highlights and that button never disagree about what's actionable.
+  const isDrafting = !sprintState.dailyDraftResolved || !!sprintState.bonusDraft;
+  const shouldHighlightPlayed = !isDrafting && hasAvailableActions();
+
   const columns = [
-    ['Deck', sprintState.deck, renderLibraryCard, 'No cards yet'],
-    ['Draft', null, null, null],
-    ['Played', sprintState.played, renderPlayedCard, 'Nothing deployed'],
-    ['My Tasks', sprintState.tasks, renderSprintTask, 'No tasks yet'],
-    ['Finished Tasks', sprintState.finished, renderFinishedTask, 'Nothing finished yet'],
+    ['Deck', 'deck', sprintState.deck, renderLibraryCard, 'No cards yet'],
+    ['Draft', 'draft', null, null, null],
+    ['Played', 'played', sprintState.played, renderPlayedCard, 'Nothing deployed'],
+    ['My Tasks', 'tasks', sprintState.tasks, renderSprintTask, 'No tasks yet'],
+    ['Finished Tasks', 'finished', sprintState.finished, renderFinishedTask, 'Nothing finished yet'],
   ];
 
-  columns.forEach(([label, items, renderItem, emptyText]) => {
+  columns.forEach(([label, columnKey, items, renderItem, emptyText]) => {
+    const highlight = (columnKey === 'draft' && isDrafting) || (columnKey === 'played' && shouldHighlightPlayed);
     const column = document.createElement('div');
-    column.className = 'board-column';
+    column.className = 'board-column' + (highlight ? ' board-column-highlight' : '');
+    column.dataset.column = columnKey;
     const columnHeader = document.createElement('div');
     columnHeader.className = 'board-column-header';
     const labelEl = document.createElement('span');
@@ -1939,7 +2084,7 @@ function renderEverSprintBoard() {
       const endDayBtn = document.createElement('button');
       endDayBtn.className = 'action-btn ' + (canEndDay() && !hasAvailableActions() ? 'day-btn-clear' : 'day-btn-pending');
       endDayBtn.disabled = !canEndDay();
-      endDayBtn.textContent = sprintState.dayIndex < 4 ? 'End Day, Draw 1' : 'End Week';
+      endDayBtn.textContent = sprintState.dayIndex < 4 ? 'End Day' : 'End Week';
       endDayBtn.addEventListener('click', () => endDay());
       columnHeader.appendChild(endDayBtn);
     }
@@ -1957,6 +2102,7 @@ function renderEverSprintBoard() {
   });
 
   everSprintBoardEl.appendChild(board);
+  appendSprintLogPanel(everSprintBoardEl);
 }
 
 // -- Sprint Summary hub --
@@ -2022,7 +2168,7 @@ function renderSprintSummaryView(container) {
 }
 
 // -- Deck editor (file-system metaphor) --
-// "Deck" and "Unused Cards" are just folders — dragging a card file between
+// "Deck" and "Collection" are just folders — dragging a card file between
 // them is the entire deckbuilding interaction. Whatever's in Deck when the
 // player leaves the summary becomes next sprint's live queue.
 
@@ -2032,6 +2178,14 @@ function renderSprintSummaryView(container) {
 // a count badge rather than one tile per copy, so selection is keyed by
 // folder + template (e.g. "deck:quick-patch") rather than by card instance.
 let selectedGroupKey = null;
+
+// Display order for the deck editor: type (Script, then Utility, then
+// Daemon), then rarity (Common, then Uncommon, then Rare) within each type,
+// then alphabetical by name within each type+rarity group. Computer Virus
+// (rarity: null) isn't covered by this ordering — it's purged from the deck
+// at every sprint's end (see purgeVirusCards), so it's never actually
+// present when the deck editor is shown.
+const CARD_SORT_TYPE_ORDER = ['script', 'utility', 'daemon'];
 
 function groupCardsByTemplate(cards) {
   const groups = [];
@@ -2044,6 +2198,15 @@ function groupCardsByTemplate(cards) {
       groups.push(group);
     }
     group.instances.push(card);
+  });
+  groups.sort((a, b) => {
+    const templateA = CARD_DEFS_BY_ID[a.templateId];
+    const templateB = CARD_DEFS_BY_ID[b.templateId];
+    const typeDiff = CARD_SORT_TYPE_ORDER.indexOf(templateA.type) - CARD_SORT_TYPE_ORDER.indexOf(templateB.type);
+    if (typeDiff !== 0) return typeDiff;
+    const rarityDiff = RARITIES.indexOf(templateA.rarity) - RARITIES.indexOf(templateB.rarity);
+    if (rarityDiff !== 0) return rarityDiff;
+    return templateA.name.localeCompare(templateB.name);
   });
   return groups;
 }
@@ -2058,6 +2221,7 @@ function fileTile(group, folderKey) {
   const el = document.createElement('div');
   el.className = 'file-tile' + (selected ? ' selected' : '');
   el.dataset.type = template.type;
+  if (template.rarity) el.dataset.rarity = template.rarity;
   el.draggable = true;
   el.dataset.groupKey = groupKey;
   el.innerHTML = `
@@ -2111,7 +2275,8 @@ function renderFolder(label, cards, folderKey, maxCount) {
   const folder = document.createElement('div');
   folder.className = 'file-folder';
   const headerText = maxCount ? `${label} (${cards.length}/${maxCount})` : `${label} (${cards.length})`;
-  folder.innerHTML = `<div class="file-folder-header">${headerText}</div>`;
+  const underMin = folderKey === 'deck' && cards.length < MIN_DECK_SIZE;
+  folder.innerHTML = `<div class="file-folder-header${underMin ? ' file-folder-header-warning' : ''}">${headerText}</div>`;
 
   const body = document.createElement('div');
   body.className = 'file-folder-body';
@@ -2153,9 +2318,11 @@ function renderDeckEditor(container) {
   title.className = 'summary-title';
   title.textContent = 'Edit Deck';
   header.appendChild(title);
+  const deckTooSmall = sprintState.deck.length < MIN_DECK_SIZE;
   const nextBtn = document.createElement('button');
-  nextBtn.className = 'action-btn day-btn-clear';
-  nextBtn.textContent = 'Go to Next Sprint';
+  nextBtn.className = 'action-btn ' + (deckTooSmall ? 'day-btn-blocked' : 'day-btn-clear');
+  nextBtn.textContent = deckTooSmall ? 'Deck must have 10 cards' : 'Go to Next Sprint';
+  nextBtn.disabled = deckTooSmall;
   nextBtn.addEventListener('click', () => {
     selectedGroupKey = null;
     advanceToNextSprint();
@@ -2166,7 +2333,7 @@ function renderDeckEditor(container) {
   const folders = document.createElement('div');
   folders.className = 'file-folders';
   folders.appendChild(renderFolder('Deck', sprintState.deck, 'deck', MAX_DECK_SIZE));
-  folders.appendChild(renderFolder('Unused Cards', sprintState.unused, 'unused'));
+  folders.appendChild(renderFolder('Collection', sprintState.unused, 'unused'));
   wrap.appendChild(folders);
 
   // Clicking anywhere outside a card file (tiles stop propagation) deselects.
@@ -2180,12 +2347,111 @@ function renderDeckEditor(container) {
   positionCardTooltip(wrap); // needs layout, so only after wrap is in the DOM
 }
 
+// -- Sprint tutorial --
+// A single-screen, one-time primer shown the first time the player opens
+// EverSprint with real tasks loaded (see buildEverSprintApp). Marked seen in
+// progress once dismissed, so it never shows again after that — see
+// sprintTutorialSeen / loadProgress / saveProgress above. Deeper mechanics
+// (Performance's End-Week-only timing, card types, Automation, task
+// abilities, Virus, Reassign) are deliberately left out of this list — those
+// are rolling-tips territory instead, per DESIGN.md's Player Onboarding
+// section.
+const SPRINT_TUTORIAL_POINTS = [
+  'You have 5 days to complete all the tasks assigned to you during each Sprint.',
+  "Each task has a Severity bar. Reduce a task's Severity to 0 to finish that task.",
+  'At the start of each day, draft a card to play and use your cards to finish all your tasks.',
+  'Finishing tasks raises your Performance score. Leaving tasks unfinished lowers it.',
+  'Get your Performance score to 100 to get a promotion!',
+];
+
+function showSprintTutorial(wrapper) {
+  const overlay = document.createElement('div');
+  overlay.className = 'sprint-tutorial-overlay';
+  const card = document.createElement('div');
+  card.className = 'sprint-tutorial-card';
+  card.innerHTML = `
+    <div class="sprint-tutorial-title">Welcome to EverSprint</div>
+    <ul class="sprint-tutorial-list">
+      ${SPRINT_TUTORIAL_POINTS.map((point) => `<li>${point}</li>`).join('')}
+    </ul>
+    <div class="sprint-tutorial-footer">
+      <button class="action-btn sprint-tutorial-done">Got it</button>
+    </div>
+  `;
+  overlay.appendChild(card);
+  wrapper.appendChild(overlay);
+
+  card.querySelector('.sprint-tutorial-done').addEventListener('click', () => {
+    overlay.remove();
+    sprintTutorialSeen = true;
+    saveProgress();
+  });
+}
+
+// -- Rolling sprint tips --
+// Deeper mechanics deliberately left out of the one-time tutorial (see
+// SPRINT_TUTORIAL_POINTS above) surface here instead, rotating through the
+// board header's hint slot — the same spot that used to show contextual
+// prompts ("Choose a task to target.", "Bonus draft available — pick one or
+// decline.", "Pick one card from today's Draft to continue."). Those prompts
+// are gone; the state they were read from (pendingTarget, pendingCardTarget,
+// bonusDraft, dailyDraftResolved) still drives the rest of the board (which
+// tasks/cards are targetable, which column shows the bonus draft, whether
+// End Day is enabled) — only the hint text itself was replaced.
+const SPRINT_TIPS = [
+  'There are 3 card types: Scripts, Utilities and Daemons.',
+  'Scripts affect the game the moment you draft them, then they are shuffled back into your deck.',
+  'Utility and Daemon cards stay in your Played column until the end of the sprint.',
+  'Utility cards have an Activate effect. These effects can be activated again after the cooldown timer reaches 0.',
+  'Completing a task increases your Performance rating by 1.',
+  'Failing to complete a task lowers your Performance rating by 1.',
+  'Tasks that are carried over to the next sprint can be Reassigned at the cost of lowering your Performance rating by 2.',
+  'A task with Automation on it will lower its severity by its Automation amount at the start of each day.',
+  'Pay attention to the effects that each task has.',
+  'When you fail to complete a task, that task will show up in your next Sprint along with your new tasks.',
+  'Sprints become more difficult as your Performance rating increases.',
+  'Multiple copies of the same Daemon will stack their effects.',
+  'If you finish all your tasks before Friday, you will be assigned a Special Task, which guarantees an uncommon or rare card as a reward.',
+  'When you finish a task, you will get a new card as a reward.',
+  'You may only have 10 copies of common cards, 5 copies of uncommon cards and 2 copies of rare cards.',
+  'Cards that have a Draft from X mechanic are a good way to search through your deck for the card you want.',
+  'The minimum deck size is 10 cards.',
+  'The maximum deck size is 40 cards.',
+];
+
+let tipRotationIndex = 0;
+let tipRotationTimer = null;
+
+// Re-armed on every buildEverSprintApp (fresh open or rebuildOnRestore), so
+// there's never more than one timer running. The tick itself is a direct DOM
+// text update rather than a full renderEverSprintBoard() — the rotation
+// shouldn't disturb any other in-progress UI state — and self-clears if the
+// window has since been closed (createWindow has no per-app close hook to
+// unsubscribe from; everSprintBoardEl going stale/detached is what signals it).
+function startTipRotation() {
+  if (tipRotationTimer) clearInterval(tipRotationTimer);
+  tipRotationIndex = 0;
+  tipRotationTimer = setInterval(() => {
+    const hintEl = everSprintBoardEl && document.body.contains(everSprintBoardEl)
+      ? everSprintBoardEl.querySelector('.sprint-hint')
+      : null;
+    if (!hintEl) {
+      clearInterval(tipRotationTimer);
+      tipRotationTimer = null;
+      return;
+    }
+    tipRotationIndex = (tipRotationIndex + 1) % SPRINT_TIPS.length;
+    hintEl.textContent = SPRINT_TIPS[tipRotationIndex];
+  }, 30000);
+}
+
 function buildEverSprintApp(contentEl) {
   const tasksLoaded = EVERGREEN_MAIL_SEEDS.find((e) => e.id === 'sunita-2').viewed;
 
   const wrapper = document.createElement('div');
   wrapper.className = 'sprint-app';
   contentEl.appendChild(wrapper);
+  addSprintLogToggleButton(contentEl);
 
   if (!tasksLoaded) {
     const board = document.createElement('div');
@@ -2207,6 +2473,11 @@ function buildEverSprintApp(contentEl) {
   everSprintBoardEl = wrapper;
   ensureSprintState();
   renderEverSprintBoard();
+  startTipRotation();
+
+  if (!sprintTutorialSeen && sprintState.phase === 'active' && !sprintState.gameOver) {
+    showSprintTutorial(wrapper);
+  }
 }
 
 document.getElementById('icon-eversprint').addEventListener('click', () => {
