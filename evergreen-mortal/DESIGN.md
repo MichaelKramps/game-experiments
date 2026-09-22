@@ -10,9 +10,9 @@ EverSprint is the in-fiction "work tracking" app inside Evergreen Mortal — a k
 
 Performance mostly only actually changes once per sprint, at End Week — not incrementally as things happen during the week. Finishing a task, Reassigning a carried-over task, and the final loss for anything still open at week's end all queue their contribution rather than applying it immediately; the whole sprint's net change is calculated and applied in one shot when the week ends (revealed on the Sprint Summary screen as "Performance N/100 (±M)"). This is why **promotion can only happen at the end of a sprint** — hitting 100 requires that sprint-end lump sum, since gains never move Performance mid-week on their own.
 
-**Exception — Deadline Pressure.** Its daily loss tick is a deliberate carve-out: it applies for real, immediately, the moment it fires each day (on top of still getting hit again by the sprint-end lump sum if the task is still open then, per its "fires every day and again at sprint end" text). This means **firing (hitting 0) can still happen mid-sprint** — but only from this one live threat; every other source of Performance change is deferred to the week-end reveal.
+**Exception — Filing Deadline.** Its daily loss tick is a deliberate carve-out: it applies for real, immediately, the moment it fires each day (on top of still getting hit again by the sprint-end lump sum if the task is still open then, per its "fires every day and again at sprint end" text). This means **firing (hitting 0) can still happen mid-sprint** — but only from this one live threat; every other source of Performance change is deferred to the week-end reveal.
 
-**Implementation note — Special Task / Business as Usual severity across a sprint**: since Performance doesn't move mid-sprint (Deadline Pressure aside), every task that gets its severity from Business as Usual — including every Special Task spawned during the same sprint — locks to the *same* number, whatever Performance was at that sprint's start. Multiple Special Tasks in one sprint will all share identical severity; it only changes once the next sprint's opening Performance is revealed.
+**Implementation note — Special Task / Standard Intake severity across a sprint**: since Performance doesn't move mid-sprint (Filing Deadline aside), every task that gets its severity from Standard Intake — including every Special Task spawned during the same sprint — locks to the *same* number, whatever Performance was at that sprint's start. Multiple Special Tasks in one sprint will all share identical severity; it only changes once the next sprint's opening Performance is revealed.
 
 ## Core Loop / Board Columns
 
@@ -117,10 +117,11 @@ Ownership of any single named card — counted across Deck, Collection, and Play
 The cap only constrains *collecting* copies, never *deploying* them — a player below the cap can always put every owned copy of a card into the Deck, subject only to the Deck's own size limit (see Deck Size below). There is no separate "copy limit" check on the Deck folder itself; it's enforced entirely at the point a reward is granted:
 
 1. Roll the intended rarity as normal (74/25/1, or Special Task's 50/50 Rare/Uncommon — see below).
-2. If any card of that rarity is below its cap, grant a random one of those eligible cards, same as today.
-3. If *every* card of that rarity is at its cap, fall back to a substitute rarity: **Common → Uncommon, Uncommon → Rare, Rare → Uncommon**. (Not a symmetric cycle — Rare's fallback is Uncommon, not Common.)
-4. If the substitute rarity is also fully maxed, the one rarity that is neither the original roll nor the substitute is guaranteed instead.
-5. If all three rarities are fully maxed out, no reward is granted at all.
+2. **Rare lockout** — below Performance 30, a roll of Rare is downgraded to Uncommon before anything else happens (`RARE_CARD_PERFORMANCE_MIN` in `game.js`). This applies to every reward path that can roll Rare, Special Task's 50/50 included.
+3. If any card of that rarity is below its cap, grant a random one of those eligible cards, same as today.
+4. If *every* card of that rarity is at its cap, fall back to a substitute rarity: **Common → Uncommon, Uncommon → Rare, Rare → Uncommon**. (Not a symmetric cycle — Rare's fallback is Uncommon, not Common.)
+5. If the substitute rarity is also fully maxed, the one rarity that is neither the original roll nor the substitute is guaranteed instead.
+6. If all three rarities are fully maxed out, no reward is granted at all.
 
 ### Starting Deck
 
@@ -209,47 +210,46 @@ Tasks currently (in the shipped game) are pure damage sponges: static severity, 
 
 Each sprint's task lineup is generated fresh at sprint start using a fixed algorithm:
 
-1. **Eligible ability count** — count how many of the 12 task abilities (below) currently pass their Performance gate. This is always at least 4, since Business as Usual, Escalation, Retaliation, and Infectious are eligible at all Performance levels.
+1. **Eligible ability count** — count how many of the 12 task abilities (below) currently pass their Performance gate. This is always at least 4, since Standard Intake, Disease Progression, Compliance Problem, and Contaminated are eligible at all Performance levels.
 2. **Task count** — a random integer between 2 and `min(6, eligible ability count)`. The ceiling shrinks with the eligible pool so a sprint never needs more unique abilities than actually exist yet at the current Performance.
-3. **Total severity budget** — `Performance × 2 × 1.1^(Performance / 10)`. This compounds faster than linear, so late-game lineups get dramatically more dangerous in total, not just proportionally more:
+3. **Total severity budget** — `Performance × 2 × 1.1^(Performance / 10)`, where this **Performance** is floored at 25 for every task-generation calculation in this section (budget, gates, and the ability magnitudes in step 6 below) — so sprint 1 (actual Performance 10) generates as if Performance were 25, even though the displayed/tracked Performance value itself is untouched and still starts at 10. This compounds faster than linear, so late-game lineups get dramatically more dangerous in total, not just proportionally more:
 
-   | Performance | Total severity budget |
+   | Performance (floored at 25 for this calc) | Total severity budget |
    |---|---|
-   | 10 | ~22 |
-   | 25 (sprint 1 start) | ~63.5 |
+   | 25 (sprint 1 start, actual Performance 10) | ~63.5 |
    | 50 | ~161 |
    | 75 | ~307 |
    | 100 | ~519 |
 
 4. **Split** — each task gets a floor of 5 severity; the remaining budget is divided across all tasks using normalized random weights (an uneven, organic split, not an even one), then rounded to whole numbers with drift correction so the total still matches. **A single task's severity is capped at 100** — at high Performance the budget (see the table above) can suggest more than that for one task, and any excess from the split is simply not applied rather than pushed onto the task.
-5. **Ability assignment** — one task is guaranteed the **Business as Usual** ability. Each remaining task gets a unique ability (no repeats within a sprint), drawn with equal probability from whichever of the other 11 abilities are currently eligible.
-6. **Severity overrides** — a task with Business as Usual or Layered discards whatever severity the random split gave it and uses its own formula instead (see table below). This isn't compensated elsewhere — a sprint's realized total severity can end up under the nominal budget when either ability appears.
-7. **Gain / loss** — independent of severity and ability: every task carries a fixed **gain** of 1 and **loss** of 1. **Gain** is the Performance awarded when the task is finished (severity reaches 0). **Loss** is the Performance penalty applied if the task is still unresolved at sprint's end — and it fires **every sprint** the task remains open, not just once (see Deadline Pressure for the ability that fires it more often still, and Carrying tasks between sprints below for how a task can end up unresolved across more than one sprint in the first place). Not shown on the board itself (see below) since it's now the same for every task; still tracked per-task internally since Reassign and Deadline Pressure key off it.
+5. **Ability assignment** — one task is guaranteed the **Standard Intake** ability. Each remaining task gets a unique ability (no repeats within a sprint), drawn with equal probability from whichever of the other 11 abilities are currently eligible.
+6. **Severity overrides** — a task with Standard Intake or Chronic discards whatever severity the random split gave it and uses its own formula instead (see table below). This isn't compensated elsewhere — a sprint's realized total severity can end up under the nominal budget when either ability appears.
+7. **Gain / loss** — independent of severity and ability: every task carries a fixed **gain** of 1 and **loss** of 1. **Gain** is the Performance awarded when the task is finished (severity reaches 0). **Loss** is the Performance penalty applied if the task is still unresolved at sprint's end — and it fires **every sprint** the task remains open, not just once (see Filing Deadline for the ability that fires it more often still, and Carrying tasks between sprints below for how a task can end up unresolved across more than one sprint in the first place). Not shown on the board itself (see below) since it's now the same for every task; still tracked per-task internally since Reassign and Filing Deadline key off it.
 
 #### The 12 task abilities
 
-Each ability also gets a flavor name for the task card itself, distinct from the ability name (e.g. a task with the Escalation ability is named "Runaway Process"):
+Each ability also gets a flavor name for the task card itself, distinct from the ability name (e.g. a task with the Disease Progression ability is named "Data Anomaly Detection"). Two abilities — Compliance Problem and Resource Strain — draw their flavor name randomly from a small pool each time the task is generated, instead of using one fixed name; every other ability still has exactly one fixed flavor name:
 
 | # | Ability | Task flavor name | Mechanic | Performance gate |
 |---|---|---|---|---|
-| 1 | Business as Usual | Routine Maintenance | Severity = Performance, calculated once at sprint start (overrides the random split); behaves as normal severity after that (can be raised/lowered like any other task) | all levels |
-| 2 | Escalation | Runaway Process | Severity +x/day left unfinished, x = round(Performance/10) | all levels |
-| 3 | Retaliation | Defensive Firewall | On any Utility Activation, severity +x, x = round(Performance/10) | all levels |
-| 4 | Infectious | Compromised Server | At sprint start, adds x Computer Virus cards (1 under 50, 2 at 51–75, 3 over 75). Finishing this task removes every Computer Virus copy currently in the deck | all levels |
-| 5 | Armored | Hardened Legacy System | Takes half damage, universally, from any effect type | >35 |
-| 6 | Absorption | Load Aggregator | Gains x severity whenever any other task's severity is lowered, x = round(Performance/10) | >40 |
-| 7 | Draft Squeeze | Resource Contention | Day's Draft samples 2 cards instead of 3 while alive | >50 |
-| 8 | Sluggish Systems | Throttled Pipeline | All Utility cooldowns +1 while alive | >50 |
-| 9 | Contagious | Spreading Outage | Every other task's severity +5/day while alive | >50 |
-| 10 | Distraction | Decoy Ticket | Immune to `target`-type effects only (`all`/`highest` still work) | >60 |
-| 11 | Deadline Pressure | Executive Escalation | Loss penalty fires every day *and* again at sprint end | >70 |
-| 12 | Layered | Encrypted Vault | Severity starts at 5 (overrides the random split); can only be lowered by 1 per hit, regardless of card power, from then on | >80 |
+| 1 | Standard Intake | Routine Treatment Review | Severity = Performance (floored at 25, same as the rest of task generation), calculated once at sprint start (overrides the random split); behaves as normal severity after that (can be raised/lowered like any other task) | all levels |
+| 2 | Disease Progression | Data Anomaly Detection | Severity +x/day left unfinished, x = round(Performance/10) | all levels |
+| 3 | Compliance Problem | FDA Inquiry / CBER Inquiry / EMA Inquiry / MHRA Inquiry / PMDA Inquiry (random) | On any Utility Activation, severity +x, x = round(Performance/10) | all levels |
+| 4 | Contaminated | Containment Profile Audit | At sprint start, adds x Computer Virus cards (1 under 50, 2 at 51–75, 3 over 75). Finishing this task removes every Computer Virus copy currently in the deck | all levels |
+| 5 | Treatment-Resistant | Create Trial Batches | Takes half damage, universally, from any effect type | >35 |
+| 6 | Redirect | Patient Interview Transcription | Gains x severity whenever any other task's severity is lowered, x = round(Performance/10) | >40 |
+| 7 | Resource Strain | Restock Reagents / Restock Viral Vectors / Restock Lipid Nanoparticles / Restock Enzyme Doses / Restock Cell Cultures (random) | Day's Draft samples 2 cards instead of 3 while alive | >50 |
+| 8 | Pipeline Delay | Investigate Process Bottleneck | All Utility cooldowns +1 while alive | >50 |
+| 9 | Familial Cascade | Data Pattern Review | Every other task's severity +5/day while alive | >50 |
+| 10 | Mutation | VUS Analysis | Immune to `target`-type effects only (`all`/`highest` still work) | >60 |
+| 11 | Filing Deadline | Regulatory Paperwork Filing | Loss penalty fires every day *and* again at sprint end | >70 |
+| 12 | Chronic | Cross-department Data Gathering | Severity starts at 5 (overrides the random split); can only be lowered by 1 per hit, regardless of card power, from then on | >80 |
 
 Performance gates are checked once, at the moment a sprint's tasks are generated — an ability stays locked in for that task's whole life even if Performance later crosses back over the threshold.
 
-**Implementation note — locked magnitudes, not just gates**: the same "checked once, locked for the task's life" rule extends to the *x* values above, not only to whether the ability is eligible in the first place. Escalation's, Retaliation's, and Absorption's `x = round(Performance/10)`, and Infectious's virus count, are all rolled once at task generation and stored on the task — they do **not** silently recompute from Performance's current value later in the sprint (Performance can move a lot in five days). This also means the in-game ability description on a task always states its exact locked number (e.g. "Gains 6 severity every day it stays unfinished") rather than the general formula. Deadline Pressure's daily penalty is likewise just the task's own `loss` stat, already fixed at generation.
+**Implementation note — locked magnitudes, not just gates**: the same "checked once, locked for the task's life" rule extends to the *x* values above, not only to whether the ability is eligible in the first place. Disease Progression's, Compliance Problem's, and Redirect's `x = round(Performance/10)`, and Contaminated's virus count, are all rolled once at task generation and stored on the task — they do **not** silently recompute from Performance's current value later in the sprint (Performance can move a lot in five days). This also means the in-game ability description on a task always states its exact locked number (e.g. "Gains 6 severity every day it stays unfinished") rather than the general formula. Filing Deadline's daily penalty is likewise just the task's own `loss` stat, already fixed at generation.
 
-**Implementation note — 100 is a hard severity cap**: a task's severity can never exceed 100, full stop. This is enforced at every point severity can increase — the initial budget split, Escalation's daily gain, Retaliation's per-Activation gain, Contagious's daily spread, and Absorption's per-trigger gain — not just at generation. Each task's health-bar reference value (`maxSeverity`) tracks its own (already-capped) starting severity, so a task that starts below 100 and gets pushed upward by these abilities shows its bar filling in past the point it started at, capped visually at 100% once severity reaches the ceiling.
+**Implementation note — 100 is a hard severity cap**: a task's severity can never exceed 100, full stop. This is enforced at every point severity can increase — the initial budget split, Disease Progression's daily gain, Compliance Problem's per-Activation gain, Familial Cascade's daily spread, and Redirect's per-trigger gain — not just at generation. Each task's health-bar reference value (`maxSeverity`) tracks its own (already-capped) starting severity, so a task that starts below 100 and gets pushed upward by these abilities shows its bar filling in past the point it started at, capped visually at 100% once severity reaches the ceiling.
 
 ### Carrying tasks between sprints
 
