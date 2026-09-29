@@ -216,7 +216,7 @@ const EVERGREEN_MAIL_SEEDS = [
           "Jamie,",
           "This is a standard reminder sent to all employees during their intern probationary period: your continued employment is contingent on full compliance with Evergreen's Code of Conduct, available in your onboarding materials.",
           "Violations — including conduct outside of work hours that reflects poorly on the company, or actions that could be seen as undermining team cohesion — may result in immediate termination without further notice.",
-          "This is routine. No action is needed on your part.",
+          "No action is currently needed on your part.",
           "— Evergreen Human Resources",
         ],
       },
@@ -418,7 +418,7 @@ const JOURNAL_ENTRIES = [
     revealed: false,
     title: 'the glasses',
     body: [
-      "Still no sign of Jo. I've been keeping my head down, watching more than talking.",
+      "No sign of Jo. I've been keeping my head down, watching more than talking.",
       "Most of the employees here wear a pair of glasses that don't look like they're just for reading. People glance off to the side mid-conversation, like they're checking something only they can see. No one else seems to notice, or if they do, no one mentions it.",
     ],
   },
@@ -430,7 +430,7 @@ const JOURNAL_ENTRIES = [
     title: 'coffee',
     body: [
       "Sunita brings me coffee every morning. I think she does it for everyone on the team, not just me.",
-      "She's kind. She's also relentless — the standards here are high, and somehow everyone meets them without complaint. She's good at her job. I just don't know yet what her job actually is.",
+      "She's kind. She's also relentless — the standards here are high, and somehow everyone meets them without complaint. She's good at her job.",
     ],
   },
   {
@@ -451,7 +451,7 @@ const JOURNAL_ENTRIES = [
     revealed: false,
     title: 'Marcus',
     body: [
-      "It had been years since I spent real time with Marcus. Sitting in his kitchen, it was like no time had passed — same jokes, same easy quiet between sentences.",
+      "It had been years since I spent real time with Marcus. Sitting in his kitchen, it was like no time had passed — same jokes, same easy quiet between conversation topics.",
       "Then I asked about Jo. He didn't answer straight. He got nervous, the kind of nervous I don't remember him ever being. I didn't push. But I think he knows something.",
       "I have to find her.",
     ],
@@ -866,11 +866,20 @@ function updateJournalBadge() {
   }
 }
 
+// EverSprint's "!" nudges the player toward the app for the whole intern
+// stretch — it stays up until they're promoted (sprintState is null until
+// EverSprint is first opened, which still counts as not promoted).
+function updateEverSprintBadge() {
+  const badge = document.getElementById('eversprint-badge');
+  badge.classList.toggle('hidden', sprintState?.gameOver === 'promoted');
+}
+
 function openDesktop() {
   document.getElementById('app').classList.add('hidden');
   document.getElementById('desktop-screen').classList.remove('hidden');
   updateMailBadge();
   updateJournalBadge();
+  updateEverSprintBadge();
   currentScreen = 'desktop';
   saveProgress();
 }
@@ -1030,7 +1039,13 @@ function openEvergreenMailApp() {
       evergreenMailClient = createMailClient(contentEl, {
         seedEmails: EVERGREEN_MAIL_SEEDS.filter((e) => e.delivered).sort((a, b) => b.deliveredOrder - a.deliveredOrder),
         onChange: updateMailBadge,
-        secondaryFolder: { label: 'External Inbox', emails: CYBER_MAIL_SEEDS },
+        // Sunita's welcome email was the last thing delivered to the personal
+        // inbox, so it sits at the top — read, and without the "Start job"
+        // button, since the job has already started.
+        secondaryFolder: {
+          label: 'External Inbox',
+          emails: [{ ...SUNITA_ONBOARDING_EMAIL, read: true, action: null }, ...CYBER_MAIL_SEEDS],
+        },
       });
     },
   });
@@ -1342,24 +1357,33 @@ function isCardMaxed(templateId) {
 }
 
 // ---- Card rewards ----
-// Finishing a task rolls a rarity, then grants one random unique card of
+// Finishing a normal task has a REWARD_CHANCE shot at a card at all (Special
+// Tasks always grant one). A granted reward rolls a rarity, then one random unique card of
 // that rarity (Computer Virus is excluded — it only enters a deck via task
 // abilities/effects, never as a reward). The new card goes to the Unused
 // Cards folder, not directly into the sprint's Deck.
+const REWARD_CHANCE = 0.5;
+
 const REWARD_ODDS = [
   ['common', 0.74],
   ['uncommon', 0.25],
   ['rare', 0.01],
 ];
 
-function rollRarity() {
+const SPECIAL_TASK_REWARD_ODDS = [
+  ['common', 0.25],
+  ['uncommon', 0.5],
+  ['rare', 0.25],
+];
+
+function rollRarity(odds = REWARD_ODDS) {
   const r = Math.random();
   let acc = 0;
-  for (const [rarity, p] of REWARD_ODDS) {
+  for (const [rarity, p] of odds) {
     acc += p;
     if (r < acc) return rarity;
   }
-  return REWARD_ODDS[REWARD_ODDS.length - 1][0];
+  return odds[odds.length - 1][0];
 }
 
 function eligibleRewardPool(rarity) {
@@ -1372,7 +1396,7 @@ function eligibleRewardPool(rarity) {
 // exhausted, no reward is granted at all. See DESIGN.md "Copy Limits &
 // Reward Exhaustion".
 // Rare cards are locked out below Performance 30 — any reward path that
-// would have rolled 'rare' (including Special Task's 50/50 roll) downgrades
+// would have rolled 'rare' (including Special Task's 25/50/25 roll) downgrades
 // to 'uncommon' instead, before the exhaustion-fallback logic below runs.
 const RARE_CARD_PERFORMANCE_MIN = 30;
 
@@ -1394,13 +1418,14 @@ function grantCardReward(rarity) {
 }
 
 function rollCardReward() {
+  if (Math.random() >= REWARD_CHANCE) return;
   grantCardReward(rollRarity());
 }
 
-// Special Task's reward skips the normal 74/25/1 odds entirely — straight
-// 50/50 Rare/Uncommon, never Common, never nothing.
+// Special Task's reward is guaranteed (no REWARD_CHANCE roll) and uses its
+// own 25/50/25 Common/Uncommon/Rare odds instead of the normal 74/25/1.
 function rollSpecialTaskReward() {
-  grantCardReward(Math.random() < 0.5 ? 'rare' : 'uncommon');
+  grantCardReward(rollRarity(SPECIAL_TASK_REWARD_ODDS));
 }
 
 // ---- Task abilities ----
@@ -2251,6 +2276,7 @@ function changePerformance(amount) {
   if (sprintState.performance >= 100) {
     sprintState.gameOver = 'promoted';
     logEvent('Performance hit 100 — promoted.');
+    updateEverSprintBadge();
   } else if (sprintState.performance <= 0) {
     sprintState.gameOver = 'fired';
     logEvent('Performance hit 0 — fired.');
@@ -3052,8 +3078,8 @@ const SPRINT_TIPS = [
   'When you fail to complete a task, that task will show up in your next Sprint along with your new tasks.',
   'Sprints become more difficult as your Performance rating increases.',
   'Multiple copies of the same Daemon will stack their effects.',
-  'If you finish all your tasks before Friday, you will be assigned a Special Task, which guarantees an uncommon or rare card as a reward.',
-  'When you finish a task, you will get a new card as a reward.',
+  'If you finish all your tasks before Friday, you will be assigned a Special Task, which always rewards a card, with better odds of an uncommon or rare.',
+  'When you finish a task, you have a 50% chance to get a new card as a reward.',
   'You may only have 10 copies of common cards, 5 copies of uncommon cards and 2 copies of rare cards.',
   'Cards that have a Draft from X mechanic are a good way to search through your deck for the card you want.',
   'The minimum deck size is 10 cards.',

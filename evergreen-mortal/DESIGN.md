@@ -86,7 +86,7 @@ Several cards let the player attack a task indirectly: instead of lowering its s
 
 ## Rarity & Reward Odds
 
-When a task is finished, the reward roll uses these odds:
+When a normal task is finished, there is a **50% chance** (`REWARD_CHANCE` in `game.js`) of any card reward at all. If a reward is granted, the rarity roll uses these odds (Special Tasks always grant a card and use their own odds — see Special Task below):
 
 | Rarity | Odds |
 |---|---|
@@ -98,7 +98,7 @@ Pool composition: **23 Common** (11 Script / 8 Utility / 4 Daemon), **12 Uncommo
 
 Each of the 39 cards below is a single unique named card, not a stack — the only way to end up with more than one copy of the same card is rolling it as a reward twice (or, for Computer Virus, the outbreak mechanic).
 
-**Reward delivery**: finishing a task grants exactly **one** card, rolled against the odds above. The new card goes to the **Collection** folder (the existing deckbuilder pool of owned-but-not-in-this-sprint cards, `sprintState.unused`) — not directly into the sprint's Deck.
+**Reward delivery**: a granted reward is exactly **one** card, rolled against the odds above. The new card goes to the **Collection** folder (the existing deckbuilder pool of owned-but-not-in-this-sprint cards, `sprintState.unused`) — not directly into the sprint's Deck.
 
 **"Play a random X from your deck" with no eligible X**: if the deck contains no card of the required type, the effect simply does nothing (no fizzle penalty, no substitution).
 
@@ -116,8 +116,8 @@ Ownership of any single named card — counted across Deck, Collection, and Play
 
 The cap only constrains *collecting* copies, never *deploying* them — a player below the cap can always put every owned copy of a card into the Deck, subject only to the Deck's own size limit (see Deck Size below). There is no separate "copy limit" check on the Deck folder itself; it's enforced entirely at the point a reward is granted:
 
-1. Roll the intended rarity as normal (74/25/1, or Special Task's 50/50 Rare/Uncommon — see below).
-2. **Rare lockout** — below Performance 30, a roll of Rare is downgraded to Uncommon before anything else happens (`RARE_CARD_PERFORMANCE_MIN` in `game.js`). This applies to every reward path that can roll Rare, Special Task's 50/50 included.
+1. Roll the intended rarity as normal (74/25/1, or Special Task's 25/50/25 Common/Uncommon/Rare — see below).
+2. **Rare lockout** — below Performance 30, a roll of Rare is downgraded to Uncommon before anything else happens (`RARE_CARD_PERFORMANCE_MIN` in `game.js`). This applies to every reward path that can roll Rare, Special Task's 25/50/25 included.
 3. If any card of that rarity is below its cap, grant a random one of those eligible cards, same as today.
 4. If *every* card of that rarity is at its cap, fall back to a substitute rarity: **Common → Uncommon, Uncommon → Rare, Rare → Uncommon**. (Not a symmetric cycle — Rare's fallback is Uncommon, not Common.)
 5. If the substitute rarity is also fully maxed, the one rarity that is neither the original roll nor the substitute is guaranteed instead.
@@ -287,15 +287,16 @@ Tuesday, Wednesday, or Thursday, one more task queues up for the day that's
 just starting — **Special Task**. It's generated exactly like a Business as
 Usual task — severity locked to current Performance, gain/loss fixed at 1
 as usual, behaves as normal severity after that — with two differences: its
-name, and its reward. Finishing a Special Task skips the normal 74/25/1
-Common/Uncommon/Rare odds entirely and rolls a straight **50/50 between Rare
-and Uncommon** — never Common, never nothing.
+name, and its reward. Finishing a Special Task always grants a card (it skips
+the normal task's 50% reward chance) and uses its own odds instead of the
+normal 74/25/1: **25% Common, 50% Uncommon, 25% Rare**
+(`SPECIAL_TASK_REWARD_ODDS` in `game.js`).
 
 **Visual indicator**: a Special Task's card gets a "Special" text badge next
 to its name and a `--rarity-rare`-colored outline (`.special-task` in
 index.html/game.js) — reusing the rarity ribbon's "rare" amber rather than
-introducing a new color, since a Special Task's reward odds are themselves
-rare-tier-or-better. Shown everywhere the task itself renders: the live "My
+introducing a new color, since a Special Task is the best shot at a rare
+card. Shown everywhere the task itself renders: the live "My
 Tasks" board (`renderSprintTask`), Finished Tasks and the Sprint Summary's
 Finished/Carried-over columns (both reuse `renderSprintTask`/
 `renderFinishedTask`, so no separate code path). If a Special Task is also
@@ -365,5 +366,5 @@ A running, human-readable record of what happened during the sprint(s) so far �
 - No concrete story-sprint task has been designed yet (what it looks like tied to an actual plot beat, and how multi-ability stacking should read to the player) — including how the player is cued that a sprint is about to shift into a story beat rather than routine work.
 - The rolling tips pool doesn't cover Performance's End-Week-only timing, Virus outbreak behavior, or most individual task abilities beyond a generic "pay attention to task effects" nudge — candidates for future additions to `SPRINT_TIPS`.
 - A visual-hierarchy pass across the sprint board, rewards/summary screen, and deck builder is planned but not yet implemented — today's layout leans on dense text rather than guiding the eye to what's urgent or actionable.
-- No numeric balance pass has been done — severity thresholds, cooldown lengths, ability gate thresholds, the severity-budget formula's constants, the starting deck, the fixed gain/loss of 1, Reassign's 2× cost multiplier, Special Task's 50/50 Rare/Uncommon split, the 10–40 deck size range, the 10/5/2 copy limits, and Automation's grant/payoff amounts are all first-draft guesses undergoing active playtesting revision.
+- No numeric balance pass has been done — severity thresholds, cooldown lengths, ability gate thresholds, the severity-budget formula's constants, the starting deck, the fixed gain/loss of 1, Reassign's 2× cost multiplier, Special Task's 25/50/25 Common/Uncommon/Rare split, the 50% normal-task reward chance, the 10–40 deck size range, the 10/5/2 copy limits, and Automation's grant/payoff amounts are all first-draft guesses undergoing active playtesting revision.
 - The whole system has been smoke-tested (full sprint loop, deck editor persistence, Virus outbreak, high-Performance task generation) but not actually playtested for fun/balance versus just working correctly on paper.
