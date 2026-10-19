@@ -8,7 +8,7 @@ const CYBER_MAIL_SEEDS = [
       {
         self: true,
         from: 'You',
-        addr: 'jamie.booker@fernwaymail.com',
+        addr: 'jamie.taylor@fernwaymail.com',
         date: '4 months ago',
         body: [
           "Marcus. It's been a long time…years, at this point.",
@@ -20,7 +20,7 @@ const CYBER_MAIL_SEEDS = [
       {
         self: false,
         from: 'Marcus Odom',
-        addr: 'marcus.odom@evergreenmortal.com',
+        addr: 'marcus.odom@fernwaymail.com',
         date: '4 months ago',
         body: [
           "Jamie. Hey. It's so good to hear from you. And it's not your fault. It's not anyone's fault. It's just good to hear from you.",
@@ -39,7 +39,7 @@ const CYBER_MAIL_SEEDS = [
       {
         self: true,
         from: 'You',
-        addr: 'jamie.booker@fernwaymail.com',
+        addr: 'jamie.taylor@fernwaymail.com',
         date: '6 months ago',
         body: [
           "Reese — I don't want to make this bigger than it needs to be, but have you heard from Jo? It's been a while since I have, and I want to rule out that it's nothing before I let myself worry about it being something.",
@@ -49,11 +49,11 @@ const CYBER_MAIL_SEEDS = [
       },
       {
         self: false,
-        from: 'Reese Booker',
-        addr: 'reese.booker@fernwaymail.com',
+        from: 'Reese Taylor',
+        addr: 'reese.taylor@fernwaymail.com',
         date: '6 months ago',
         body: [
-          "Hi. No, I haven't heard from Jo in months…not a call, not a text. But that's Jo for you, she's always wrapped up in something.",
+          "Hi. No, I haven't heard from Jo in months…but that's Jo for you, she's always wrapped up in something.",
           "— Reese",
         ],
       },
@@ -67,13 +67,13 @@ const CYBER_MAIL_SEEDS = [
     thread: [
       {
         self: false,
-        from: 'Jo Booker',
-        addr: 'jo.booker@fernwaymail.com',
+        from: 'Jo Taylor',
+        addr: 'jo.taylor@fernwaymail.com',
         date: '9 months ago',
         body: [
           "Hi — sorry for the radio silence this week, onboarding's been intense. I think this is the place I've been trying to find since Mabel.",
           "I came across something in one of the internal archives that doesn't add up. I won't get into it here, but I want to look into it properly before I say anything more — I'd rather be right than fast. You know how I am.",
-          "So don't be surprised if I go quiet for a few weeks. Nothing's wrong, I'm just heads-down.",
+          "Don't be surprised if I go quiet for a few weeks. Nothing's wrong, I'm just heads-down.",
           "Talk soon. Love you.",
           "— Jo",
         ],
@@ -90,7 +90,7 @@ const SUNITA_ONBOARDING_EMAIL = {
     {
       self: false,
       from: 'Sunita Marsh',
-      addr: 'sunita.marsh@evergreenmortal.com',
+      addr: 'sunita.marsh@evergreen.com',
       date: 'Just now',
       body: [
         'Jamie,',
@@ -111,30 +111,8 @@ const SUNITA_ONBOARDING_EMAIL = {
 
 const EVERGREEN_MAIL_SEEDS = [
   {
-    id: 'sunita-2',
-    subject: 'your first day',
-    read: false,
-    viewed: false,
-    delivered: true,
-    thread: [
-      {
-        self: false,
-        from: 'Sunita Marsh',
-        addr: 'sunita.marsh@evergreenmortal.com',
-        date: 'Just now',
-        body: [
-          "Jamie — welcome to the floor. Take a look around, get settled at your desk.",
-          "You'll find the EverSprint software on your computer with your first few tasks already queued up. Open it up to get started.",
-          "EverSprint is your home base. It's where you'll do all your work and it's how your performance is tracked. If you keep up with your work, you'll do great here.",
-          "If you need anything, my door's always open.",
-          "— Sunita",
-        ],
-      },
-    ],
-  },
-  {
     id: 'culture-welcome',
-    subject: 'welcome to the mission',
+    subject: "Welcome to Evergreen LLC!",
     read: false,
     viewed: false,
     delivered: true,
@@ -142,7 +120,7 @@ const EVERGREEN_MAIL_SEEDS = [
       {
         self: false,
         from: 'Evergreen Culture Department',
-        addr: 'culture@evergreenmortal.com',
+        addr: 'culture@evergreen.com',
         date: 'Just now',
         body: [
           "Jamie,",
@@ -158,116 +136,218 @@ const EVERGREEN_MAIL_SEEDS = [
     ],
   },
   {
-    id: 'sunita-20',
-    subject: "you're doing great",
+    id: 'sunita-2',
+    subject: "Your first day",
     read: false,
     viewed: false,
-    delivered: false,
+    delivered: true,
     thread: [
       {
         self: false,
         from: 'Sunita Marsh',
-        addr: 'sunita.marsh@evergreenmortal.com',
+        addr: 'sunita.marsh@evergreen.com',
         date: 'Just now',
         body: [
-          "Jamie,",
-          "I wanted to check in and say your work this week has been excellent — you're picking things up faster than most people do in their first month.",
-          "A quick preview of what's ahead: once you're promoted out of the intern program, you'll get full access to the employee directory — every name, title, and team in the company.",
-          "You'll also be enrolled in our wellness program at that point — it's not just a benefit, it's part of how we keep our people performing at their best. Expect a wellness checkup sometime in the next few months.",
-          "Keep this up and that promotion won't be far off.",
+          "Jamie — welcome to the floor. Take a look around, get settled at your desk.",
+          "You'll find the EverSprint software on your computer with your first few tasks already queued up. Open it up to get started.",
+          "EverSprint is your home base. It's where you'll do all your work and it's how your performance is tracked. If you keep up with your work, you'll do great here.",
+          "If you need anything, my door's always open.",
           "— Sunita",
         ],
       },
     ],
   },
   {
-    id: 'marcus-30',
-    subject: 'come by after work?',
+    id: 'wellness-15',
+    subject: "Your first wellness check",
     read: false,
     viewed: false,
     delivered: false,
     thread: [
       {
         self: false,
-        from: 'Marcus Odom',
-        addr: 'marcus.odom@evergreenmortal.com',
-        date: 'Just now',
-        body: [
-          "Jamie — was thinking about you today, don't ask me why. Come by my place after work sometime this week? I'll make coffee, we can catch up properly. It's been too long.",
-          "No agenda, I promise. Just want to see you.",
-          "— Marcus",
-        ],
-      },
-    ],
-  },
-  {
-    id: 'hr-35',
-    subject: 'a note on your probationary status',
-    read: false,
-    viewed: false,
-    delivered: false,
-    thread: [
-      {
-        self: false,
-        from: 'Evergreen Human Resources',
-        addr: 'hr@evergreenmortal.com',
+        from: 'Evergreen Wellness Division',
+        addr: 'wellness@evergreen.com',
         date: 'Just now',
         body: [
           "Jamie,",
-          "This is a standard reminder sent to all employees during their intern probationary period: your continued employment is contingent on full compliance with Evergreen's Code of Conduct, available in your onboarding materials.",
-          "Violations — including conduct outside of work hours that reflects poorly on the company, or actions that could be seen as undermining team cohesion — may result in immediate termination without further notice.",
-          "No action is currently needed on your part.",
-          "— Evergreen Human Resources",
+          "As part of your onboarding enrollment in Evergreen's wellness and longevity monitoring program, your first internal wellness check has been scheduled for this month.",
+          "Please report to the Wellness Suite on the third floor at your assigned time — no preparation is required. You will receive regular wellness checks for as long as you work at Evergreen. This is a standard part of your benefits, and mandatory for all employees.",
+          "We appreciate you taking care of yourself. It's how we take care of you.",
+          "— Evergreen Wellness Division",
         ],
       },
     ],
   },
   {
-    id: 'marcus-40',
-    subject: 'about yesterday',
+    id: 'culture-20',
+    subject: "Employee Efficiency",
     read: false,
     viewed: false,
     delivered: false,
     thread: [
       {
         self: false,
-        from: 'Marcus Odom',
-        addr: 'marcus.odom@evergreenmortal.com',
-        date: 'Just now',
-        body: [
-          "Jamie — I keep thinking about Saturday. It was so good to see you, it really did feel like no time had passed at all.",
-          "I'm sorry about how I got when you asked about Jo. I wasn't trying to dodge you, I promise. It's just — talking about Jo makes me think about Mabel, and I still don't really know how to do that. I never did.",
-          "Let's do this again soon. And Jamie — I am glad you're here.",
-          "— Marcus",
-        ],
-      },
-    ],
-  },
-  {
-    id: 'sunita-50',
-    subject: "you're almost there",
-    read: false,
-    viewed: false,
-    delivered: false,
-    thread: [
-      {
-        self: false,
-        from: 'Sunita Marsh',
-        addr: 'sunita.marsh@evergreenmortal.com',
+        from: 'Evergreen Culture Department',
+        addr: 'culture@evergreen.com',
         date: 'Just now',
         body: [
           "Jamie,",
-          "I'll keep this simple: you've been one of the strongest interns I've managed, and I mean that. Evergreen doesn't hand out promotions lightly, but you're closer to one than almost anyone else who's come through this program under me.",
-          "When it happens, you're out of the intern program for good — full directory access, and a pair of EverGlasses waiting at your desk. Every full employee wears them, and from what I hear, you'll wonder how you worked without them.",
-          "Keep doing what you're doing.",
-          "— Sunita",
+          "By now you've seen how seriously we take performance here.",
+          "As an intern, your day is deliberately structured: a fixed allotment of focused hours, tracked through EverSprint, so we can see exactly how you use them. As you advance, your allotment grows along with our trust in you. Our most senior employees accomplish in a single day what most companies would plan for a week.",
+          "You may notice your colleagues rarely take breaks, rarely miss a deadline, and never seem to tire. That isn't pressure. That's what people can do when they're cared for properly. And that's where we expect all our employees to reach.",
+          "— Evergreen Culture Department",
+        ],
+      },
+    ],
+  },
+  {
+    id: 'wellness-25',
+    subject: "Wellness check results",
+    read: false,
+    viewed: false,
+    delivered: false,
+    thread: [
+      {
+        self: false,
+        from: 'Evergreen Wellness Division',
+        addr: 'wellness@evergreen.com',
+        cc: 'sunita.marsh@evergreen.com',
+        date: 'Just now',
+        body: [
+          "Jamie,",
+          "Thank you for completing your first Evergreen wellness check. Your results are below. All scores are on a 100-point scale, calibrated against the Evergreen employee baseline.",
+          { pre: [
+            "EVERGREEN WELLNESS & LONGEVITY MONITORING",
+            "Employee: Jamie        Tier: 1 (Intern)        Check: 1",
+            "",
+            "Cardiovascular Health ............ 84",
+            "Respiratory Health ............... 86",
+            "Metabolic Health ................. 81",
+            "Bloodwork Panel .................. 83",
+            "Sleep Quality .................... 74",
+            "Nutrition ........................ 80",
+            "",
+            "Focus Index ...................... 68",
+            "Stamina Index .................... 67",
+            "Compliance Index ................. 24",
+            "",
+            "OVERALL .......................... 53",
+          ] },
+          { heading: "Summary" },
+          "Your physical health is good and well within range for a new employee. Your Focus and Stamina Indices are typical for an intern in the first weeks of the program.",
+          "Your Compliance Index is low, which is expected at this stage. New employees arrive carrying habits and expectations from outside Evergreen, and these take time to settle. This score reflects how fully you have adapted to Evergreen's way of working, and it typically rises steadily with participation in the program.",
+          { heading: "Recommendations" },
+          { bullets: [
+            "Aim for seven or more hours of sleep per night.",
+            "Maintain regular meals and hydration during your workday.",
+            "Take advantage of the morning refreshments provided by your team.",
+            "Your next wellness check will be scheduled automatically. No action is needed on your part.",
+          ] },
+          "We're glad to have you in our care.",
+          "— Evergreen Wellness Division",
+        ],
+      },
+    ],
+  },
+  {
+    id: 'culture-35',
+    subject: "Promotion at Evergreen",
+    read: false,
+    viewed: false,
+    delivered: false,
+    thread: [
+      {
+        self: false,
+        from: 'Evergreen Culture Department',
+        addr: 'culture@evergreen.com',
+        date: 'Just now',
+        body: [
+          "Jamie,",
+          "You've likely heard it already: Evergreen only promotes from within.",
+          "Every director, every department head, every member of our executive team began their career at Evergreen as an intern, at a desk like yours, working through the same sprints you are now. We have never hired a leader from outside the company. We have never needed to.",
+          "That's because Evergreen employees don't leave. Our retention rate is the highest in the industry, and our people stay with us for life. Soon you'll understand why.",
+          "Each promotion brings new responsibilities, new tools, and a deeper understanding of our mission, shared only with those who have earned it. There are things about Evergreen that interns simply aren't ready to see yet.",
+          "— Evergreen Culture Department",
+        ],
+      },
+    ],
+  },
+  {
+    id: 'wellness-45',
+    subject: "Wellness check results",
+    read: false,
+    viewed: false,
+    delivered: false,
+    thread: [
+      {
+        self: false,
+        from: 'Evergreen Wellness Division',
+        addr: 'wellness@evergreen.com',
+        cc: 'sunita.marsh@evergreen.com',
+        date: 'Just now',
+        body: [
+          "Jamie,",
+          "Your second wellness check results are below.",
+          { pre: [
+            "EVERGREEN WELLNESS & LONGEVITY MONITORING",
+            "Employee: Jamie        Tier: 1 (Intern)        Check: 2",
+            "",
+            "Cardiovascular Health ............ 85",
+            "Respiratory Health ............... 86",
+            "Metabolic Health ................. 82",
+            "Bloodwork Panel .................. 84",
+            "Sleep Quality .................... 76",
+            "Nutrition ........................ 81",
+            "",
+            "Focus Index ...................... 69",
+            "Stamina Index .................... 69",
+            "Compliance Index ................. 33",
+            "",
+            "OVERALL .......................... 57",
+          ] },
+          { heading: "Summary" },
+          "Good progress. Your physical health has improved slightly across the board, and your sleep quality is moving in the right direction.",
+          "Your Compliance Index has risen significantly since your first check. This tells us you are settling into your role and into the rhythm of the team. Your Focus and Stamina Indices remain stable, and we expect them to follow as your adjustment continues.",
+          { heading: "Recommendations" },
+          { bullets: [
+            "Keep up your current sleep and meal habits.",
+            "Continue your current morning routine. Consistency is the single strongest predictor of improvement.",
+            "Your next wellness check will be scheduled automatically.",
+          ] },
+          "Keep up the good work.",
+          "— Evergreen Wellness Division",
+        ],
+      },
+    ],
+  },
+  {
+    id: 'culture-50',
+    subject: "Benefits of Promotion",
+    read: false,
+    viewed: false,
+    delivered: false,
+    thread: [
+      {
+        self: false,
+        from: 'Evergreen Culture Department',
+        addr: 'culture@evergreen.com',
+        date: 'Just now',
+        body: [
+          "Jamie,",
+          "At Evergreen, you have access to the work in front of you. That's by design. It lets you focus, build good habits, and prove what you're capable of without distraction.",
+          "With a promotion, the breadth of your work will widen. You'll require access to new information and that access will be given to you.",
+          "With your first promotion you will gain access to the full employee directory. This allows you more visibility and access to the other employees at Evergreen.",
+          "Each promotion opens even more doors inside Evergreen. Some of what we do can only be appreciated once you've seen enough of it to understand why it matters. Many of our employees tell us that the day they reached a new level felt like seeing Evergreen for the first time, again.",
+          "We're looking forward to showing you more.",
+          "— Evergreen Culture Department",
         ],
       },
     ],
   },
   {
     id: 'anon-60',
-    subject: 'about Jo',
+    subject: "about Jo",
     read: false,
     viewed: false,
     delivered: false,
@@ -286,70 +366,57 @@ const EVERGREEN_MAIL_SEEDS = [
     ],
   },
   {
-    id: 'culture-65',
-    subject: 'your upcoming wellness check',
+    id: 'wellness-65',
+    subject: "Wellness check results",
     read: false,
     viewed: false,
     delivered: false,
     thread: [
       {
         self: false,
-        from: 'Evergreen Culture Department',
-        addr: 'culture@evergreenmortal.com',
+        from: 'Evergreen Wellness Division',
+        addr: 'wellness@evergreen.com',
+        cc: 'sunita.marsh@evergreen.com',
         date: 'Just now',
         body: [
           "Jamie,",
-          "As part of your onboarding enrollment in Evergreen's wellness and longevity monitoring program, your first internal wellness check has been scheduled for this week.",
-          "Please report to the Wellness Suite on the third floor at your assigned time — no preparation is required. This is a standard part of your benefits, and mandatory for all employees.",
-          "We appreciate you taking care of yourself. It's how we take care of you.",
-          "— Evergreen Culture Department",
+          "Your third wellness check results are below.",
+          { pre: [
+            "EVERGREEN WELLNESS & LONGEVITY MONITORING",
+            "Employee: Jamie        Tier: 1 (Intern)        Check: 3",
+            "",
+            "Cardiovascular Health ............ 85",
+            "Respiratory Health ............... 87",
+            "Metabolic Health ................. 83",
+            "Bloodwork Panel .................. 84",
+            "Sleep Quality .................... 78",
+            "Nutrition ........................ 81",
+            "",
+            "Focus Index ...................... 71",
+            "Stamina Index .................... 70",
+            "Compliance Index ................. 39",
+            "",
+            "OVERALL .......................... 60",
+          ] },
+          { heading: "Summary" },
+          "Your physical health remains strong and continues to improve.",
+          "Your Focus, Stamina and Compliance Indices have all risen since your last check. However, all three are below the trajectory projected for you at this point in the program. Your Compliance Index in particular has slowed. This can sometimes indicate outside stressors or distractions competing for your attention.",
+          "This is not cause for concern yet. We will continue to monitor it closely.",
+          { heading: "Recommendations" },
+          { bullets: [
+            "Limit outside commitments that may affect your rest or focus.",
+            "If anything outside of work is weighing on you, we encourage you to speak with your team lead.",
+            "If your Focus and Stamina Indices remain below projection at your next check, a supplement may be prescribed to support them.",
+            "Your next wellness check will be scheduled automatically.",
+          ] },
+          "— Evergreen Wellness Division",
         ],
       },
     ],
   },
   {
-    id: 'sunita-75',
-    subject: 'ahead of the curve',
-    read: false,
-    viewed: false,
-    delivered: false,
-    thread: [
-      {
-        self: false,
-        from: 'Sunita Marsh',
-        addr: 'sunita.marsh@evergreenmortal.com',
-        date: 'Just now',
-        body: [
-          "Jamie,",
-          "You're progressing faster than almost anyone else who's come through this program under me. It's honestly impressive.",
-          "One small note from your last wellness check — everything came back within range, but a couple of your vitals are trending in a direction we'd like to keep an eye on. Nothing alarming. If they haven't improved by your next check, we may prescribe something to help with focus and stamina. It's very common here, nothing to worry about.",
-          "Keep doing what you're doing.",
-          "— Sunita",
-        ],
-      },
-    ],
-  },
-  {
-    id: 'anon-85',
-    subject: 'be careful',
-    read: false,
-    viewed: false,
-    delivered: false,
-    thread: [
-      {
-        self: false,
-        from: 'Unknown Sender',
-        addr: '******@***.***',
-        date: 'Just now',
-        body: [
-          "Don't drink the coffee.",
-        ],
-      },
-    ],
-  },
-  {
-    id: 'marcus-90',
-    subject: 'what I found on Jo',
+    id: 'marcus-75',
+    subject: "Come by after work?",
     read: false,
     viewed: false,
     delivered: false,
@@ -357,21 +424,41 @@ const EVERGREEN_MAIL_SEEDS = [
       {
         self: false,
         from: 'Marcus Odom',
-        addr: 'marcus.odom@evergreenmortal.com',
+        addr: 'marcus.odom@evergreen.com',
         date: 'Just now',
         body: [
-          "Jamie — you asked me to look into Jo's file, so I did, carefully, and quietly.",
-          "She started in the intern program a little over two years ago. Her supervisor at the time told me she was exceptional — promoted four separate times in her first year alone. But there's no record of any of those promotions anywhere in the system now. Not one.",
-          "After that, her file just... stops. No transfer, no termination, no forwarding address. Nothing.",
-          "I don't know what this means yet. But I'd tread very carefully from here, Jamie. I mean that.",
+          "Jamie,",
+          "I was thinking about you today, don't ask me why. Come by my place after work sometime this week? I'll make coffee, we can catch up properly. It's been too long.",
+          "No agenda, I promise. Just want to see you.",
           "— Marcus",
         ],
       },
     ],
   },
   {
-    id: 'anon-99',
-    subject: 'Mabel',
+    id: 'marcus-75-reply',
+    subject: "Re: Come by after work?",
+    read: false,
+    viewed: false,
+    delivered: false,
+    thread: [
+      {
+        self: false,
+        from: 'Marcus Odom',
+        addr: 'marcus.odom@evergreen.com',
+        date: 'Just now',
+        body: [
+          "Jamie — I keep thinking about Saturday. It was so good to see you, it really did feel like no time had passed at all.",
+          "I'm sorry about how I got when you asked about Jo. I wasn't trying to dodge you, I promise. It's just — talking about Jo makes me think about Mabel, and I still don't really know how to do that. I never did.",
+          "Let's do this again soon. And Jamie — I am glad you're here.",
+          "— Marcus",
+        ],
+      },
+    ],
+  },
+  {
+    id: 'anon-85',
+    subject: "be careful",
     read: false,
     viewed: false,
     delivered: false,
@@ -382,8 +469,56 @@ const EVERGREEN_MAIL_SEEDS = [
         addr: '******@***.***',
         date: 'Just now',
         body: [
-          "Jo found out something about Mabel.",
-          "Then she disappeared.",
+          "Don't drink the coffee",
+        ],
+      },
+    ],
+  },
+  {
+    id: 'wellness-90',
+    subject: "Wellness check results",
+    read: false,
+    viewed: false,
+    delivered: false,
+    thread: [
+      {
+        self: false,
+        from: 'Evergreen Wellness Division',
+        addr: 'wellness@evergreen.com',
+        cc: 'sunita.marsh@evergreen.com',
+        date: 'Just now',
+        body: [
+          "Jamie,",
+          "Your fourth wellness check results are below. Please read them carefully.",
+          { pre: [
+            "EVERGREEN WELLNESS & LONGEVITY MONITORING",
+            "Employee: Jamie        Tier: 1 (Intern)        Check: 4",
+            "",
+            "Cardiovascular Health ............ 86",
+            "Respiratory Health ............... 87",
+            "Metabolic Health ................. 83",
+            "Bloodwork Panel .................. 79",
+            "Sleep Quality .................... 71",
+            "Nutrition ........................ 82",
+            "",
+            "Focus Index ...................... 66",
+            "Stamina Index .................... 64",
+            "Compliance Index ................. 23",
+            "",
+            "OVERALL .......................... 51",
+          ] },
+          { heading: "Summary" },
+          "Your physical health remains stable. However, your Focus, Stamina and Compliance Indices have all declined since your last check, and your Compliance Index has fallen sharply, to below the level recorded at your very first check.",
+          "A decline of this size is unusual, and it is rarely without cause. It is most often associated with a change in daily routine. Your bloodwork also reflects a change since your last visit.",
+          "Your team lead has been notified so that she can support you.",
+          { heading: "Recommendations" },
+          { bullets: [
+            "Resume your full morning routine, including the refreshments provided by your team.",
+            "A supplement to support your Focus and Stamina has been prescribed. It will be provided to you through your team.",
+            "A follow-up check has been scheduled ahead of your normal cycle. Attendance is mandatory.",
+          ] },
+          "We want to help you get back on track.",
+          "— Evergreen Wellness Division",
         ],
       },
     ],
@@ -405,107 +540,57 @@ function markMailDelivered(email) {
   email.deliveredOrder = mailDeliveryCounter++;
 }
 
+let journalDeliveryCounter = 0;
+
+function markJournalDelivered(entry) {
+  if (entry.delivered) return;
+  entry.delivered = true;
+  entry.deliveredOrder = journalDeliveryCounter++;
+}
+
 // Jamie's private journal — read-only, first-person entries that unlock as
-// Performance crosses each entry's threshold (see PERFORMANCE_MILESTONES /
+// Performance crosses each entry's milestone threshold (see PERFORMANCE_MILESTONES /
 // checkPerformanceMilestones). Rendered as a single continuous feed by
 // buildJournalApp, typed out once via the typewriter effect the first time
 // each entry is revealed, then shown as static text on every later visit.
 const JOURNAL_ENTRIES = [
   {
-    id: 'journal-11',
-    threshold: 11,
-    delivered: false,
-    revealed: false,
-    title: 'the glasses',
-    body: [
-      "No sign of Jo. I've been keeping my head down, watching more than talking.",
-      "Most of the employees here wear a pair of glasses that don't look like they're just for reading. People glance off to the side mid-conversation, like they're checking something only they can see. No one else seems to notice, or if they do, no one mentions it.",
-    ],
-  },
-  {
-    id: 'journal-15',
-    threshold: 15,
-    delivered: false,
-    revealed: false,
-    title: 'coffee',
-    body: [
-      "Sunita brings me coffee every morning. I think she does it for everyone on the team, not just me.",
-      "She's kind. She's also relentless — the standards here are high, and somehow everyone meets them without complaint. She's good at her job.",
-    ],
-  },
-  {
     id: 'journal-25',
-    threshold: 25,
     delivered: false,
     revealed: false,
-    title: 'support for what',
-    body: [
-      "Publicly, Evergreen is a drug and supplement company. But some of the work I've been assigned doesn't read like drug development — it reads like technical support for something else entirely. I can't tell if it's internal tooling or something meant for customers.",
-      "I've also started noticing a pattern: the employees without the glasses are all interns. Like me.",
-    ],
-  },
-  {
-    id: 'journal-35',
-    threshold: 35,
-    delivered: false,
-    revealed: false,
-    title: 'Marcus',
-    body: [
-      "It had been years since I spent real time with Marcus. Sitting in his kitchen, it was like no time had passed — same jokes, same easy quiet between conversation topics.",
-      "Then I asked about Jo. He didn't answer straight. He got nervous, the kind of nervous I don't remember him ever being. I didn't push. But I think he knows something.",
-      "I have to find her.",
-    ],
-  },
-  {
-    id: 'journal-45',
-    threshold: 45,
-    delivered: false,
-    revealed: false,
-    title: 'obedience',
-    body: [
-      "I don't know yet if Marcus is an ally or just another person here who's learned to be careful.",
-      "Something about this place is starting to unsettle me beyond the obvious. I've never once heard a coworker complain — not about deadlines, not about workload, not about anything. It isn't discipline. It's something closer to obedience. I'm not sure this is the Marcus I remember.",
-    ],
-  },
-  {
-    id: 'journal-55',
-    threshold: 55,
-    delivered: false,
-    revealed: false,
-    title: 'two months',
-    body: [
-      "Two months in now. I've confirmed it: every full employee wears the glasses. Every single one.",
-      "Sunita still brings me coffee every morning, which still surprises me a little. I asked her, carefully, about the tasks that don't look like drug development. She said they're for internal purposes and didn't say another word about it.",
-    ],
-  },
-  {
-    id: 'journal-65',
-    threshold: 65,
-    delivered: false,
-    revealed: false,
-    title: 'no sender',
-    body: [
-      "Someone emailed me today claiming they worked with Jo. There's no name attached, no address that resolves to anyone — just a message that says she told them to find me.",
-      "I don't know how to answer someone who left no way to be answered. I don't know what to do except wait and hope they write again.",
-    ],
-  },
-  {
-    id: 'journal-70',
-    threshold: 70,
-    delivered: false,
-    revealed: false,
-    title: 'the wellness check',
+    title: "the wellness check",
     body: [
       "Had my first wellness check yesterday. Parts of it were normal — blood pressure, bloodwork, the usual. But some of it wasn't anything I've seen before. Scans I didn't recognize. Questions that didn't feel like they were about my health.",
       "What are they actually looking for?",
     ],
   },
   {
-    id: 'journal-80',
-    threshold: 80,
+    id: 'journal-40',
     delivered: false,
     revealed: false,
-    title: 'who sees this',
+    title: "coffee",
+    body: [
+      "Sunita brings me coffee every morning. I think she does it for everyone on the team, not just me.",
+      "She's kind. She's also relentless — the standards here are high, and somehow everyone meets them without complaint. She's good at her job.",
+    ],
+  },
+  {
+    id: 'journal-75',
+    delivered: false,
+    revealed: false,
+    title: "Marcus",
+    body: [
+      "Marcus told me he held open his personal email for years just in case I reached out to him. When I did he let it expire.",
+      "It had been years since I spent real time with Marcus. Sitting in his kitchen, it was like no time had passed — same jokes, same easy quiet between conversation topics.",
+      "Then I asked about Jo. He didn't answer straight. He got nervous, the kind of nervous I don't remember him ever being. I didn't push. But I think he knows something.",
+      "I have to find her.",
+    ],
+  },
+  {
+    id: 'journal-90',
+    delivered: false,
+    revealed: false,
+    title: "who sees this",
     body: [
       "Why does my supervisor have access to the results of my wellness check? That's not how any of this is supposed to work.",
       "There's clearly more happening inside Evergreen than the public knows. At this point, probably more than I know, too.",
@@ -513,25 +598,12 @@ const JOURNAL_ENTRIES = [
   },
   {
     id: 'journal-95',
-    threshold: 95,
     delivered: false,
     revealed: false,
-    title: 'the coffee',
+    title: "every desk",
     body: [
-      "I've started quietly getting rid of Sunita's coffee instead of drinking it. I don't know for certain there's anything wrong with it. I just can't afford to find out the hard way.",
-      "It's made it harder to keep up with my work, which is its own problem now. Marcus said something is wrong with Jo's records. If I want to see them myself, I need this promotion. So I need my performance to hold, coffee or no coffee.",
-    ],
-  },
-  {
-    id: 'journal-100',
-    threshold: 100,
-    delivered: false,
-    revealed: false,
-    title: 'the glasses on my desk',
-    body: [
-      "There was a pair of glasses on my desk this morning. When I put them on, I could see it immediately — everyone's name, their title, a performance number hovering next to them like a second heartbeat. There are other features too, locked, waiting for something I don't have yet.",
-      "Marcus said Jo found something about Mabel before she vanished. So either she found it and got out, or she's still here somewhere, and she's in trouble.",
-      "I'm more certain than ever that I made the right call not going to the police. The only way forward now is further up.",
+      "I've stopped drinking the coffee. I have to pretend to drink it and then dispose of it discreetly.",
+      "As I walk around the office, there's a coffee on every desk. Same mug, same coffee. And it seems everyone gets their coffee delivered at the same time by their manager. How could I have missed this before?",
     ],
   },
 ];
@@ -542,31 +614,404 @@ const JOURNAL_ENTRIES = [
 // checkPerformanceMilestones() (see changePerformance) every time
 // Performance actually changes, so a single jump that crosses several
 // thresholds at once (the normal case — Performance only moves in lump
-// sums) delivers all of them together.
+// sums) delivers all of them together. A `nextSprint: true` milestone is
+// queued instead when its threshold is reached, and delivered when the
+// following sprint starts (see advanceToNextSprint).
 const PERFORMANCE_MILESTONES = [
-  { threshold: 11, type: 'journal', id: 'journal-11' },
-  { threshold: 15, type: 'journal', id: 'journal-15' },
-  { threshold: 20, type: 'email', id: 'sunita-20' },
+  { threshold: 15, type: 'email', id: 'wellness-15' },
+  { threshold: 20, type: 'email', id: 'culture-20' },
+  { threshold: 25, type: 'email', id: 'wellness-25' },
   { threshold: 25, type: 'journal', id: 'journal-25' },
-  { threshold: 30, type: 'email', id: 'marcus-30' },
-  { threshold: 35, type: 'journal', id: 'journal-35' },
-  { threshold: 35, type: 'email', id: 'hr-35' },
-  { threshold: 40, type: 'email', id: 'marcus-40' },
-  { threshold: 45, type: 'journal', id: 'journal-45' },
-  { threshold: 50, type: 'email', id: 'sunita-50' },
-  { threshold: 55, type: 'journal', id: 'journal-55' },
+  { threshold: 35, type: 'email', id: 'culture-35' },
+  { threshold: 40, type: 'journal', id: 'journal-40' },
+  { threshold: 45, type: 'email', id: 'wellness-45' },
+  { threshold: 50, type: 'email', id: 'culture-50' },
   { threshold: 60, type: 'email', id: 'anon-60' },
-  { threshold: 65, type: 'email', id: 'culture-65' },
-  { threshold: 65, type: 'journal', id: 'journal-65' },
-  { threshold: 70, type: 'journal', id: 'journal-70' },
-  { threshold: 75, type: 'email', id: 'sunita-75' },
-  { threshold: 80, type: 'journal', id: 'journal-80' },
+  { threshold: 65, type: 'email', id: 'wellness-65' },
+  { threshold: 75, type: 'email', id: 'marcus-75' },
+  { threshold: 75, type: 'journal', id: 'journal-75', nextSprint: true },
+  { threshold: 75, type: 'email', id: 'marcus-75-reply', nextSprint: true },
   { threshold: 85, type: 'email', id: 'anon-85' },
-  { threshold: 90, type: 'email', id: 'marcus-90' },
+  { threshold: 90, type: 'email', id: 'wellness-90' },
+  { threshold: 90, type: 'journal', id: 'journal-90' },
   { threshold: 95, type: 'journal', id: 'journal-95' },
-  { threshold: 99, type: 'email', id: 'anon-99' },
-  { threshold: 100, type: 'journal', id: 'journal-100' },
 ];
+
+// Investigations — story cards that live in the EverSprint deck. Each one is
+// a checklist: picking the card in any draft (or having it force-played by
+// Batch Job / Root Access) checks off its next step and delivers that step's
+// reward, a journal entry or an email Jamie sends. Information Needed is the
+// number of unchecked steps; at 0 the card leaves the deck for good.
+//
+// `trigger` says when the card enters the deck: `performance: N` when
+// Performance reaches N (checked with PERFORMANCE_MILESTONES), or
+// `after: id` the moment that other investigation is completed.
+//
+// A sent email shows up immediately, in the External Inbox when `mailbox` is
+// 'external' (sent from Jamie's personal address) or the main Evergreen inbox
+// when it's 'evergreen' (his work address). A `bounce` is part of the thread
+// from the start; a `reply` arrives at the start of the next sprint.
+const INVESTIGATIONS = [
+  {
+    id: 'inv-news',
+    name: 'Research recent Evergreen news stories',
+    trigger: { performance: 20 },
+    steps: [
+      {
+        label: 'Read story “A look at Evergreen”',
+        journal: {
+          title: 'a look at Evergreen',
+          body: [
+            'Evergreen started as a supplement company and grew into a drug developer. It owns its own labs, its own manufacturing and its own research hospitals. There are no shareholders and of course no public filings.',
+            "It's so hard to find information on this company.",
+          ],
+        },
+      },
+      {
+        label: "Read story “Breakthroughs in Huntington's disease”",
+        journal: {
+          title: "Huntington's disease breakthroughs",
+          body: [
+            "Evergreen is running a trial that it says has stopped progression of Huntington's disease completely. Patients haven't declined at all in eighteen months. None of the data has been peer reviewed. The company says it will share results \"when the work is ready.\"",
+            "If it's true, it's the kind of thing that should be making the rounds in the science community. Instead it's hidden inside Evergreen.",
+          ],
+        },
+      },
+      {
+        label: "Read story “Evergreen's reclusive CEO”",
+        journal: {
+          title: 'the CEO',
+          body: [
+            "The CEO doesn't give interviews or attend events, and no one outside the board has seen them in years. They speak to the public through one letter a year, which always ends with the same line: More time, together.",
+            "And good luck finding a photo of Evergreen's CEO. I couldn't find one.",
+          ],
+        },
+      },
+    ],
+  },
+  {
+    id: 'inv-stories-1',
+    name: 'Research unsubstantiated stories online #1',
+    trigger: { performance: 65 },
+    steps: [
+      {
+        label: 'Send email: employee coffee addiction',
+        email: {
+          mailbox: 'external',
+          to: 'dana.whitlock@fernwaymail.com',
+          subject: 'your post about your husband and Evergreen',
+          body: [
+            'Hi Dana,',
+            "I hope it's okay that I'm writing. I found your post about your husband and the coffee after he started at Evergreen. Someone in my family works there, and some of what you described sounded familiar.",
+            "If you're willing, I'd like to hear more. I'm not a journalist, and I'm not trying to get anyone in trouble. I'm just trying to understand.",
+            '— Jamie',
+          ],
+          reply: {
+            from: 'Dana Whitlock',
+            addr: 'dana.whitlock@fernwaymail.com',
+            body: [
+              'Jamie,',
+              "Honestly, I'd stopped expecting anyone to take it seriously. People in the comments told me he'd just found a new hobby.",
+              "Nick never drank coffee in his life. He said it made his heart race. Three weeks after he started at Evergreen, he was drinking it all day. Six months in, he was setting an alarm for 3am so he could get up and drink a cup. If he slept through it, he woke up with a migraine so bad he couldn't see straight, and it lasted the rest of the night.",
+              "I asked him to see a doctor. He told me it was fine, and that the company's wellness team was \"monitoring it.\" Since then he's stopped telling me anything about work.",
+            ],
+          },
+        },
+      },
+      {
+        label: 'Send email: employee coffee addiction',
+        email: {
+          mailbox: 'external',
+          to: 'elena.voss@fernwaymail.com',
+          subject: 'your post about your mother',
+          body: [
+            'Hi Elena,',
+            "I came across what you wrote about your mother and the coffee at Evergreen. I'm sorry to reach out to a stranger like this. Someone close to me works there, and I'm trying to find out whether what happened to your mother is something I should be worried about.",
+            "Could you tell me how she's doing?",
+            '— Jamie',
+          ],
+          reply: {
+            from: 'Elena Voss',
+            addr: 'elena.voss@fernwaymail.com',
+            body: [
+              'My mother passed away four months ago. She was still working at Evergreen when it happened.',
+              'They told us it was her heart. She was fifty-two, and she walked five miles every morning.',
+              'Evergreen sent flowers and a letter thanking her for her years of service. Before they would release her last paycheck, they had us sign a confidentiality agreement.',
+              "I don't know what else I can tell you. I hope your person is okay.",
+            ],
+          },
+        },
+      },
+    ],
+  },
+  {
+    id: 'inv-marcus',
+    name: 'Emails to Marcus rejected',
+    trigger: { performance: 45 },
+    steps: [
+      {
+        label: 'Email Marcus to meet up after work',
+        email: {
+          mailbox: 'evergreen',
+          to: 'marcus.odom@fernwaymail.com',
+          subject: 'drinks after work?',
+          body: [
+            "Marcus — any chance you're free one night this week after work? It would be nice to catch up.",
+            '— Jamie',
+          ],
+          bounce: {
+            from: 'Mail Delivery System',
+            addr: 'postmaster@evergreen.com',
+            body: [
+              'Delivery failed. The address marcus.odom@fernwaymail.com could not be found.',
+            ],
+          },
+        },
+      },
+      {
+        label: 'Email Marcus again',
+        email: {
+          mailbox: 'external',
+          to: 'marcus.odom@fernwaymail.com',
+          subject: 'trying again',
+          body: [
+            "Marcus, the last one bounced, so I'm trying again in case it was a glitch. Let me know if you'd like to get together.",
+            '— Jamie',
+          ],
+          bounce: {
+            from: 'Mail Delivery System',
+            addr: 'postmaster@fernwaymail.com',
+            body: [
+              'Delivery failed. The address marcus.odom@fernwaymail.com could not be found.',
+            ],
+          },
+        },
+      },
+      {
+        label: 'Investigate rejected emails',
+        journal: {
+          title: 'bounced',
+          body: [
+            "My emails to Marcus keep bouncing. He wrote to me from that exact address four months ago. Now the system says it doesn't exist.",
+            "Either it changed, or someone changed it for him. I need to find out what address he's using at work now.",
+          ],
+        },
+      },
+    ],
+  },
+  {
+    id: 'inv-teammates',
+    name: 'Asking teammates about Jo',
+    trigger: { performance: 15 },
+    steps: [
+      {
+        label: 'Talk to teammates',
+        journal: {
+          title: 'never heard of her',
+          body: [
+            'Today I asked everyone on my team, one at a time, whether they knew someone named Jo Taylor. Nobody did.',
+            "It's odd, nobody asked me a single question back. Not who she was, and not why I wanted to know. They all answered quickly and went straight back to work.",
+          ],
+        },
+      },
+    ],
+  },
+  {
+    id: 'inv-coworkers',
+    name: "Finding Jo's old coworkers",
+    trigger: { after: 'inv-teammates' },
+    steps: [
+      {
+        label: 'Walk the halls',
+        journal: {
+          title: 'walking the halls',
+          body: [
+            "I spent my lunch walking the halls to see if any other teams might know Jo. I didn't get far. Almost every door needs a badge, and mine opens only a handful of them. The elevators skip whole floors unless you have clearance.",
+            "As far as I can tell, teams never mix here. There's no shared kitchen and no common area. Everyone eats at their desk.",
+          ],
+        },
+      },
+      {
+        label: 'Explore new areas of the office',
+        journal: {
+          title: 'the elevator',
+          body: [
+            "I finally got somewhere today. A woman waiting at the elevator said Jo's name sounded familiar. She thought Jo might have worked in the data center, but she wasn't sure. Then her elevator came, and she didn't look back at me.",
+          ],
+        },
+      },
+      {
+        label: 'Stake out data center',
+        journal: {
+          title: 'Theo',
+          body: [
+            "My badge won't open the data center, so I waited outside the door. About an hour later a guy named Theo came out. He knew Jo. He'd worked next to her for months.",
+            "He said she was sharp and asked too many questions, which he meant as a compliment. Then one day her desk was empty. He'd heard she transferred to a team a few floors up. He gave me her work email address and asked me not to tell anyone where I got it.",
+          ],
+        },
+      },
+      {
+        label: "Email Jo's work address",
+        email: {
+          mailbox: 'evergreen',
+          to: 'jo.taylor@evergreen.com',
+          subject: "it's Jamie",
+          body: [
+            "Jo — it's me. I know this is the last address you'd expect to hear from me at. I'll explain everything.",
+            "I just need to know you're okay. One line is enough.",
+            '— Jamie',
+          ],
+          bounce: {
+            from: 'Mail Delivery System',
+            addr: 'postmaster@evergreen.com',
+            body: [
+              "Delivery failed. The recipient's mailbox is restricted or no longer exists.",
+            ],
+          },
+        },
+      },
+    ],
+  },
+  {
+    id: 'inv-manager',
+    name: "Finding Jo's old manager",
+    trigger: { after: 'inv-coworkers' },
+    steps: [
+      {
+        label: 'Talk to data center peers',
+        journal: {
+          title: 'a napkin',
+          body: [
+            "I've been eating lunch outside the data center door, and now Theo and a couple of his teammates say hi to me. Today I asked who managed Jo before she moved. After some looking at each other, one of them wrote an email address on a napkin: grant.holloway@evergreen.com.",
+          ],
+        },
+      },
+      {
+        label: "Send email to Jo's old manager",
+        email: {
+          mailbox: 'external',
+          to: 'grant.holloway@evergreen.com',
+          subject: 'a question about Jo Taylor',
+          body: [
+            'Hi Grant,',
+            "My name is Jamie. I'm an intern on Sunita Marsh's team. I understand that Jo Taylor used to report to you before she transferred. Would it be possible to get in touch with her, or could you tell me which team she moved to?",
+            'Thank you for your time.',
+            '— Jamie',
+          ],
+          reply: {
+            from: 'Grant Holloway',
+            addr: 'grant.holloway@evergreen.com',
+            body: [
+              'Jamie,',
+              "I can't answer questions about Jo Taylor or give you her contact information while you're an intern.",
+              "I'd encourage you to focus on your performance.",
+              '— Grant Holloway',
+            ],
+          },
+        },
+      },
+    ],
+  },
+  {
+    id: 'inv-hiring',
+    name: 'How did Jamie get hired? Talking to Sunita',
+    trigger: { performance: 75 },
+    steps: [
+      {
+        label: 'Talk to Sunita about hiring',
+        journal: {
+          title: 'how I got hired',
+          body: [
+            'Today I asked Sunita how I got hired. I never actually applied. One week I was writing to Marcus, and the next week I had an offer.',
+            'She said Marcus submitted an application for me and put in a word with some people higher up. Then the CFO personally told her to bring me on, and to make sure I got through the intern program.',
+            'Why would the CFO care about one random intern?',
+          ],
+        },
+      },
+    ],
+  },
+  {
+    id: 'inv-reese',
+    name: 'Checking up on Reese',
+    trigger: { performance: 85 },
+    steps: [
+      {
+        label: 'Ask Reese about Jo again',
+        email: {
+          mailbox: 'external',
+          to: 'reese.taylor@fernwaymail.com',
+          subject: 'checking in',
+          body: [
+            "Reese — I wanted to check in and see how you're doing. Are things going okay? How have the dinners been?",
+          ],
+          reply: {
+            from: 'Reese Taylor',
+            addr: 'reese.taylor@fernwaymail.com',
+            body: [
+              "Huh. It's unusual to hear from you. You must be feeling better.",
+              "I'm good, actually. I've started doing some design work for a few people from the support group, so that's been nice.",
+              "Jo hasn't been coming to the dinners, though. I'm sure she's still hiding in whatever project she picked up a few months ago that you were worried about. She never tells me anything.",
+              '— Reese',
+            ],
+          },
+        },
+      },
+    ],
+  },
+];
+
+const INVESTIGATIONS_BY_ID = Object.fromEntries(INVESTIGATIONS.map((inv) => [inv.id, inv]));
+
+const JAMIE_ADDRESSES = {
+  external: 'jamie.taylor@fernwaymail.com',
+  evergreen: 'jamie.taylor@evergreen.com',
+};
+
+// Investigation emails sent from Jamie's personal address (External Inbox).
+// Work-address ones go into EVERGREEN_MAIL_SEEDS alongside the story mail.
+const EXTERNAL_MAIL = [];
+
+// Every step's reward becomes a regular journal entry or email, with the id
+// `<investigation id>-<step number>`, delivered when the step is checked off.
+INVESTIGATIONS.forEach((inv) => {
+  inv.steps.forEach((step, i) => {
+    step.id = `${inv.id}-${i + 1}`;
+    if (step.journal) {
+      JOURNAL_ENTRIES.push({ id: step.id, delivered: false, revealed: false, ...step.journal });
+      return;
+    }
+    const { mailbox, to, subject, body, bounce, reply } = step.email;
+    const thread = [{ self: true, from: 'You', addr: JAMIE_ADDRESSES[mailbox], to, date: 'Just now', body }];
+    if (bounce) thread.push({ self: false, date: 'Just now', ...bounce });
+    const email = {
+      id: step.id,
+      subject,
+      read: false,
+      viewed: false,
+      delivered: false,
+      replied: false,
+      thread,
+      reply: reply ? { self: false, date: 'Just now', ...reply } : null,
+    };
+    (mailbox === 'external' ? EXTERNAL_MAIL : EVERGREEN_MAIL_SEEDS).push(email);
+  });
+});
+
+function findMailById(id) {
+  return EVERGREEN_MAIL_SEEDS.find((e) => e.id === id) || EXTERNAL_MAIL.find((e) => e.id === id);
+}
+
+// Appends a sent email's reply to its thread. A new reply bumps the thread to
+// the top of its inbox as unread; restoring one from a save leaves it be.
+function addReplyToThread(email, { restoring = false } = {}) {
+  if (!email.reply || email.thread.includes(email.reply)) return;
+  email.thread.push(email.reply);
+  email.replied = true;
+  if (restoring) return;
+  email.read = false;
+  email.viewed = false;
+  email.deliveredOrder = mailDeliveryCounter++;
+}
 
 // Generic mail-client UI, bound to a root element containing the
 // [data-role] structure defined in #tmpl-mail-app (or the static
@@ -585,6 +1030,7 @@ function createMailClient(rootEl, config) {
   const primaryInbox = [...seedEmails];
   const secondaryInbox = secondaryFolder ? [...secondaryFolder.emails] : null;
   let activeFolder = 'primary'; // 'primary' | 'secondary' — only meaningful when secondaryFolder is set
+  let secondaryNavEl = null;
   let selectedId = null;
   let pendingDelivered = !!config.initialPendingDelivered;
   if (pendingDelivered && pendingEmail) primaryInbox.unshift(pendingEmail);
@@ -607,6 +1053,10 @@ function createMailClient(rootEl, config) {
 
   function renderInbox() {
     if (inboxHeaderEl) inboxHeaderEl.textContent = (activeFolder === 'secondary' ? secondaryFolder.label : 'Inbox').toUpperCase();
+    if (secondaryNavEl) {
+      const secondaryUnread = secondaryInbox.filter((e) => !e.read).length;
+      secondaryNavEl.textContent = secondaryFolder.label + (secondaryUnread > 0 ? ` (${secondaryUnread})` : '');
+    }
     listEl.innerHTML = '';
     currentInbox().forEach((email) => {
       const latest = lastMessage(email);
@@ -631,7 +1081,8 @@ function createMailClient(rootEl, config) {
   function renderDetail(email) {
     detailSubjectEl.textContent = email.subject;
     detailThreadEl.innerHTML = '';
-    email.thread.forEach((message) => {
+    // Threads are stored oldest-first but shown newest-first.
+    [...email.thread].reverse().forEach((message) => {
       const msgEl = document.createElement('div');
       msgEl.className = 'thread-message' + (message.self ? ' self' : '');
       msgEl.innerHTML = `
@@ -639,15 +1090,13 @@ function createMailClient(rootEl, config) {
           <div>
             <span class="thread-from-name">${message.from}</span>
             <span class="thread-addr">&lt;${message.addr}&gt;</span>
+            ${message.to ? `<div class="thread-cc">to: ${message.to}</div>` : ''}
+            ${message.cc ? `<div class="thread-cc">cc: ${message.cc}</div>` : ''}
           </div>
           <div class="thread-date">${message.date}</div>
         </div>
       `;
-      message.body.forEach((paragraph) => {
-        const p = document.createElement('p');
-        p.textContent = paragraph;
-        msgEl.appendChild(p);
-      });
+      message.body.forEach((item) => msgEl.appendChild(renderBodyItem(item)));
       if (message.signature) {
         const sigEl = document.createElement('div');
         sigEl.className = 'thread-signature';
@@ -672,6 +1121,37 @@ function createMailClient(rootEl, config) {
 
     detailEmptyEl.classList.add('hidden');
     detailContentEl.classList.remove('hidden');
+  }
+
+  // A body item is a plain paragraph string, or one of:
+  // { heading }, { bullets: [...] }, or { pre: [...] } (a monospace block,
+  // e.g. the wellness-check score table).
+  function renderBodyItem(item) {
+    if (typeof item === 'string') {
+      const p = document.createElement('p');
+      p.textContent = item;
+      return p;
+    }
+    if (item.heading) {
+      const h = document.createElement('p');
+      h.className = 'thread-heading';
+      h.textContent = item.heading;
+      return h;
+    }
+    if (item.bullets) {
+      const ul = document.createElement('ul');
+      ul.className = 'thread-bullets';
+      item.bullets.forEach((text) => {
+        const li = document.createElement('li');
+        li.textContent = text;
+        ul.appendChild(li);
+      });
+      return ul;
+    }
+    const pre = document.createElement('pre');
+    pre.className = 'thread-pre';
+    pre.textContent = item.pre.join('\n');
+    return pre;
   }
 
   function deliverPending() {
@@ -708,7 +1188,7 @@ function createMailClient(rootEl, config) {
   if (secondaryFolder) {
     const sidebarEl = rootEl.querySelector('.mail-sidebar');
     const primaryNavEl = rootEl.querySelector('.nav-item');
-    const secondaryNavEl = document.createElement('div');
+    secondaryNavEl = document.createElement('div');
     secondaryNavEl.className = 'nav-item clickable';
     secondaryNavEl.textContent = secondaryFolder.label;
     sidebarEl.appendChild(secondaryNavEl);
@@ -741,9 +1221,10 @@ function createMailClient(rootEl, config) {
 // restarting the story. Declared before first use below (loadProgress() is
 // called immediately at startup).
 
-const PROGRESS_KEY = 'evergreen-mortal-progress';
+const PROGRESS_KEY = 'evergreen-progress';
 let currentScreen = 'cybermail';
 let sprintTutorialSeen = false;
+let investigationIntroSeen = false;
 // Declared here (rather than next to createSprintState/ensureSprintState,
 // further down the file) so applyProgress — called near the top of the
 // script, well before createSprintState is even defined — can safely
@@ -771,16 +1252,17 @@ function applyProgress(progress) {
   });
   if (progress.sunitaRead) SUNITA_ONBOARDING_EMAIL.read = true;
   if (progress.sprintTutorialSeen) sprintTutorialSeen = true;
+  if (progress.investigationIntroSeen) investigationIntroSeen = true;
   (progress.evergreenMail || []).forEach((saved) => {
     const email = EVERGREEN_MAIL_SEEDS.find((e) => e.id === saved.id);
-    if (email) {
-      email.read = saved.read;
-      email.viewed = saved.viewed;
-      if (saved.delivered) email.delivered = true;
-      if (typeof saved.deliveredOrder === 'number') email.deliveredOrder = saved.deliveredOrder;
-    }
+    if (email) restoreMailState(email, saved);
+  });
+  (progress.externalMail || []).forEach((saved) => {
+    const email = EXTERNAL_MAIL.find((e) => e.id === saved.id);
+    if (email) restoreMailState(email, saved);
   });
   if (typeof progress.mailDeliveryCounter === 'number') mailDeliveryCounter = progress.mailDeliveryCounter;
+  if (typeof progress.journalDeliveryCounter === 'number') journalDeliveryCounter = progress.journalDeliveryCounter;
   // Backward compatibility: a save made before deliveredOrder existed can
   // restore an email as delivered without a deliveredOrder (saved.delivered
   // true, saved.deliveredOrder absent). Left as-is, that email's
@@ -801,6 +1283,7 @@ function applyProgress(progress) {
     if (entry) {
       if (saved.delivered) entry.delivered = true;
       if (saved.revealed) entry.revealed = true;
+      if (typeof saved.deliveredOrder === 'number') entry.deliveredOrder = saved.deliveredOrder;
     }
   });
   // Full sprint snapshot, so a reload resumes the exact board (deck,
@@ -812,15 +1295,30 @@ function applyProgress(progress) {
   if (progress.sprintState) sprintState = progress.sprintState;
 }
 
+function restoreMailState(email, saved) {
+  email.read = saved.read;
+  email.viewed = saved.viewed;
+  if (saved.delivered) email.delivered = true;
+  if (typeof saved.deliveredOrder === 'number') email.deliveredOrder = saved.deliveredOrder;
+  if (saved.replied) addReplyToThread(email, { restoring: true });
+}
+
+function saveMailState(e) {
+  return { id: e.id, read: e.read, viewed: e.viewed, delivered: e.delivered, deliveredOrder: e.deliveredOrder, replied: !!e.replied };
+}
+
 function saveProgress() {
   const progress = {
     screen: currentScreen,
     cyberMail: CYBER_MAIL_SEEDS.map((e) => ({ id: e.id, read: e.read, viewed: e.viewed })),
     sunitaRead: SUNITA_ONBOARDING_EMAIL.read,
-    evergreenMail: EVERGREEN_MAIL_SEEDS.map((e) => ({ id: e.id, read: e.read, viewed: e.viewed, delivered: e.delivered, deliveredOrder: e.deliveredOrder })),
-    journal: JOURNAL_ENTRIES.map((e) => ({ id: e.id, delivered: e.delivered, revealed: e.revealed })),
+    evergreenMail: EVERGREEN_MAIL_SEEDS.map(saveMailState),
+    externalMail: EXTERNAL_MAIL.map(saveMailState),
+    journal: JOURNAL_ENTRIES.map((e) => ({ id: e.id, delivered: e.delivered, revealed: e.revealed, deliveredOrder: e.deliveredOrder })),
     mailDeliveryCounter,
+    journalDeliveryCounter,
     sprintTutorialSeen,
+    investigationIntroSeen,
     sprintState: sprintState ? { ...sprintState, pendingTarget: null, pendingCardTarget: null } : null,
   };
   try {
@@ -844,9 +1342,15 @@ const cyberMail = createMailClient(document.getElementById('app'), {
 // call back into this specific client instance.
 let evergreenMailClient = null;
 
+// Unread mail across both Evergreen Mail folders — the main inbox and the
+// External Inbox's investigation emails.
+function unreadMailCount() {
+  return [...EVERGREEN_MAIL_SEEDS, ...EXTERNAL_MAIL].filter((e) => e.delivered && !e.read).length;
+}
+
 function updateMailBadge() {
   const badge = document.getElementById('mail-badge');
-  const count = EVERGREEN_MAIL_SEEDS.filter((e) => e.delivered && !e.read).length;
+  const count = unreadMailCount();
   if (count > 0) {
     badge.textContent = String(count);
     badge.classList.remove('hidden');
@@ -1039,12 +1543,17 @@ function openEvergreenMailApp() {
       evergreenMailClient = createMailClient(contentEl, {
         seedEmails: EVERGREEN_MAIL_SEEDS.filter((e) => e.delivered).sort((a, b) => b.deliveredOrder - a.deliveredOrder),
         onChange: updateMailBadge,
-        // Sunita's welcome email was the last thing delivered to the personal
-        // inbox, so it sits at the top — read, and without the "Start job"
-        // button, since the job has already started.
+        // Investigation emails sent from Jamie's personal address sit on top,
+        // newest first. Below them, Sunita's welcome email was the last
+        // pre-hire delivery — read, and without the "Start job" button, since
+        // the job has already started.
         secondaryFolder: {
           label: 'External Inbox',
-          emails: [{ ...SUNITA_ONBOARDING_EMAIL, read: true, action: null }, ...CYBER_MAIL_SEEDS],
+          emails: [
+            ...EXTERNAL_MAIL.filter((e) => e.delivered).sort((a, b) => b.deliveredOrder - a.deliveredOrder),
+            { ...SUNITA_ONBOARDING_EMAIL, read: true, action: null },
+            ...CYBER_MAIL_SEEDS,
+          ],
         },
       });
     },
@@ -1055,7 +1564,7 @@ document.getElementById('icon-mail').addEventListener('click', openEvergreenMail
 
 // ---- EverSprint ----
 // The in-game "sprint tracking" app — a kanban board where work tasks are
-// rendered as a card battle. Implements the design in evergreen-mortal/DESIGN.md:
+// rendered as a card battle. Implements the design in evergreen/DESIGN.md:
 // a daily mandatory 3-card Draft, Utility cards with per-card cooldowns and no
 // cap on daily activations, passive Daemon cards, a Computer Virus curse that
 // punishes declining it, "Draft from N" bonus mini-drafts that can chain, and
@@ -1321,6 +1830,19 @@ const CARD_DEFS = [
 
 const CARD_DEFS_BY_ID = Object.fromEntries(CARD_DEFS.map((c) => [c.id, c]));
 
+// Investigation cards share CARD_DEFS_BY_ID so drafts and the deck editor can
+// render them, but stay out of CARD_DEFS — they're never card rewards.
+INVESTIGATIONS.forEach((inv) => {
+  CARD_DEFS_BY_ID[inv.id] = {
+    id: inv.id,
+    name: inv.name,
+    type: 'investigation',
+    rarity: null,
+    kind: 'investigation',
+    description: () => investigationChecklistHtml(inv),
+  };
+});
+
 const STARTER_DECK = [
   'quick-patch', 'quick-patch',
   'broadcast-ping', 'broadcast-ping',
@@ -1332,6 +1854,13 @@ const STARTER_DECK = [
 ];
 
 const SPRINT_DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+
+// Hours are the daily resource spent on drafting — cards themselves cost
+// nothing. Each day grants HOURS_PER_DAY on top of whatever was banked from
+// the day before (see endDay); the bank is lost at End Week. Single-act for
+// now: the intern act's 4 hours/day at a 4-hour draft is one draft per day.
+const HOURS_PER_DAY = 4;
+const DRAFT_HOUR_COST = 4;
 
 const MIN_DECK_SIZE = 10;
 const MAX_DECK_SIZE = 40;
@@ -1578,12 +2107,20 @@ function assignTasksForSprint(carriedOverTasks = []) {
   const severities = splitSeverityBudget(budget, taskCount);
 
   const nonBau = shuffle(eligible.filter((a) => a.id !== 'business-as-usual').slice());
-  const abilityIds = shuffle(['business-as-usual', ...nonBau.slice(0, taskCount - 1).map((a) => a.id)]);
+  const abilityIds = ['business-as-usual', ...nonBau.slice(0, taskCount - 1).map((a) => a.id)];
+
+  // Every sprint also gets one extra Standard Intake on top of the random
+  // lineup. Its severity is overridden to Performance below, so it doesn't
+  // take a slice of the budget split — the rest of the lineup is unchanged.
+  const lineup = shuffle([
+    ...abilityIds.map((abilityId, i) => ({ abilityId, splitSeverity: severities[i] })),
+    { abilityId: 'business-as-usual', splitSeverity: 0 },
+  ]);
 
   const tasks = [];
   const virusCards = [];
-  abilityIds.forEach((abilityId, i) => {
-    let severity = Math.min(TASK_SEVERITY_CAP, severities[i]);
+  lineup.forEach(({ abilityId, splitSeverity }) => {
+    let severity = Math.min(TASK_SEVERITY_CAP, splitSeverity);
     if (abilityId === 'business-as-usual') severity = performance;
     if (abilityId === 'layered') severity = 5;
 
@@ -1775,7 +2312,7 @@ function spawnSpecialTask() {
 // Only available on tasks that survived from a previous sprint; this
 // sprint's own freshly-generated tasks can't be reassigned.
 function reassignTask(taskId) {
-  if (sprintState.pendingTarget || sprintState.pendingCardTarget || sprintState.bonusDraft) return;
+  if (isBoardBusy()) return;
   const task = findTask(taskId);
   if (!task || task.finished || !task.carriedOver) return;
   task.finished = true;
@@ -1957,9 +2494,14 @@ function runDaemonHook(hookName) {
 }
 
 // A picked/played Computer Virus is destroyed permanently — no board effect.
+// A picked investigation checks off its next step (see advanceInvestigation).
 // A picked Utility/Daemon deploys into Played; a picked Script resolves now.
 function playCardEffect(card, template, opts = {}) {
   if (template.type === 'virus') return;
+  if (template.type === 'investigation') {
+    advanceInvestigation(card);
+    return;
+  }
   if (template.type === 'utility' || template.type === 'daemon') {
     card.cooldownRemaining = 0;
     sprintState.played.push(card);
@@ -2047,7 +2589,7 @@ function afterUtilityRun() {
 }
 
 function activateUtilityCard(instanceId) {
-  if (!sprintState.dailyDraftResolved || sprintState.pendingTarget || sprintState.pendingCardTarget || sprintState.bonusDraft) return;
+  if (isBoardBusy()) return;
   const card = sprintState.played.find((c) => c.instanceId === instanceId);
   if (!card) return;
   const template = CARD_DEFS_BY_ID[card.templateId];
@@ -2088,14 +2630,14 @@ function resolveDraftPick(chosen, remaining, origin) {
 }
 
 function pickFromDailyDraft(instanceId) {
-  if (sprintState.dailyDraftResolved || sprintState.pendingTarget || sprintState.pendingCardTarget) return;
+  if (!sprintState.dailyDraftOpen || sprintState.pendingTarget || sprintState.pendingCardTarget) return;
   const idx = sprintState.dailyDraft.findIndex((c) => c.instanceId === instanceId);
   if (idx === -1) return;
   const [chosen] = sprintState.dailyDraft.splice(idx, 1);
   const remaining = sprintState.dailyDraft;
   sprintState.dailyDraft = [];
-  sprintState.dailyDraftResolved = true;
-  logEvent(`Daily draft: picked "${CARD_DEFS_BY_ID[chosen.templateId].name}".`);
+  sprintState.dailyDraftOpen = false;
+  logEvent(`Draft: picked "${CARD_DEFS_BY_ID[chosen.templateId].name}".`);
   resolveDraftPick(chosen, remaining, 'daily-draft');
   renderEverSprintBoard();
 }
@@ -2124,12 +2666,48 @@ function declineBonusDraft() {
 
 // -- Sprint / day lifecycle --
 
-function startDailyDraft() {
-  sprintState.dailyDraftResolved = false;
+// The board is "busy" while anything modal is waiting on the player — an
+// open paid draft, a bonus draft, or a card/task target pick. Nothing else
+// on the board (Activate, Reassign, Draft, End Day) can be used meanwhile.
+function isBoardBusy() {
+  return sprintState.dailyDraftOpen || !!sprintState.pendingTarget || !!sprintState.pendingCardTarget || !!sprintState.bonusDraft;
+}
+
+// Affordability alone, ignoring whether the board is busy — this is what
+// keeps End Day locked: as long as another draft could be paid for, the day
+// isn't over. An empty deck can't be drafted from, so it frees End Day.
+function canAffordDraft() {
+  return sprintState.hours >= DRAFT_HOUR_COST && sprintState.deck.length > 0;
+}
+
+function canStartDraft() {
+  return !sprintState.gameOver && !isBoardBusy() && canAffordDraft();
+}
+
+// Hours are paid when the draft opens, not on pick — there's no backing out
+// of an open draft, so the two are equivalent and this keeps the hours shown
+// during the draft honest.
+function startDraft() {
+  if (!canStartDraft()) return;
+  sprintState.hours -= DRAFT_HOUR_COST;
   const squeezed = sprintState.tasks.some((t) => !t.finished && hasAbility(t, 'draft-squeeze'));
   sprintState.dailyDraft = sampleAnyFromDeck(squeezed ? 2 : 3);
+  sprintState.dailyDraftOpen = true;
   const names = sprintState.dailyDraft.map((c) => CARD_DEFS_BY_ID[c.templateId].name).join(', ');
-  logEvent(`Daily draft ready: ${names || '(nothing — deck is empty)'}.`);
+  logEvent(`Drafted (-${DRAFT_HOUR_COST}h, ${sprintState.hours}h left): ${names}.`);
+  renderEverSprintBoard();
+}
+
+// Saves from before Hours existed had a draft opened automatically at day
+// start (dailyDraftResolved). An unresolved one becomes an open, already-paid
+// draft; a resolved one means today's single draft is spent.
+function migrateSprintStateForHours(state) {
+  if (typeof state.hours === 'number') return;
+  const openDraft = state.dailyDraftResolved === false && (state.dailyDraft || []).length > 0;
+  state.dailyDraftOpen = openDraft;
+  if (!openDraft) state.dailyDraft = [];
+  state.hours = state.dailyDraftResolved === false && !openDraft ? HOURS_PER_DAY : 0;
+  delete state.dailyDraftResolved;
 }
 
 function createSprintState() {
@@ -2149,14 +2727,19 @@ function createSprintState() {
     weekRewards: [],
     summary: null,
     editingDeck: false,
+    hours: HOURS_PER_DAY,
     dailyDraft: [],
-    dailyDraftResolved: false,
+    dailyDraftOpen: false, // a paid draft is on screen — see startDraft
     activationsToday: 0,
     pendingTarget: null,
     pendingCardTarget: null,
     bonusDraft: null,
     bonusDraftQueue: [], // { n } entries — additional bonus drafts triggered while one's already showing; see openDraftFrom for why these don't hold sampled cards yet
     gameOver: null, // null | 'promoted' | 'fired'
+    queuedMilestones: [], // nextSprint milestone ids waiting for the next sprint — see checkPerformanceMilestones
+    investigations: {}, // investigation id -> { progress, done } once it has entered the deck — see addQueuedInvestigations
+    queuedInvestigations: [], // triggered investigation ids waiting for End Week — see queueInvestigation
+    pendingReplies: [], // sent investigation email ids whose reply arrives next sprint — see deliverPendingReplies
     log: [], // { week, day, text } entries — see logEvent / the Sprint Log panel
   };
 }
@@ -2165,8 +2748,8 @@ function ensureSprintState() {
   if (!sprintState) {
     sprintState = createSprintState();
     assignTasksForSprint();
-    startDailyDraft();
   }
+  migrateSprintStateForHours(sprintState);
   return sprintState;
 }
 
@@ -2251,14 +2834,22 @@ function addSprintLogToggleButton(contentEl) {
 // a single call can deliver several milestones at once since Performance
 // only ever moves in lump sums (see changePerformance's callers).
 function checkPerformanceMilestones() {
+  if (!sprintState.queuedMilestones) sprintState.queuedMilestones = [];
   let deliveredAny = false;
   PERFORMANCE_MILESTONES.forEach((milestone) => {
     if (sprintState.performance < milestone.threshold) return;
-    const list = milestone.type === 'journal' ? JOURNAL_ENTRIES : EVERGREEN_MAIL_SEEDS;
-    const item = list.find((e) => e.id === milestone.id);
-    if (item && !item.delivered) {
-      if (milestone.type === 'email') markMailDelivered(item); else item.delivered = true;
-      deliveredAny = true;
+    if (milestone.nextSprint) {
+      const item = findMilestoneItem(milestone);
+      if (item && !item.delivered && !sprintState.queuedMilestones.includes(milestone.id)) {
+        sprintState.queuedMilestones.push(milestone.id);
+      }
+      return;
+    }
+    if (deliverMilestone(milestone)) deliveredAny = true;
+  });
+  INVESTIGATIONS.forEach((inv) => {
+    if (inv.trigger.performance !== undefined && sprintState.performance >= inv.trigger.performance) {
+      queueInvestigation(inv.id);
     }
   });
   if (deliveredAny) {
@@ -2266,6 +2857,125 @@ function checkPerformanceMilestones() {
     updateJournalBadge();
     saveProgress();
   }
+}
+
+function findMilestoneItem(milestone) {
+  const list = milestone.type === 'journal' ? JOURNAL_ENTRIES : EVERGREEN_MAIL_SEEDS;
+  return list.find((e) => e.id === milestone.id);
+}
+
+// Returns true if the milestone's item was newly delivered.
+function deliverMilestone(milestone) {
+  const item = findMilestoneItem(milestone);
+  if (!item || item.delivered) return false;
+  if (milestone.type === 'email') markMailDelivered(item); else markJournalDelivered(item);
+  return true;
+}
+
+// Delivers the nextSprint milestones queued during the sprint that just
+// ended — called once the new sprint has begun.
+function deliverQueuedMilestones() {
+  const queued = sprintState.queuedMilestones || [];
+  if (queued.length === 0) return;
+  sprintState.queuedMilestones = [];
+  let deliveredAny = false;
+  PERFORMANCE_MILESTONES.forEach((milestone) => {
+    if (queued.includes(milestone.id) && deliverMilestone(milestone)) deliveredAny = true;
+  });
+  if (deliveredAny) {
+    updateMailBadge();
+    updateJournalBadge();
+    saveProgress();
+  }
+}
+
+// -- Investigations --
+
+function investigationStates() {
+  if (!sprintState.investigations) sprintState.investigations = {};
+  return sprintState.investigations;
+}
+
+// Triggered investigations never join the deck mid-sprint — they wait here
+// until End Week (see addQueuedInvestigations). Each investigation only ever
+// enters once; it then stays in the deck (locked there — see
+// moveCardBetweenFolders) until every step is checked off.
+function queueInvestigation(id) {
+  if (investigationStates()[id]) return;
+  if (!sprintState.queuedInvestigations) sprintState.queuedInvestigations = [];
+  if (!sprintState.queuedInvestigations.includes(id)) sprintState.queuedInvestigations.push(id);
+}
+
+// Called at End Week, after Performance is applied. Returns the ids added so
+// the sprint summary can highlight them.
+function addQueuedInvestigations() {
+  const queued = sprintState.queuedInvestigations || [];
+  sprintState.queuedInvestigations = [];
+  const states = investigationStates();
+  const added = queued.filter((id) => !states[id]);
+  added.forEach((id) => {
+    states[id] = { progress: 0, done: false };
+    sprintState.deck.push(makeCard(id));
+    logEvent(`New investigation in your deck: "${INVESTIGATIONS_BY_ID[id].name}".`);
+  });
+  return added;
+}
+
+// Checks off the investigation's next step and delivers its reward. An
+// unfinished investigation goes back into the deck like any other picked
+// card that isn't consumed; a finished one is gone, and any investigation
+// chained after it joins the deck at the end of the sprint.
+function advanceInvestigation(card) {
+  const inv = INVESTIGATIONS_BY_ID[card.templateId];
+  const states = investigationStates();
+  if (!states[inv.id]) states[inv.id] = { progress: 0, done: false };
+  const state = states[inv.id];
+  const step = inv.steps[state.progress];
+  state.progress += 1;
+  logEvent(`Investigation "${inv.name}": followed lead "${step.label}".`);
+
+  if (step.journal) {
+    markJournalDelivered(JOURNAL_ENTRIES.find((e) => e.id === step.id));
+  } else {
+    const email = findMailById(step.id);
+    markMailDelivered(email);
+    if (email.reply) {
+      if (!sprintState.pendingReplies) sprintState.pendingReplies = [];
+      sprintState.pendingReplies.push(email.id);
+    }
+  }
+
+  if (state.progress < inv.steps.length) {
+    sprintState.deck.push(card);
+  } else {
+    state.done = true;
+    logEvent(`Investigation complete: "${inv.name}".`);
+    INVESTIGATIONS.filter((next) => next.trigger.after === inv.id).forEach((next) => queueInvestigation(next.id));
+  }
+  updateMailBadge();
+  updateJournalBadge();
+  saveProgress();
+}
+
+// Replies to emails sent during the sprint that just ended — called once the
+// new sprint has begun.
+function deliverPendingReplies() {
+  const pending = sprintState.pendingReplies || [];
+  if (pending.length === 0) return;
+  sprintState.pendingReplies = [];
+  pending.forEach((id) => addReplyToThread(findMailById(id)));
+  updateMailBadge();
+  saveProgress();
+}
+
+function investigationChecklistHtml(inv) {
+  const state = sprintState && sprintState.investigations && sprintState.investigations[inv.id];
+  const progress = state ? state.progress : 0;
+  const items = inv.steps.map((step, i) => {
+    const done = i < progress;
+    return `<li class="${done ? 'done' : ''}">${done ? '&#9745;' : '&#9744;'} ${step.label}</li>`;
+  }).join('');
+  return `<div class="investigation-needed">Information Needed: ${inv.steps.length - progress}</div><ul class="investigation-checklist">${items}</ul>`;
 }
 
 function changePerformance(amount) {
@@ -2296,8 +3006,10 @@ function queuePerformanceChange(amount) {
   sprintState.pendingPerformanceDelta += amount;
 }
 
+// Drafting is mandatory while affordable: the day only ends once the
+// remaining hours can't pay for another draft (or the deck is empty).
 function canEndDay() {
-  return sprintState.dailyDraftResolved && !sprintState.pendingTarget && !sprintState.pendingCardTarget && !sprintState.bonusDraft;
+  return !isBoardBusy() && !canAffordDraft();
 }
 
 function hasAvailableActions() {
@@ -2350,7 +3062,11 @@ function endDay() {
     if (sprintState.tasks.length === 0) {
       spawnSpecialTask();
     }
-    startDailyDraft();
+    // Leftover hours (always less than one draft's cost, since End Day is
+    // locked while a draft is affordable) bank into the new day.
+    const banked = sprintState.hours;
+    sprintState.hours = HOURS_PER_DAY + banked;
+    logEvent(`${sprintState.hours}h available today${banked > 0 ? ` (${banked}h banked)` : ''}.`);
     renderEverSprintBoard();
     return;
   }
@@ -2369,7 +3085,10 @@ function endDay() {
   sprintState.pendingPerformanceDelta = 0;
   logEvent(`End Week — Sprint ${sprintState.weekNumber} complete. Carried over: ${carriedOverTasks.length === 0 ? 'none' : carriedOverTasks.map((t) => t.name).join(', ')}.`);
   changePerformance(totalDelta);
+  const newInvestigations = addQueuedInvestigations();
 
+  // Banked hours don't survive the sprint.
+  sprintState.hours = 0;
   sprintState.played.forEach((c) => { c.cooldownRemaining = 0; });
   sprintState.deck.push(...sprintState.played);
   sprintState.played = [];
@@ -2381,6 +3100,7 @@ function endDay() {
       finishedTasks: sprintState.finishedThisWeek,
       carriedOverTasks,
       rewards: sprintState.weekRewards,
+      newInvestigations,
       performanceChange: totalDelta,
     };
     sprintState.finishedThisWeek = [];
@@ -2406,8 +3126,10 @@ function advanceToNextSprint() {
   sprintState.activationsToday = 0;
   sprintState.finished = [];
   logEvent(`Sprint ${sprintState.weekNumber} begins (deck committed at ${sprintState.deck.length} cards).`);
+  sprintState.hours = HOURS_PER_DAY;
   assignTasksForSprint(carriedOverTasks);
-  startDailyDraft();
+  deliverQueuedMilestones();
+  deliverPendingReplies();
   renderEverSprintBoard();
 }
 
@@ -2427,6 +3149,8 @@ function moveCardBetweenFolders(instanceId, fromKey, toKey) {
   const from = sprintState[fromKey];
   const idx = from.findIndex((c) => c.instanceId === instanceId);
   if (idx === -1) return;
+  // Investigations are locked into the Deck until they're completed.
+  if (CARD_DEFS_BY_ID[from[idx].templateId].type === 'investigation') return;
   const [card] = from.splice(idx, 1);
   sprintState[toKey].push(card);
   renderEverSprintBoard();
@@ -2505,7 +3229,7 @@ function renderPlayedCard(card) {
   } else {
     const btn = document.createElement('button');
     btn.textContent = 'Activate';
-    btn.disabled = !sprintState.dailyDraftResolved || !!sprintState.pendingTarget || !!sprintState.pendingCardTarget || !!sprintState.bonusDraft;
+    btn.disabled = isBoardBusy();
     btn.addEventListener('click', () => activateUtilityCard(card.instanceId));
     el.appendChild(btn);
   }
@@ -2537,7 +3261,7 @@ function renderSprintTask(task) {
     const reassignBtn = document.createElement('button');
     reassignBtn.className = 'reassign-btn';
     reassignBtn.textContent = `Reassign (-${2 * task.loss})`;
-    reassignBtn.disabled = !!(sprintState.pendingTarget || sprintState.pendingCardTarget || sprintState.bonusDraft);
+    reassignBtn.disabled = isBoardBusy();
     reassignBtn.addEventListener('click', (e) => { e.stopPropagation(); reassignTask(task.id); });
     el.appendChild(reassignBtn);
   }
@@ -2596,13 +3320,19 @@ function renderDraftColumnBody(body) {
     body.appendChild(declineBtn);
     return;
   }
-  if (!sprintState.dailyDraftResolved) {
+  if (sprintState.dailyDraftOpen) {
     sprintState.dailyDraft.forEach((card) => body.appendChild(renderDraftOptionCard(card, pickFromDailyDraft)));
     return;
   }
   const note = document.createElement('div');
   note.className = 'draft-column-note';
-  note.textContent = "Today's pick is made. New offer tomorrow.";
+  if (canAffordDraft()) {
+    note.textContent = `Draft costs ${DRAFT_HOUR_COST}h. You have ${sprintState.hours}h.`;
+  } else if (sprintState.deck.length === 0) {
+    note.textContent = 'Your deck is empty — nothing left to draft today.';
+  } else {
+    note.textContent = `Not enough hours to draft again today${sprintState.hours > 0 ? ` (${sprintState.hours}h will bank into tomorrow)` : ''}.`;
+  }
   body.appendChild(note);
 }
 
@@ -2636,6 +3366,7 @@ function renderEverSprintBoard() {
       renderSprintSummaryView(everSprintBoardEl);
     }
     appendSprintLogPanel(everSprintBoardEl);
+    showInvestigationIntroIfNeeded();
     return;
   }
 
@@ -2652,6 +3383,10 @@ function renderEverSprintBoard() {
       <div class="severity-bar performance-bar"><div class="severity-bar-fill" style="width:${sprintState.performance}%"></div></div>
     </div>
     <div class="sprint-hint">${SPRINT_TIPS[tipRotationIndex]}</div>
+    <div class="sprint-header-stat sprint-hours">
+      <span>Hours</span>
+      <strong>${sprintState.hours}h</strong>
+    </div>
     <div class="sprint-header-stat">
       <div class="sprint-day">Sprint ${sprintState.weekNumber} &middot; ${SPRINT_DAY_NAMES[sprintState.dayIndex]}</div>
       <div class="sprint-day-dots">${dayDots}</div>
@@ -2668,8 +3403,12 @@ function renderEverSprintBoard() {
   // the player needs to look. "Available abilities" reuses hasAvailableActions
   // (also what the End Day button's own color already keys off of) so the
   // two highlights and that button never disagree about what's actionable.
-  const isDrafting = !sprintState.dailyDraftResolved || !!sprintState.bonusDraft;
-  const shouldHighlightPlayed = !isDrafting && hasAvailableActions();
+  // The Draft column also lights up whenever a paid draft is affordable,
+  // since drafting is mandatory until the hours run out — so it and Played
+  // can both be highlighted at once (draft now, or use a Utility first).
+  const isDrafting = sprintState.dailyDraftOpen || !!sprintState.bonusDraft;
+  const shouldHighlightDraft = isDrafting || canStartDraft();
+  const shouldHighlightPlayed = !isBoardBusy() && hasAvailableActions();
 
   const columns = [
     ['Deck', 'deck', sprintState.deck, renderLibraryCard, 'No cards yet'],
@@ -2680,7 +3419,7 @@ function renderEverSprintBoard() {
   ];
 
   columns.forEach(([label, columnKey, items, renderItem, emptyText]) => {
-    const highlight = (columnKey === 'draft' && isDrafting) || (columnKey === 'played' && shouldHighlightPlayed);
+    const highlight = (columnKey === 'draft' && shouldHighlightDraft) || (columnKey === 'played' && shouldHighlightPlayed);
     const column = document.createElement('div');
     column.className = 'board-column' + (highlight ? ' board-column-highlight' : '');
     column.dataset.column = columnKey;
@@ -2697,6 +3436,14 @@ function renderEverSprintBoard() {
       endDayBtn.addEventListener('click', () => endDay());
       columnHeader.appendChild(endDayBtn);
     }
+    if (label === 'Draft') {
+      const draftBtn = document.createElement('button');
+      draftBtn.className = 'action-btn ' + (canStartDraft() ? 'day-btn-clear' : 'day-btn-inactive');
+      draftBtn.disabled = !canStartDraft();
+      draftBtn.textContent = `Draft (${DRAFT_HOUR_COST}h)`;
+      draftBtn.addEventListener('click', () => startDraft());
+      columnHeader.appendChild(draftBtn);
+    }
     const body = document.createElement('div');
     body.className = 'board-column-body';
     column.appendChild(columnHeader);
@@ -2712,17 +3459,19 @@ function renderEverSprintBoard() {
 
   everSprintBoardEl.appendChild(board);
   appendSprintLogPanel(everSprintBoardEl);
+  showInvestigationIntroIfNeeded();
 }
 
 // -- Sprint Summary hub --
 
 function renderSprintSummaryView(container) {
   const summary = sprintState.summary;
-  const unreadMailCount = EVERGREEN_MAIL_SEEDS.filter((e) => e.delivered && !e.read).length;
+  const unreadMails = unreadMailCount();
   const unreadJournalCount = JOURNAL_ENTRIES.filter((e) => e.delivered && !e.revealed).length;
   // The actual total applied at End Week — not just gains/losses from this
   // week's tasks, but also any Reassigns and Deadline Pressure daily ticks.
   const netChange = summary.performanceChange;
+  const newInvestigations = summary.newInvestigations || [];
 
   const wrap = document.createElement('div');
   wrap.className = 'sprint-summary';
@@ -2735,7 +3484,7 @@ function renderSprintSummaryView(container) {
     </div>
     <div class="summary-columns">
       <div class="summary-section">
-        <div class="summary-section-title">Rewards (${summary.rewards.length})</div>
+        <div class="summary-section-title">Rewards (${summary.rewards.length + newInvestigations.length})</div>
         <div class="summary-section-body" data-role="rewards-body"></div>
       </div>
       <div class="summary-section">
@@ -2756,7 +3505,22 @@ function renderSprintSummaryView(container) {
   // of just names.
   fillColumn(wrap.querySelector('[data-role="finished-body"]'), summary.finishedTasks, renderFinishedTask, 'Nothing finished this sprint');
   fillColumn(wrap.querySelector('[data-role="carried-body"]'), summary.carriedOverTasks, renderSprintTask, 'Nothing left open');
-  fillColumn(wrap.querySelector('[data-role="rewards-body"]'), summary.rewards, renderLibraryCard, 'No new tools');
+  const rewardsBody = wrap.querySelector('[data-role="rewards-body"]');
+  fillColumn(rewardsBody, summary.rewards, renderLibraryCard, 'No new tools');
+  // New investigations go first, flagged, since they're locked into the deck
+  // rather than landing in Collection like card rewards.
+  newInvestigations.slice().reverse().forEach((id) => {
+    const cardEl = renderLibraryCard({ templateId: id });
+    cardEl.classList.add('summary-new-investigation');
+    const flag = document.createElement('div');
+    flag.className = 'summary-new-investigation-flag';
+    flag.textContent = 'New investigation — added to your deck';
+    cardEl.prepend(flag);
+    rewardsBody.prepend(cardEl);
+  });
+  if (newInvestigations.length > 0 && summary.rewards.length === 0) {
+    rewardsBody.querySelectorAll('.board-empty').forEach((el) => el.remove());
+  }
 
   const actions = wrap.querySelector('.summary-actions');
 
@@ -2766,10 +3530,10 @@ function renderSprintSummaryView(container) {
   editBtn.addEventListener('click', () => { sprintState.editingDeck = true; renderEverSprintBoard(); });
   actions.appendChild(editBtn);
 
-  if (unreadMailCount > 0) {
+  if (unreadMails > 0) {
     const mailBtn = document.createElement('button');
     mailBtn.className = 'action-btn action-btn-notify';
-    mailBtn.textContent = `Read Emails (${unreadMailCount})`;
+    mailBtn.textContent = `Read Emails (${unreadMails})`;
     mailBtn.addEventListener('click', () => openEvergreenMailApp());
     actions.appendChild(mailBtn);
   }
@@ -2873,7 +3637,8 @@ function fileTile(group, folderKey) {
   el.className = 'file-tile' + (selected ? ' selected' : '');
   el.dataset.type = template.type;
   if (template.rarity) el.dataset.rarity = template.rarity;
-  el.draggable = true;
+  el.draggable = template.type !== 'investigation';
+  if (!el.draggable) el.title = 'Investigations stay in your deck until they are complete.';
   el.dataset.groupKey = groupKey;
   el.innerHTML = `
     <div class="file-icon">&#128196;</div>
@@ -3026,20 +3791,30 @@ function renderDeckEditor(container) {
 const SPRINT_TUTORIAL_POINTS = [
   'You have 5 days to complete all the tasks assigned to you during each Sprint.',
   "Each task has a Severity bar. Reduce a task's Severity to 0 to finish that task.",
-  'At the start of each day, draft a card to play and use your cards to finish all your tasks.',
+  "Each day you get 4 hours. Spend them to Draft a card, then use your cards to finish all your tasks. When you can't afford another Draft, end the day.",
   'Finishing tasks raises your Performance score. Leaving tasks unfinished lowers it.',
   'Get your Performance score to 100 to get a promotion!',
 ];
 
-function showSprintTutorial(wrapper) {
+// Shown the first time an investigation enters the deck — see
+// showInvestigationIntroIfNeeded.
+const INVESTIGATION_INTRO_POINTS = [
+  'Investigation Cards are automatically added into your deck and cannot be removed.',
+  'During the sprint, draft an investigation card to follow its next lead.',
+  'Following a lead makes Jamie take some action to learn more.',
+  'Follow every lead and the investigation card will be removed from your deck.',
+];
+
+// One-screen primer modal over the EverSprint board, dismissed with "Got it".
+function showTutorialModal(wrapper, title, points, onDismiss) {
   const overlay = document.createElement('div');
   overlay.className = 'sprint-tutorial-overlay';
   const card = document.createElement('div');
   card.className = 'sprint-tutorial-card';
   card.innerHTML = `
-    <div class="sprint-tutorial-title">Welcome to EverSprint</div>
+    <div class="sprint-tutorial-title">${title}</div>
     <ul class="sprint-tutorial-list">
-      ${SPRINT_TUTORIAL_POINTS.map((point) => `<li>${point}</li>`).join('')}
+      ${points.map((point) => `<li>${point}</li>`).join('')}
     </ul>
     <div class="sprint-tutorial-footer">
       <button class="action-btn sprint-tutorial-done">Got it</button>
@@ -3050,9 +3825,23 @@ function showSprintTutorial(wrapper) {
 
   card.querySelector('.sprint-tutorial-done').addEventListener('click', () => {
     overlay.remove();
-    sprintTutorialSeen = true;
+    onDismiss();
     saveProgress();
   });
+}
+
+function showSprintTutorial(wrapper) {
+  showTutorialModal(wrapper, 'Welcome to EverSprint', SPRINT_TUTORIAL_POINTS, () => { sprintTutorialSeen = true; });
+}
+
+// Investigations join the deck at End Week, so this normally first appears
+// over the sprint summary that highlights the new card. Called at the end of
+// every renderEverSprintBoard (which wipes the board, overlay included) until
+// it's dismissed.
+function showInvestigationIntroIfNeeded() {
+  if (investigationIntroSeen || !sprintTutorialSeen || !everSprintBoardEl) return;
+  if (Object.keys(sprintState.investigations || {}).length === 0) return;
+  showTutorialModal(everSprintBoardEl, 'An Investigation Card was added to your deck!', INVESTIGATION_INTRO_POINTS, () => { investigationIntroSeen = true; });
 }
 
 // -- Rolling sprint tips --
@@ -3062,7 +3851,7 @@ function showSprintTutorial(wrapper) {
 // prompts ("Choose a task to target.", "Bonus draft available — pick one or
 // decline.", "Pick one card from today's Draft to continue."). Those prompts
 // are gone; the state they were read from (pendingTarget, pendingCardTarget,
-// bonusDraft, dailyDraftResolved) still drives the rest of the board (which
+// bonusDraft, dailyDraftOpen) still drives the rest of the board (which
 // tasks/cards are targetable, which column shows the bonus draft, whether
 // End Day is enabled) — only the hint text itself was replaced.
 const SPRINT_TIPS = [
@@ -3082,6 +3871,8 @@ const SPRINT_TIPS = [
   'When you finish a task, you have a 50% chance to get a new card as a reward.',
   'You may only have 10 copies of common cards, 5 copies of uncommon cards and 2 copies of rare cards.',
   'Cards that have a Draft from X mechanic are a good way to search through your deck for the card you want.',
+  'Leftover hours carry over to the next day, but any hours still unspent at the end of the sprint are lost.',
+  'Bonus drafts from Draft from X cards cost no hours.',
   'The minimum deck size is 10 cards.',
   'The maximum deck size is 40 cards.',
 ];
@@ -3170,7 +3961,7 @@ const DEFAULT_SETTINGS = {
   emailClient: 'evergreen',
   agileBoard: 'evergreen',
 };
-const SETTINGS_KEY = 'evergreen-mortal-settings';
+const SETTINGS_KEY = 'evergreen-settings';
 
 function loadSettings() {
   try {
@@ -3366,7 +4157,13 @@ function buildJournalApp(contentEl) {
   panel.className = 'journal-panel';
   contentEl.appendChild(panel);
 
-  const delivered = JOURNAL_ENTRIES.filter((e) => e.delivered);
+  // Oldest delivery first. Entries from older saves without a deliveredOrder
+  // keep their array order, ahead of everything tracked.
+  const delivered = JOURNAL_ENTRIES
+    .map((e, i) => ({ e, order: typeof e.deliveredOrder === 'number' ? e.deliveredOrder : i - 10000 }))
+    .filter(({ e }) => e.delivered)
+    .sort((a, b) => a.order - b.order)
+    .map(({ e }) => e);
 
   if (delivered.length === 0) {
     const empty = document.createElement('div');

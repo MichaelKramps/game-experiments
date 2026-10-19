@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Evergreen Mortal</title>
+  <title>Evergreen</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -27,6 +27,7 @@
       --type-utility: #f2c94c;
       --type-daemon: #b388ff;
       --type-virus: #ff4466;
+      --type-investigation: #ff9e57;
       --rarity-common: #141414;
       --rarity-uncommon: #d9dce6;
       --rarity-rare: #ff9f43;
@@ -193,6 +194,21 @@
     .thread-addr { color: var(--text-faint); margin-left: 4px; }
     .thread-date { color: var(--text-faint); font-size: 0.75rem; white-space: nowrap; }
     .thread-message p { color: var(--text-dim); font-size: 0.9rem; line-height: 1.6; margin-bottom: 14px; }
+    .thread-cc { color: var(--text-faint); font-size: 0.75rem; margin-top: 2px; }
+    .thread-heading { color: var(--text) !important; font-weight: bold; margin-bottom: 6px !important; }
+    .thread-bullets { color: var(--text-dim); font-size: 0.9rem; line-height: 1.6; margin: 0 0 14px 20px; }
+    .thread-pre {
+      color: var(--text-dim);
+      font-family: monospace;
+      font-size: 0.8rem;
+      line-height: 1.45;
+      white-space: pre;
+      overflow-x: auto;
+      background: rgba(127, 127, 127, 0.06);
+      border: 1px solid var(--border);
+      padding: 12px 14px;
+      margin-bottom: 14px;
+    }
     .thread-signature { border-top: 1px solid var(--border); margin-top: 4px; padding-top: 10px; }
     .thread-signature p { color: var(--text-faint); font-size: 0.75rem; line-height: 1.5; margin-bottom: 4px; }
 
@@ -475,6 +491,7 @@
     .day-btn-clear:hover { background: #4ee08a !important; }
     .day-btn-blocked { background: var(--danger) !important; color: #fff !important; cursor: not-allowed; }
     .day-btn-blocked:hover { background: var(--danger) !important; }
+    .day-btn-inactive, .day-btn-inactive:hover { background: var(--bg-inset) !important; color: var(--text-faint) !important; cursor: not-allowed; }
     .board-column-body {
       flex: 1;
       padding: 10px;
@@ -569,6 +586,10 @@
     .sprint-card[data-type="utility"] { border-left: 3px solid var(--type-utility); }
     .sprint-card[data-type="daemon"] { border-left: 3px solid var(--type-daemon); }
     .sprint-card[data-type="virus"] { border-left: 3px solid var(--type-virus); }
+    .sprint-card[data-type="investigation"] { border-left: 3px solid var(--type-investigation); }
+    .investigation-needed { color: var(--type-investigation); font-size: 0.7rem; margin-bottom: 4px; }
+    .investigation-checklist { list-style: none; font-size: 0.7rem; line-height: 1.45; }
+    .investigation-checklist li.done { color: var(--text-faint); text-decoration: line-through; }
     .sprint-card-type-tag { font-size: 0.6rem; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-faint); }
 
     /* Rarity corner ribbon — a plain CSS-triangle badge (no images/icons),
@@ -840,6 +861,15 @@
     }
     .summary-section-title { color: var(--text-mute); font-size: 0.75rem; letter-spacing: 0.04em; margin-bottom: 4px; }
     .summary-section-body { display: flex; flex-direction: column; gap: 8px; }
+    .sprint-card.summary-new-investigation { box-shadow: 0 0 0 1px var(--type-investigation), 0 0 12px rgba(255, 158, 87, 0.35); }
+    .summary-new-investigation-flag {
+      color: var(--type-investigation);
+      font-size: 0.65rem;
+      font-weight: bold;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
     .task-status-tag { font-size: 0.7rem; font-weight: normal; margin-left: 6px; }
     .sprint-task-cleared { opacity: 0.85; cursor: default; }
     .summary-actions { display: flex; justify-content: flex-end; gap: 10px; }
@@ -939,6 +969,7 @@
     .file-tile[data-type="utility"] { border-left: 3px solid var(--type-utility); }
     .file-tile[data-type="daemon"] { border-left: 3px solid var(--type-daemon); }
     .file-tile[data-type="virus"] { border-left: 3px solid var(--type-virus); }
+    .file-tile[data-type="investigation"] { border-left: 3px solid var(--type-investigation); cursor: default; }
     .file-icon { font-size: 1.4rem; line-height: 1; }
     .file-name { color: var(--text-dim); font-size: 0.65rem; text-align: center; line-height: 1.3; }
     .file-count {

@@ -4,7 +4,7 @@
 
 ## Overview
 
-EverSprint is the in-fiction "work tracking" app inside Evergreen Mortal — a kanban board where routine (and eventually plot-relevant) work is represented as a card battle. A sprint runs Monday–Friday. **Performance** (0–100) is the single win/loss meter: hit 100 and you're promoted (win), hit 0 and you're fired (loss). See "Performance Timing" below for when it actually moves.
+EverSprint is the in-fiction "work tracking" app inside Evergreen — a kanban board where routine (and eventually plot-relevant) work is represented as a card battle. A sprint runs Monday–Friday. **Performance** (0–100) is the single win/loss meter: hit 100 and you're promoted (win), hit 0 and you're fired (loss). See "Performance Timing" below for when it actually moves.
 
 ## Performance Timing
 
@@ -19,16 +19,29 @@ Performance mostly only actually changes once per sprint, at End Week — not in
 Three columns, renamed from the original implementation:
 
 - **Deck** — cards you own for this sprint that aren't currently in play.
-- **Draft** (was "Hand") — today's randomly-sampled offer of cards.
+- **Draft** (was "Hand") — the current randomly-sampled offer of cards, opened by the Draft button.
 - **Played** (was "Initialized") — cards currently deployed (Utility and Daemon cards live here while active).
+
+### Hours
+
+Drafting costs **hours**; cards themselves cost nothing to play. Each day grants **4 hours** (`HOURS_PER_DAY`) and a draft costs **4 hours** (`DRAFT_HOUR_COST`), so at current values it's one draft per day. The header shows the hours available right now.
+
+- **Banking**: hours left over at End Day carry into the next day (new day = 4 + leftover). They're **lost at End Week**, and a new sprint starts at a flat 4.
+- Because End Day is locked while a draft is affordable (see below), the bank is always less than one draft's cost — it only ever carries a remainder, so whole drafts can't be hoarded. At today's values the bank is always 0; it exists for the planned hour/draft-cost modifiers (see `PROPOSAL-acts-hours-investigations.md`).
+- **Bonus Draft-from-N prompts are free** — they're card effects, not paid drafts.
 
 **Each day:**
 
-1. The game randomly samples **3 cards** from the Deck into the Draft.
-2. The player **must** pick exactly one of the 3 — there is no passing on the daily draft.
-3. The 2 unpicked cards return to the Deck. **The Deck reshuffles any time cards return to it**, so draws are genuinely random, never a fixed/predictable order.
-4. **Turn order**: the day's mandatory Draft pick must be resolved *before* the player may Activate any Utility cards that day.
-5. **No cap on Utility activations per day.** Once the daily draft pick is resolved, the player may Activate every off-cooldown Utility they have, in any order, as many times as card interactions allow — it's even possible for a single Utility to Activate multiple times in one day (e.g. via a Daemon like "When you Activate a card, Activate it twice") if the deck supports it. This is intentional; no artificial action-economy cap has been added.
+1. **Free play.** The day opens with nothing drafted. The player can Activate off-cooldown Utilities and Reassign tasks as they like — including before the first draft.
+2. **Draft.** The Draft button (in the Draft column header) is enabled when the player has at least the draft cost in hours and the Deck isn't empty. Clicking it spends the hours immediately and samples **3 cards** from the Deck into the Draft.
+3. **While a draft is open, the board is locked** — Activate, Reassign, Draft and End Day are all disabled (`isBoardBusy()`) until a card is picked. The player **must** pick exactly one; there's no passing on a paid draft. The same lock applies during bonus drafts and target selection.
+4. The unpicked cards return to the Deck. **The Deck reshuffles any time cards return to it**, so draws are genuinely random, never a fixed/predictable order.
+5. Back to free play; draft again if hours allow.
+6. **End Day** is enabled only once the remaining hours are below the draft cost (or the Deck is empty) — drafting is mandatory as long as it's affordable. End Day banks the remainder, ticks daily task abilities and cooldowns, and advances the day.
+
+**No cap on Utility activations per day.** The player may Activate every off-cooldown Utility they have, in any order, as many times as card interactions allow — it's even possible for a single Utility to Activate multiple times in one day (e.g. via a Daemon like "When you Activate a card, Activate it twice") if the deck supports it. This is intentional; no artificial action-economy cap has been added.
+
+**Implementation note — old saves**: saves from before Hours had a draft opened automatically each morning (`dailyDraftResolved`). `migrateSprintStateForHours` (run from `ensureSprintState`) converts them: an unresolved draft becomes an already-paid open draft with 0 hours left; a resolved one means today's draft is spent (0 hours).
 
 ## Card Types
 
@@ -56,6 +69,16 @@ The only curse card in the game. **Never appears in a starting deck** — it onl
 
 **Implementation note**: the drafted/declined split applies inside a bonus Draft-from-N too, not just the daily 3-card Draft. If a Virus is one of the N sampled cards and you play something else, that Virus counts as declined (returns + 1 new copy). If you decline the whole bonus prompt, every sampled card — Virus included — is treated as declined the same way. A Virus can also come up as one of the 2 cards an untyped "play N random cards from your deck" effect (e.g. Batch Job) forces into play; since there's no decline option there, it simply resolves as picked (destroyed).
 
+### Investigation
+A story card. Instead of severity it has **Information Needed** — a checklist of **leads** (the player-facing name; `steps` in code), defined per investigation in `INVESTIGATIONS` in `game.js`. Investigations never touch Performance; their cost is the work card you didn't pick instead.
+
+- **Entering the deck**: each investigation has one trigger — Performance reaching a threshold (checked alongside `PERFORMANCE_MILESTONES`), or completing another investigation. Either way it **joins the deck at End Week, never mid-sprint**, and the sprint summary shows it at the top of Rewards, highlighted as "New investigation — added to your deck". Each investigation enters only once.
+- **Picking it** in any draft (daily or bonus) follows the next lead and delivers that lead's reward. Being force-played by Batch Job or Root Access counts as a pick. Merely appearing in a draft, or being declined, does nothing.
+- **Rewards**: a journal entry, or an email Jamie sends. Sent emails appear immediately — in the External Inbox if sent from his personal `fernwaymail.com` address, or the main inbox if sent from his work address. A **rejected** email carries its bounce in the thread from the start and gets no reply. Otherwise the **reply arrives at the start of the next sprint**, appended to the same thread and bumped to the top as unread.
+- An unfinished investigation returns to the deck after being picked. At **0 Information Needed** it leaves the deck permanently.
+- **Locked into the Deck**: it can't be dragged to Collection in the deck editor. It counts toward deck size and carries between sprints.
+- No existing card interacts with investigations specifically.
+
 ## The "Play" Keyword
 
 When a card effect says "play a random X from your deck" (or similar), the meaning depends on X's type:
@@ -64,12 +87,12 @@ When a card effect says "play a random X from your deck" (or similar), the meani
 
 ## The "Draft from N" Sub-Mechanic
 
-Several cards trigger a bonus mini-draft: **immediately sample N random cards from the deck, choose 1, and play it** (following the same "play" rules as above for whatever type is chosen). This does **not** count against the day's mandatory 3-card Draft pick — it's a bonus action.
+Several cards trigger a bonus mini-draft: **immediately sample N random cards from the deck, choose 1, and play it** (following the same "play" rules as above for whatever type is chosen). This costs no hours and is separate from the paid 3-card Draft — it's a bonus action.
 
 - These can **chain indefinitely** — if a bonus-drafted card is itself a "Draft from N" effect, it can trigger another bonus draft, and so on.
 - **The player may always decline any bonus Draft-from-N prompt** and play nothing from it. This is both a genuine player choice and the built-in safety valve against decks that could otherwise force an infinite chain.
 
-**Implementation note**: the Draft Squeeze task ability (see below) only shrinks the day's mandatory 3-card Draft — bonus Draft-from-N prompts always sample the card's own stated N regardless of Draft Squeeze.
+**Implementation note**: the Draft Squeeze task ability (see below) only shrinks the paid 3-card Draft — bonus Draft-from-N prompts always sample the card's own stated N regardless of Draft Squeeze.
 
 **Implementation note — simultaneous triggers queue, they don't clobber each other**: some effects can trigger more than one bonus draft in the same instant — e.g. an 'all'-kind effect like Broadcast Ping finishing two tasks at once with Task Manager ("when you finish a task, Draft from 3") deployed fires it twice. Each trigger gets its own separate Draft-from-N prompt, shown one after another (the UI shows "(+N more queued)" when there's a backlog) — none of them are dropped or merged into one.
 
@@ -222,7 +245,7 @@ Each sprint's task lineup is generated fresh at sprint start using a fixed algor
    | 100 | ~519 |
 
 4. **Split** — each task gets a floor of 5 severity; the remaining budget is divided across all tasks using normalized random weights (an uneven, organic split, not an even one), then rounded to whole numbers with drift correction so the total still matches. **A single task's severity is capped at 100** — at high Performance the budget (see the table above) can suggest more than that for one task, and any excess from the split is simply not applied rather than pushed onto the task.
-5. **Ability assignment** — one task is guaranteed the **Standard Intake** ability. Each remaining task gets a unique ability (no repeats within a sprint), drawn with equal probability from whichever of the other 11 abilities are currently eligible.
+5. **Ability assignment** — one task is guaranteed the **Standard Intake** ability. Each remaining task gets a unique ability (no repeats within a sprint), drawn with equal probability from whichever of the other 11 abilities are currently eligible. On top of that lineup, every sprint adds **one extra Standard Intake task** (so 2 Standard Intakes total, and 3–7 tasks per sprint). It sits outside the budget split — its severity comes from the Standard Intake override anyway — so it adds difficulty without diluting the other tasks' severities.
 6. **Severity overrides** — a task with Standard Intake or Chronic discards whatever severity the random split gave it and uses its own formula instead (see table below). This isn't compensated elsewhere — a sprint's realized total severity can end up under the nominal budget when either ability appears.
 7. **Gain / loss** — independent of severity and ability: every task carries a fixed **gain** of 1 and **loss** of 1. **Gain** is the Performance awarded when the task is finished (severity reaches 0). **Loss** is the Performance penalty applied if the task is still unresolved at sprint's end — and it fires **every sprint** the task remains open, not just once (see Filing Deadline for the ability that fires it more often still, and Carrying tasks between sprints below for how a task can end up unresolved across more than one sprint in the first place). Not shown on the board itself (see below) since it's now the same for every task; still tracked per-task internally since Reassign and Filing Deadline key off it.
 
@@ -326,42 +349,48 @@ A single-screen, one-time primer (`SPRINT_TUTORIAL_POINTS` / `showSprintTutorial
 
 1. Sprints run 5 days; complete the tasks assigned during it.
 2. Each task has a Severity bar; reduce it to 0 to finish the task.
-3. Draft a card at the start of each day and use cards to finish tasks.
+3. Each day you get 4 hours; spend them to Draft a card, use cards to finish tasks, and end the day when you can't afford another Draft.
 4. Finishing tasks raises Performance; leaving tasks unfinished lowers it.
 5. Reach 100 Performance for a promotion.
 
 Deliberately left out: the fail condition (Performance hitting 0), the End-Week-only timing of Performance changes, the three card types' distinct behaviors, targeting, and every deeper mechanic (Automation, task abilities, Virus outbreaks, Reassign) — those are rolling-tips territory instead, so this stays a single short screen rather than a multi-step wizard.
 
-Dismissing it (the only control is "Got it" — no Skip, since there's nothing to skip past on one screen) marks it seen (`sprintTutorialSeen`, persisted in the `evergreen-mortal-progress` localStorage blob alongside the rest of progress) so it never shows again. There's currently no in-app way to replay it once dismissed.
+Dismissing it (the only control is "Got it" — no Skip, since there's nothing to skip past on one screen) marks it seen (`sprintTutorialSeen`, persisted in the `evergreen-progress` localStorage blob alongside the rest of progress) so it never shows again. There's currently no in-app way to replay it once dismissed.
 
 **Implementation note — no spotlighting**: an earlier version of this was a 5-step wizard that spotlighted board elements per step (CSS box-shadow ring via `.tutorial-spotlight`, deliberately kept beneath the scrim's z-index so the glow read through the translucency without covering the card's own buttons). That approach was replaced once the content was cut down to five tightly-related, non-visual facts — spotlighting made sense when steps pointed at specific board elements, not for a plain list. The `data-column` attributes added to board columns for that spotlighting remain in the markup but ended up unused by the rolling tips below, which turned out not to need spotlighting either.
 
+### Investigation intro
+
+A second one-time modal in the same style (`INVESTIGATION_INTRO_POINTS` / `showInvestigationIntroIfNeeded`), titled "An Investigation Card was added to your deck!", shown the first time any investigation has entered the deck. Since investigations join at End Week, it normally appears over the sprint summary that highlights the new card. It's re-shown on every board render until "Got it" is clicked (renders wipe the board, overlay included), then marked seen (`investigationIntroSeen`, persisted with progress). It never stacks on top of the first-sprint tutorial.
+
 ### Rolling sprint tips
 
-A pool of 18 short facts (`SPRINT_TIPS` in `game.js`) rotates through the board header's hint slot (`.sprint-hint`) every 30 seconds, one at a time in order, looping — covering the deeper mechanics the tutorial deliberately leaves out: card-type behavior and targeting, Automation, Reassign's cost, task carryover, Performance scaling with difficulty, Daemon stacking, Special Task, card rewards, deck copy limits and size bounds, and Draft-from-N as a search tool. `startTipRotation()` (re-armed on every `buildEverSprintApp` call, so there's only ever one timer) advances the index and writes the new tip directly into the DOM rather than triggering a full board re-render, and self-clears if the EverSprint window has since been closed (there's no per-app close hook in this codebase's window manager to unsubscribe from otherwise — see `createWindow`).
+A pool of 20 short facts (`SPRINT_TIPS` in `game.js`) rotates through the board header's hint slot (`.sprint-hint`) every 30 seconds, one at a time in order, looping — covering the deeper mechanics the tutorial deliberately leaves out: card-type behavior and targeting, Automation, Reassign's cost, task carryover, Performance scaling with difficulty, Daemon stacking, Special Task, card rewards, deck copy limits and size bounds, Draft-from-N as a search tool, hour banking, and free bonus drafts. `startTipRotation()` (re-armed on every `buildEverSprintApp` call, so there's only ever one timer) advances the index and writes the new tip directly into the DOM rather than triggering a full board re-render, and self-clears if the EverSprint window has since been closed (there's no per-app close hook in this codebase's window manager to unsubscribe from otherwise — see `createWindow`).
 
-That hint slot used to show contextual prompts instead — "Choose a task to target.", "Choose a card to target.", "Bonus draft available — pick one or decline.", "Pick one card from today's Draft to continue." — computed from `sprintState.pendingTarget` / `pendingCardTarget` / `bonusDraft` / `dailyDraftResolved`. That hint *text* was removed outright (the tips fully own the slot now, all the time, including mid-target-selection or mid-bonus-draft) — but those four state flags themselves were untouched and still drive everything else they always did: which tasks/cards get the `.targetable` glow, which column shows the bonus draft options, whether End Day is enabled.
+That hint slot used to show contextual prompts instead — "Choose a task to target.", "Choose a card to target.", "Bonus draft available — pick one or decline.", "Pick one card from today's Draft to continue." — computed from `sprintState.pendingTarget` / `pendingCardTarget` / `bonusDraft` / `dailyDraftResolved` (now `dailyDraftOpen`). That hint *text* was removed outright (the tips fully own the slot now, all the time, including mid-target-selection or mid-bonus-draft) — but those four state flags themselves were untouched and still drive everything else they always did: which tasks/cards get the `.targetable` glow, which column shows the bonus draft options, whether End Day is enabled.
 
 **Not yet covered by any tip**: the End-Week-only timing of Performance changes — flagged during design discussion as the rule most likely to confuse a new player (the score visibly doesn't react to finishing a task) — didn't make it into either the tutorial or this tip pool. Worth a tip whenever this list gets revisited.
 
 ### Column highlighting
 
-A first small piece of the still-otherwise-unimplemented visual-hierarchy pass: the Draft and Played columns get the same accent-glow outline `.targetable` tasks/cards already use (`.board-column-highlight` in index.html), computed once per render in `renderEverSprintBoard` as `isDrafting`/`shouldHighlightPlayed`, to point at whichever column actually has something to do right now:
+A first small piece of the still-otherwise-unimplemented visual-hierarchy pass: the Draft and Played columns get the same accent-glow outline `.targetable` tasks/cards already use (`.board-column-highlight` in index.html), computed once per render in `renderEverSprintBoard` as `shouldHighlightDraft`/`shouldHighlightPlayed`, to point at whichever column actually has something to do right now:
 
-- **Draft** highlights whenever `isDrafting` — the daily mandatory pick isn't resolved yet, *or* a bonus draft is currently showing (a bonus draft renders inside the Draft column too, via `renderDraftColumnBody`, so both cases are "look at Draft").
-- **Played** highlights whenever `!isDrafting && hasAvailableActions()` — nothing in Draft needs attention, and at least one deployed Utility is off cooldown. `hasAvailableActions()` is the same check the End Day button's own color already keys off of, so the two never disagree about what's actionable.
+- **Draft** highlights whenever a draft is open (paid or bonus — a bonus draft renders inside the Draft column too, via `renderDraftColumnBody`), *or* a paid draft is affordable and the board isn't busy (`canStartDraft()`), since drafting is mandatory until the hours run out. The Draft button itself is green when clickable and greyed out otherwise.
+- **Played** highlights whenever `!isBoardBusy() && hasAvailableActions()` — nothing modal is waiting, and at least one deployed Utility is off cooldown. `hasAvailableActions()` is the same check the End Day button's own color already keys off of, so the two never disagree about what's actionable.
 
-The two are mutually exclusive by construction (Played's condition is gated on `!isDrafting`), so at most one column is highlighted at a time.
+Since Utilities can be used before drafting, **both columns can be highlighted at once** (draft now, or Activate first).
 
 ### Sprint Log
 
 A running, human-readable record of what happened during the sprint(s) so far — added so a stuck or confusing board state can be traced back after the fact instead of just guessed at. `logEvent(message)` (`game.js`) appends `{ week, day, text }` entries to `sprintState.log`, tagged with whatever `weekNumber`/`dayIndex` was current *at the moment logged* (so a log call placed before a day/week transition tags with the day that's ending, one placed after tags with the day that's starting — used deliberately at each transition, not just wherever was convenient). Capped at `SPRINT_LOG_MAX_ENTRIES` (300) — oldest entries drop off first — so a long play session can't grow it unbounded.
 
-**What gets logged**: daily draft ready (with the 3 card names) and its pick, bonus draft open/queued/promoted/skipped-empty and its pick/decline, Computer Virus decline-and-duplicate, Utility activation, task finish/reassign, Special Task spawn, task assignment at sprint start, every Performance change (including the promoted/fired transition), and End Day/End Week transitions. Deliberately **not** logged: individual severity/Automation ticks from card and Daemon effects (Signal Amplifier, Query Sweep, Automation's daily tick, etc.) — these fire often enough that logging each one would bury the action-level events above in noise; the action that triggered them (an Activation, a draft pick, End Day) is what's logged instead.
+**What gets logged**: each paid draft (hours spent, hours left, the 3 card names) and its pick, hours available at the start of each day (with any banked amount), bonus draft open/queued/promoted/skipped-empty and its pick/decline, Computer Virus decline-and-duplicate, Utility activation, task finish/reassign, Special Task spawn, task assignment at sprint start, every Performance change (including the promoted/fired transition), and End Day/End Week transitions. Deliberately **not** logged: individual severity/Automation ticks from card and Daemon effects (Signal Amplifier, Query Sweep, Automation's daily tick, etc.) — these fire often enough that logging each one would bury the action-level events above in noise; the action that triggered them (an Activation, a draft pick, End Day) is what's logged instead.
 
 **UI**: hidden by default behind a toggle button (`☰`, titled "Sprint Log") added to the window's own titlebar controls (`addSprintLogToggleButton`, next to minimize/maximize/close) rather than inside the board content — deliberately, since `everSprintBoardEl`'s contents get fully wiped and rebuilt on every `renderEverSprintBoard()` call (so anything placed inside it needs to be re-added every render, including across gameOver/summary/deck-editor/active-board phase changes) while the titlebar doesn't, and `rebuild()` (on window restore) only re-runs `build(contentEl)`, not `createWindow` itself, so the toggle only needs to be added once per window and is guarded against being added twice. The panel itself (`appendSprintLogPanel`) **is** re-added inside every `renderEverSprintBoard()` branch when `sprintLogOpen` is true — a scrim + scrollable card, auto-scrolled to the bottom (most recent entries) each time it opens, closeable via its own Close button or the titlebar toggle again.
 
 ## Open / Unresolved Items
+
+- A larger redesign — 5 acts and Investigations (story cards in the deck) — is in design in `PROPOSAL-acts-hours-investigations.md`. Its Hours system (single act, 4 hours/day) and Investigations (Act 1's eight) are implemented; see "Hours" and "Investigation" above. Acts, the Case Files archive, and the deck-size gate change are not.
 
 - No concrete story-sprint task has been designed yet (what it looks like tied to an actual plot beat, and how multi-ability stacking should read to the player) — including how the player is cued that a sprint is about to shift into a story beat rather than routine work.
 - The rolling tips pool doesn't cover Performance's End-Week-only timing, Virus outbreak behavior, or most individual task abilities beyond a generic "pay attention to task effects" nudge — candidates for future additions to `SPRINT_TIPS`.
