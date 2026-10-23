@@ -1,59 +1,40 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Games</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      background: #0d0d1a;
-      color: #ffffff;
-      font-family: monospace;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 16px;
-    }
-    h1 {
-      font-size: 2.5rem;
-      letter-spacing: 0.15em;
-      margin-bottom: 32px;
-    }
-    .menu {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      width: 240px;
-    }
-    .menu a {
-      display: block;
-      background: #1a1a2e;
-      border: 1px solid #2a2a4a;
-      border-radius: 6px;
-      padding: 14px 24px;
-      text-decoration: none;
-      color: #ffffff;
-      font-size: 1rem;
-      letter-spacing: 0.08em;
-      text-align: center;
-      transition: border-color 0.2s, color 0.2s, transform 0.1s;
-    }
-    .menu a:hover {
-      border-color: #44ff88;
-      color: #44ff88;
-      transform: translateY(-2px);
-    }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kramps Games</title>
+  <script src="os/os.js"></script>
+  <link rel="stylesheet" href="os/os.css">
+  <link rel="stylesheet" href="os/site.css">
 </head>
 <body>
-  <h1>Kramps Games</h1>
-  <nav class="menu">
-    <a href="free-games.html">Free Games</a>
-    <a href="full-games.html">Full Games</a>
-    <a href="experiments.html">Experiments</a>
-    <a href="about.html">About</a>
-  </nav>
+  <div class="window" id="welcome" data-app="Welcome">
+    <div class="titlebar">
+      <div class="lights"><span class="close"></span><span class="min"></span><span class="max"></span></div>
+      <div class="window-title">Welcome</div>
+    </div>
+    <div class="welcome-body">
+      <h1>Kramps Games</h1>
+      <p class="tagline">Games that look like work.</p>
+      <p>Every game here runs in your browser and is dressed up as something you'd have open at the office: a terminal, a file browser, a notepad.</p>
+      <p>There are no ads and no sign-ups. Open the Games folder to pick one.</p>
+      <div class="welcome-actions">
+        <a class="kg-btn kg-primary" href="games.html">Open Games</a>
+        <button class="link" type="button" data-kg-open="settings">Change OS or theme</button>
+      </div>
+    </div>
+  </div>
+  <script>
+    KG.makeWindow(document.getElementById('welcome'), {
+      minW: 340,
+      minH: 260,
+      rect: (a) => {
+        const w = Math.min(520, a.w - 60);
+        const h = Math.min(340, a.h - 60);
+        return { x: a.x + (a.w - w) / 2, y: a.y + (a.h - h) / 2.4, w, h };
+      },
+    });
+  </script>
 </body>
 </html>

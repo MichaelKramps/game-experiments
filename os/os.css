@@ -1,0 +1,757 @@
+/* The site shell's look: three desktop OSes (Value, Quality, Power) and a
+   generic phone layout, each in light and dark. os.js stamps the choice on
+   <html data-os data-theme>. Pages and games build on the tokens below
+   rather than hard-coding colors:
+
+   --desk                desktop color
+   --ui / --mono         fonts
+   --w-*                 ordinary windows (files, notes, dialogs)
+   --t-*                 terminals
+   --bar-*               the OS's taskbar / menu bar / top bar
+*/
+
+/* ---------------------------------------------------------------------------
+   Tokens */
+
+:root,
+[data-os='value'] {
+  --ui: 'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --mono: 'Cascadia Mono', 'Cascadia Code', Consolas, ui-monospace, Menlo, monospace;
+  --radius: 8px;
+  --title-h: 32px;
+  --desk: #4a7fb5;
+  --w-bg: #ffffff;
+  --w-fg: #1b1b1b;
+  --w-muted: #616161;
+  --w-line: #e5e5e5;
+  --w-chrome: #f3f3f3;
+  --w-chrome-fg: #1b1b1b;
+  --w-border: #c9c9c9;
+  --w-side: #f7f7f7;
+  --w-hover: #ececec;
+  --w-select: #dbe9f7;
+  --w-accent: #0067c0;
+  --w-accent-fg: #ffffff;
+  --w-btn: #fbfbfb;
+  --w-btn-border: #d0d0d0;
+  --w-danger: #c42b1c;
+  --w-shadow: 0 8px 28px rgba(0, 0, 0, 0.28);
+  --folder: #f6c443;
+  --folder-back: #e2a521;
+  --t-bg: #fafafa;
+  --t-fg: #383a42;
+  --t-dim: #8a8f98;
+  --t-faint: #e1e4e8;
+  --t-bright: #000000;
+  --t-panel: #f0f2f5;
+  --t-ok: #2f8a3e;
+  --t-warn: #a8700a;
+  --t-bad: #c4314b;
+  --t-pink: #b8327d;
+  --t-chrome: #f3f3f3;
+  --bar-bg: rgba(238, 241, 245, 0.9);
+  --bar-fg: #1b1b1b;
+}
+
+[data-os='value'][data-theme='dark'] {
+  --desk: #10243b;
+  --w-bg: #272727;
+  --w-fg: #ffffff;
+  --w-muted: #a8a8a8;
+  --w-line: #3a3a3a;
+  --w-chrome: #202020;
+  --w-chrome-fg: #ffffff;
+  --w-border: #454545;
+  --w-side: #232323;
+  --w-hover: #333333;
+  --w-select: #2c3e52;
+  --w-accent: #4cc2ff;
+  --w-accent-fg: #000000;
+  --w-btn: #2d2d2d;
+  --w-btn-border: #454545;
+  --w-danger: #ff99a4;
+  --w-shadow: 0 8px 28px rgba(0, 0, 0, 0.55);
+  --folder: #e9b53a;
+  --folder-back: #c98f18;
+  /* the classic blue shell */
+  --t-bg: #012456;
+  --t-fg: #eeedf0;
+  --t-dim: #8fa3c4;
+  --t-faint: #1f3f70;
+  --t-bright: #ffffff;
+  --t-panel: #0a2d63;
+  --t-ok: #9be59c;
+  --t-warn: #f5e58a;
+  --t-bad: #ff8f8f;
+  --t-pink: #f7a1d0;
+  --t-chrome: #202020;
+  --bar-bg: rgba(28, 28, 28, 0.92);
+  --bar-fg: #ffffff;
+}
+
+[data-os='quality'] {
+  --ui: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif;
+  --mono: ui-monospace, 'SF Mono', Menlo, Monaco, Consolas, monospace;
+  --radius: 10px;
+  --title-h: 28px;
+  --desk: #8fa6c4;
+  --w-bg: #ffffff;
+  --w-fg: #1d1d1f;
+  --w-muted: #86868b;
+  --w-line: #e5e5e5;
+  --w-chrome: #ebebeb;
+  --w-chrome-fg: #4d4d4d;
+  --w-border: #b9b9b9;
+  --w-side: #eef0f3;
+  --w-hover: #e6e6e9;
+  --w-select: #d6e6ff;
+  --w-accent: #007aff;
+  --w-accent-fg: #ffffff;
+  --w-btn: #ffffff;
+  --w-btn-border: #cfcfcf;
+  --w-danger: #d70015;
+  --w-shadow: 0 20px 50px rgba(0, 0, 0, 0.3), 0 0 0 0.5px rgba(0, 0, 0, 0.25);
+  --folder: #74baf3;
+  --folder-back: #4f9ee0;
+  --t-bg: #ffffff;
+  --t-fg: #1d1d1f;
+  --t-dim: #8e8e93;
+  --t-faint: #e5e5ea;
+  --t-bright: #000000;
+  --t-panel: #f5f5f7;
+  --t-ok: #1a7f37;
+  --t-warn: #a05a00;
+  --t-bad: #d70015;
+  --t-pink: #c1307d;
+  --t-chrome: #ebebeb;
+  --bar-bg: rgba(246, 246, 246, 0.82);
+  --bar-fg: #1d1d1f;
+}
+
+[data-os='quality'][data-theme='dark'] {
+  --desk: #1d2434;
+  --w-bg: #1e1e1e;
+  --w-fg: #f5f5f7;
+  --w-muted: #98989d;
+  --w-line: #383838;
+  --w-chrome: #2c2c2e;
+  --w-chrome-fg: #c9c9cc;
+  --w-border: #0c0c0c;
+  --w-side: #262628;
+  --w-hover: #333336;
+  --w-select: #1d3b66;
+  --w-accent: #0a84ff;
+  --w-accent-fg: #ffffff;
+  --w-btn: #3a3a3c;
+  --w-btn-border: #505050;
+  --w-danger: #ff6961;
+  --w-shadow: 0 20px 50px rgba(0, 0, 0, 0.55), 0 0 0 0.5px rgba(255, 255, 255, 0.12);
+  --t-bg: #1e1e1e;
+  --t-fg: #e6e6e6;
+  --t-dim: #8a8a8a;
+  --t-faint: #333333;
+  --t-bright: #ffffff;
+  --t-panel: #262626;
+  --t-ok: #b7e4a8;
+  --t-warn: #e5c07b;
+  --t-bad: #ff6b6b;
+  --t-pink: #f7a1d0;
+  --t-chrome: #2c2c2e;
+  --bar-bg: rgba(30, 30, 32, 0.75);
+  --bar-fg: #f5f5f7;
+}
+
+[data-os='power'] {
+  --ui: 'Ubuntu', 'Cantarell', 'Noto Sans', system-ui, sans-serif;
+  --mono: 'Ubuntu Mono', 'DejaVu Sans Mono', 'Liberation Mono', ui-monospace, monospace;
+  --radius: 12px;
+  --title-h: 42px;
+  --desk: #8a5a7e;
+  --w-bg: #ffffff;
+  --w-fg: #1e1e1e;
+  --w-muted: #77767b;
+  --w-line: #e0e0e0;
+  --w-chrome: #ebebeb;
+  --w-chrome-fg: #2e2e2e;
+  --w-border: #c4c4c4;
+  --w-side: #f2f2f2;
+  --w-hover: #e4e4e4;
+  --w-select: #fbe1d4;
+  --w-accent: #e95420;
+  --w-accent-fg: #ffffff;
+  --w-btn: #e8e8e8;
+  --w-btn-border: transparent;
+  --w-danger: #c01c28;
+  --w-shadow: 0 3px 14px rgba(0, 0, 0, 0.28), 0 0 0 1px rgba(0, 0, 0, 0.08);
+  --folder: #f08a4b;
+  --folder-back: #d0662a;
+  --t-bg: #ffffff;
+  --t-fg: #171421;
+  --t-dim: #77767b;
+  --t-faint: #deddda;
+  --t-bright: #000000;
+  --t-panel: #f6f5f4;
+  --t-ok: #26a269;
+  --t-warn: #b54d00;
+  --t-bad: #c01c28;
+  --t-pink: #a51d6d;
+  --t-chrome: #ebebeb;
+  --bar-bg: #000000;
+  --bar-fg: #ffffff;
+}
+
+[data-os='power'][data-theme='dark'] {
+  --desk: #2c0f26;
+  --w-bg: #242424;
+  --w-fg: #ffffff;
+  --w-muted: #9a9996;
+  --w-line: #383838;
+  --w-chrome: #303030;
+  --w-chrome-fg: #ffffff;
+  --w-border: #1a1a1a;
+  --w-side: #2a2a2a;
+  --w-hover: #383838;
+  --w-select: #5a2a17;
+  --w-accent: #f0703a;
+  --w-accent-fg: #ffffff;
+  --w-btn: #3d3d3d;
+  --w-danger: #ff7b63;
+  --w-shadow: 0 3px 14px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(0, 0, 0, 0.5);
+  /* the aubergine terminal */
+  --t-bg: #300a24;
+  --t-fg: #ffffff;
+  --t-dim: #b39bae;
+  --t-faint: #4f2343;
+  --t-bright: #ffffff;
+  --t-panel: #3a1030;
+  --t-ok: #8ff0a4;
+  --t-warn: #f8e45c;
+  --t-bad: #ff7b72;
+  --t-pink: #f7a1d0;
+  --t-chrome: #303030;
+}
+
+[data-os='phone'] {
+  --ui: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --mono: ui-monospace, Menlo, Consolas, 'Roboto Mono', monospace;
+  --radius: 0;
+  --title-h: 44px;
+  --desk: #e9edf2;
+  --w-bg: #ffffff;
+  --w-fg: #16181d;
+  --w-muted: #6b7280;
+  --w-line: #e5e7eb;
+  --w-chrome: #f7f8fa;
+  --w-chrome-fg: #16181d;
+  --w-border: #e5e7eb;
+  --w-side: #f3f4f6;
+  --w-hover: #f1f3f5;
+  --w-select: #dde8fb;
+  --w-accent: #2563eb;
+  --w-accent-fg: #ffffff;
+  --w-btn: #ffffff;
+  --w-btn-border: #d1d5db;
+  --w-danger: #dc2626;
+  --w-shadow: none;
+  --folder: #7aa7f0;
+  --folder-back: #5b8de0;
+  --t-bg: #ffffff;
+  --t-fg: #1f2328;
+  --t-dim: #6e7781;
+  --t-faint: #e4e7eb;
+  --t-bright: #000000;
+  --t-panel: #f4f5f7;
+  --t-ok: #1a7f37;
+  --t-warn: #9a6700;
+  --t-bad: #cf222e;
+  --t-pink: #bf3989;
+  --t-chrome: #f7f8fa;
+  --bar-bg: rgba(250, 250, 252, 0.94);
+  --bar-fg: #16181d;
+}
+
+[data-os='phone'][data-theme='dark'] {
+  --desk: #0f1115;
+  --w-bg: #16181d;
+  --w-fg: #f2f3f5;
+  --w-muted: #9aa0aa;
+  --w-line: #2a2e35;
+  --w-chrome: #1c1f25;
+  --w-chrome-fg: #f2f3f5;
+  --w-border: #2a2e35;
+  --w-side: #1c1f25;
+  --w-hover: #23272e;
+  --w-select: #1f3254;
+  --w-accent: #6ea0ff;
+  --w-accent-fg: #0b0d10;
+  --w-btn: #23272e;
+  --w-btn-border: #353a43;
+  --w-danger: #ff7b72;
+  --t-bg: #121417;
+  --t-fg: #e6e8eb;
+  --t-dim: #8b929c;
+  --t-faint: #2a2e35;
+  --t-bright: #ffffff;
+  --t-panel: #1a1d22;
+  --t-ok: #a5e3a0;
+  --t-warn: #e5c07b;
+  --t-bad: #ff7b72;
+  --t-pink: #f7a1d0;
+  --t-chrome: #1c1f25;
+  --bar-bg: rgba(22, 24, 29, 0.94);
+  --bar-fg: #f2f3f5;
+}
+
+[data-theme='dark'] { color-scheme: dark; }
+
+/* ---------------------------------------------------------------------------
+   Desktop */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body { height: 100%; overflow: hidden; }
+
+body {
+  background: var(--desk);
+  color: var(--w-fg);
+  font-family: var(--ui);
+  font-size: 13px;
+}
+
+body.dragging, body.dragging * { user-select: none; }
+
+[hidden] { display: none !important; }
+
+/* ---------------------------------------------------------------------------
+   Windows. Markup:
+   <div class="window" data-app="...">
+     <div class="titlebar">
+       <div class="lights"><span class="close"></span><span class="min"></span><span class="max"></span></div>
+       <div class="window-title">...</div>
+     </div>
+     ...
+   </div> */
+
+.window {
+  position: absolute;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  background: var(--w-bg);
+  color: var(--w-fg);
+  border: 1px solid var(--w-border);
+  border-radius: var(--radius);
+  box-shadow: var(--w-shadow);
+  overflow: hidden;
+}
+
+.titlebar {
+  position: relative;
+  flex: none;
+  display: flex;
+  align-items: center;
+  height: var(--title-h);
+  padding: 0 12px;
+  background: var(--w-chrome);
+  color: var(--w-chrome-fg);
+  border-bottom: 1px solid var(--w-line);
+  font-family: var(--ui);
+  cursor: default;
+  user-select: none;
+}
+
+.lights { display: flex; z-index: 1; }
+.lights span { position: relative; display: block; flex: none; }
+
+.window-title {
+  position: absolute;
+  inset: 0 96px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  font-size: 13px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+
+/* Value: caption buttons on the right (minimize, maximize, close), title on the left */
+[data-os='value'] .titlebar { justify-content: flex-end; padding: 0; border-bottom-color: transparent; }
+[data-os='value'] .window-title { inset: 0 150px 0 14px; justify-content: flex-start; font-size: 12px; }
+[data-os='value'] .lights { align-self: stretch; }
+[data-os='value'] .lights span { width: 46px; height: 100%; }
+[data-os='value'] .lights span:hover { background: rgba(127, 127, 127, 0.18); }
+[data-os='value'] .lights .close { order: 3; }
+[data-os='value'] .lights .close:hover { background: #c42b1c; color: #fff; }
+[data-os='value'] .lights span::before,
+[data-os='value'] .lights span::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
+}
+[data-os='value'] .lights .min::before { width: 10px; height: 1px; background: currentColor; }
+[data-os='value'] .lights .max::before { width: 10px; height: 10px; border: 1px solid currentColor; border-radius: 2px; }
+[data-os='value'] .lights .close::before,
+[data-os='value'] .lights .close::after { width: 14px; height: 1px; background: currentColor; }
+[data-os='value'] .lights .close::before { rotate: 45deg; }
+[data-os='value'] .lights .close::after { rotate: -45deg; }
+
+/* Quality: traffic lights on the left, centered title */
+[data-os='quality'] .titlebar { border-bottom-color: var(--w-line); }
+[data-os='quality'] .window-title { font-weight: 600; color: var(--w-chrome-fg); }
+[data-os='quality'] .lights { gap: 8px; }
+[data-os='quality'] .lights span {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 0.5px solid rgba(0, 0, 0, 0.18);
+}
+[data-os='quality'] .lights .close { background: #ff5f57; }
+[data-os='quality'] .lights .min { background: #febc2e; }
+[data-os='quality'] .lights .max { background: #28c840; }
+
+/* Power: tall header bar, bold centered title, a single round close button */
+[data-os='power'] .titlebar { justify-content: flex-end; padding: 0 9px; }
+[data-os='power'] .window-title { font-size: 14px; font-weight: 700; }
+[data-os='power'] .lights { gap: 8px; }
+[data-os='power'] .lights .min,
+[data-os='power'] .lights .max { display: none; }
+[data-os='power'] .lights .close {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--w-btn);
+}
+[data-os='power'] .lights .close:hover { filter: brightness(0.94); }
+[data-os='power'] .lights .close::before,
+[data-os='power'] .lights .close::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 10px;
+  height: 1.5px;
+  background: currentColor;
+  translate: -50% -50%;
+  rotate: 45deg;
+}
+[data-os='power'] .lights .close::after { rotate: -45deg; }
+
+/* Phone: windows fill the screen above the nav bar; the title is a plain header */
+[data-os='phone'] .window:not(.kg-dialog) {
+  position: fixed;
+  inset: 0 0 64px 0;
+  width: auto !important;
+  height: auto !important;
+  border: none;
+}
+[data-os='phone'] .lights { display: none; }
+[data-os='phone'] .window-title { inset: 0 16px; font-size: 16px; font-weight: 600; }
+[data-os='phone'] .grip { display: none; }
+
+/* invisible edge/corner grips for resizing */
+.grip { position: absolute; z-index: 2; }
+.grip.n { top: 0; left: 12px; right: 12px; height: 6px; cursor: ns-resize; }
+.grip.s { bottom: 0; left: 12px; right: 12px; height: 6px; cursor: ns-resize; }
+.grip.e { right: 0; top: 12px; bottom: 12px; width: 6px; cursor: ew-resize; }
+.grip.w { left: 0; top: 12px; bottom: 12px; width: 6px; cursor: ew-resize; }
+.grip.ne { top: 0; right: 0; width: 12px; height: 12px; cursor: nesw-resize; }
+.grip.nw { top: 0; left: 0; width: 12px; height: 12px; cursor: nwse-resize; }
+.grip.se { bottom: 0; right: 0; width: 12px; height: 12px; cursor: nwse-resize; }
+.grip.sw { bottom: 0; left: 0; width: 12px; height: 12px; cursor: nesw-resize; }
+
+/* ---------------------------------------------------------------------------
+   Icon art (shared by desktop icons, menus and bars) */
+
+.i-frame { fill: #3b4552; }
+.i-screen { fill: #7cc4f5; }
+.i-stand { fill: #8792a0; }
+.i-folder { fill: var(--folder); }
+.i-folder-back { fill: var(--folder-back); }
+.i-folder-mark { stroke: rgba(0, 0, 0, 0.38); stroke-width: 2.4; stroke-linecap: round; fill: none; }
+.i-folder-dot { fill: rgba(0, 0, 0, 0.38); }
+.i-paper { fill: #ffffff; stroke: #9aa3ad; stroke-width: 1; }
+.i-fold { fill: #e3e7ec; stroke: #9aa3ad; stroke-width: 1; }
+.i-lines { stroke: #8a95a1; stroke-width: 2; stroke-linecap: round; fill: none; }
+.i-gear { fill: #7c8794; }
+.i-hub { fill: #d9dee4; }
+.i-term { fill: #2b2f36; }
+.i-term-mark { stroke: #ffffff; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+.i-welcome { fill: var(--w-accent); }
+.i-welcome-mark { stroke: var(--w-accent-fg); stroke-width: 2.2; stroke-linecap: round; fill: none; }
+
+/* ---------------------------------------------------------------------------
+   Desktop icons: a column on the left (right on Quality), a tab bar on phones */
+
+.kg-icons {
+  position: fixed;
+  z-index: 1;
+  top: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 104px;
+  padding: 14px 8px;
+}
+
+[data-os='quality'] .kg-icons { top: 26px; right: 0; left: auto; }
+[data-os='power'] .kg-icons { top: 32px; }
+
+.kg-icon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 88px;
+  padding: 6px 4px 5px;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: #ffffff;
+  font: inherit;
+  font-size: 12px;
+  text-decoration: none;
+  cursor: default;
+}
+
+.kg-icon-art svg { display: block; width: 44px; height: 44px; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3)); }
+.kg-icon-label { text-align: center; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7), 0 0 1px rgba(0, 0, 0, 0.9); }
+
+.kg-icon:hover { background: rgba(255, 255, 255, 0.16); border-color: rgba(255, 255, 255, 0.24); }
+.kg-icon:focus-visible { outline: 1px dotted #fff; }
+.kg-icon:active { background: rgba(255, 255, 255, 0.26); }
+
+[data-os='quality'] .kg-icon:hover { background: none; border-color: transparent; }
+[data-os='quality'] .kg-icon:hover .kg-icon-art svg { filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3)) brightness(0.85); }
+[data-os='quality'] .kg-icon:hover .kg-icon-label {
+  background: var(--w-accent);
+  border-radius: 4px;
+  text-shadow: none;
+}
+[data-os='quality'] .kg-icon-label { padding: 0 5px; }
+
+[data-os='power'] .kg-icon { border-radius: 8px; }
+[data-os='power'] .kg-icon:hover { background: rgba(255, 255, 255, 0.2); border-color: transparent; }
+
+[data-os='phone'] .kg-icons {
+  inset: auto 0 0 0;
+  z-index: 3000;
+  flex-direction: row;
+  justify-content: space-around;
+  gap: 0;
+  width: auto;
+  height: 64px;
+  padding: 4px 4px max(4px, env(safe-area-inset-bottom));
+  background: var(--bar-bg);
+  border-top: 1px solid var(--w-line);
+  backdrop-filter: blur(16px);
+}
+[data-os='phone'] .kg-icon { width: auto; flex: 1; gap: 2px; padding: 4px 0; color: var(--w-muted); font-size: 11px; }
+[data-os='phone'] .kg-icon:hover { background: none; border-color: transparent; }
+[data-os='phone'] .kg-icon-art svg { width: 30px; height: 30px; filter: none; }
+[data-os='phone'] .kg-icon-label { text-shadow: none; }
+[data-os='phone'] .kg-icon[aria-current='page'] { color: var(--w-accent); font-weight: 600; }
+
+/* ---------------------------------------------------------------------------
+   Bars */
+
+.kg-bar {
+  position: fixed;
+  z-index: 3000;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  background: var(--bar-bg);
+  color: var(--bar-fg);
+  backdrop-filter: blur(24px) saturate(1.4);
+  user-select: none;
+}
+
+.kg-bar svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; }
+.kg-bar svg circle[r='1'],
+.kg-bar .i-fill { fill: currentColor; stroke: none; }
+.kg-bar button { font: inherit; color: inherit; background: none; border: none; cursor: default; }
+
+/* Value: centered taskbar */
+.kg-taskbar { bottom: 0; height: 48px; justify-content: center; border-top: 1px solid rgba(127, 127, 127, 0.25); }
+.kg-task-center { display: flex; align-items: center; gap: 4px; }
+.kg-task-btn {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 5px;
+}
+.kg-task-btn:hover { background: rgba(127, 127, 127, 0.18); }
+.kg-task-btn svg { width: 24px; height: 24px; stroke: none; }
+.kg-start svg { width: 20px; height: 20px; fill: var(--w-accent); }
+.kg-running::after {
+  content: '';
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  width: 16px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--w-accent);
+  translate: -50% 0;
+}
+.kg-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 200px;
+  height: 32px;
+  margin: 0 4px;
+  padding: 0 12px;
+  border: 1px solid rgba(127, 127, 127, 0.3);
+  border-radius: 16px;
+  background: rgba(127, 127, 127, 0.08);
+  color: var(--w-muted);
+}
+.kg-tray { position: absolute; right: 10px; display: flex; align-items: center; gap: 10px; }
+.kg-taskbar .kg-clock { display: flex; flex-direction: column; align-items: flex-end; font-size: 12px; line-height: 1.35; }
+
+/* Quality: menu bar along the top */
+.kg-menubar { top: 0; height: 26px; gap: 18px; padding: 0 16px; font-size: 13px; }
+.kg-menubar b { font-weight: 700; }
+.kg-menubar .kg-spacer { flex: 1; }
+.kg-mark svg { width: 15px; height: 15px; fill: currentColor; stroke: none; }
+.kg-menubar .kg-clock { margin-left: -4px; }
+
+/* Power: black top bar with the clock in the middle */
+.kg-topbar { top: 0; height: 32px; justify-content: space-between; padding: 0 8px; font-size: 14px; font-weight: 500; }
+.kg-activities { padding: 3px 12px; border-radius: 14px; }
+.kg-activities:hover, .kg-status:hover { background: rgba(255, 255, 255, 0.16); }
+.kg-topbar .kg-clock { position: absolute; left: 50%; translate: -50% 0; }
+.kg-status { display: flex; gap: 10px; padding: 4px 10px; border-radius: 14px; }
+
+/* ---------------------------------------------------------------------------
+   Launcher menu (Start / mark / Activities) */
+
+.kg-menu {
+  position: fixed;
+  z-index: 3500;
+  display: flex;
+  flex-direction: column;
+  min-width: 220px;
+  padding: 6px;
+  background: var(--w-bg);
+  color: var(--w-fg);
+  border: 1px solid var(--w-border);
+  border-radius: var(--radius);
+  box-shadow: var(--w-shadow);
+}
+[data-os='value'] .kg-menu { bottom: 56px; left: 50%; translate: -50% 0; min-width: 300px; padding: 10px; }
+[data-os='quality'] .kg-menu { top: 28px; left: 8px; border-radius: 7px; padding: 5px; }
+[data-os='power'] .kg-menu { top: 38px; left: 8px; }
+[data-os='phone'] .kg-menu { display: none !important; }
+
+.kg-menu-head { padding: 6px 10px 8px; color: var(--w-muted); font-size: 12px; font-weight: 600; }
+
+.kg-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  background: none;
+  border: none;
+  border-radius: 5px;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: default;
+}
+.kg-menu-item:hover { background: var(--w-hover); }
+[data-os='quality'] .kg-menu-item:hover { background: var(--w-accent); color: var(--w-accent-fg); }
+.kg-menu-item svg { display: block; width: 24px; height: 24px; }
+
+/* ---------------------------------------------------------------------------
+   Settings window */
+
+.kg-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 5000;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.kg-dialog { position: relative; width: min(460px, 100%); max-height: calc(100vh - 32px); }
+[data-os='phone'] .kg-dialog { border-radius: 14px; border: 1px solid var(--w-border); box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3); }
+[data-os='phone'] .kg-modal { place-items: end center; padding-bottom: 80px; }
+
+.kg-settings-body { overflow: auto; padding: 18px 20px 6px; }
+.kg-field { border: none; margin-bottom: 18px; }
+.kg-field legend { margin-bottom: 8px; font-size: 13px; font-weight: 600; }
+.kg-choices { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.kg-themes { grid-template-columns: repeat(2, 1fr); }
+.kg-hint { margin-top: 8px; color: var(--w-muted); font-size: 12px; }
+
+.kg-choice {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 8px 7px;
+  border: 1px solid var(--w-line);
+  border-radius: calc(var(--radius) * 0.75 + 2px);
+  cursor: pointer;
+}
+.kg-choice:hover { background: var(--w-hover); }
+.kg-choice:has(input:checked) { border-color: var(--w-accent); box-shadow: 0 0 0 1px var(--w-accent); }
+.kg-choice:has(input:focus-visible) { outline: 2px solid var(--w-accent); outline-offset: 2px; }
+.kg-choice input { position: absolute; opacity: 0; pointer-events: none; }
+
+/* tiny pictures of each OS: a bar and a window */
+.kg-preview {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  border-radius: 4px;
+}
+.kg-preview i, .kg-preview b { position: absolute; display: block; }
+.kg-preview b { left: 22%; top: 24%; width: 56%; height: 48%; background: #fff; border-radius: 3px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25); }
+.kg-preview[data-preview='value'] { background: #4a7fb5; }
+.kg-preview[data-preview='value'] i { left: 0; right: 0; bottom: 0; height: 14%; background: rgba(238, 241, 245, 0.92); }
+.kg-preview[data-preview='value'] b { border-top: 5px solid #f3f3f3; }
+.kg-preview[data-preview='quality'] { background: #8fa6c4; }
+.kg-preview[data-preview='quality'] i { left: 0; right: 0; top: 0; height: 9%; background: rgba(246, 246, 246, 0.9); }
+.kg-preview[data-preview='quality'] b { border-top: 5px solid #ebebeb; border-radius: 4px; }
+.kg-preview[data-preview='power'] { background: #8a5a7e; }
+.kg-preview[data-preview='power'] i { left: 0; right: 0; top: 0; height: 11%; background: #000; }
+.kg-preview[data-preview='power'] b { border-top: 7px solid #ebebeb; border-radius: 5px; }
+
+.kg-swatch { display: block; width: 100%; height: 34px; border-radius: 4px; border: 1px solid var(--w-line); }
+.kg-swatch[data-swatch='light'] { background: linear-gradient(135deg, #ffffff 50%, #e9ecef 50%); }
+.kg-swatch[data-swatch='dark'] { background: linear-gradient(135deg, #2b2b2b 50%, #1a1a1a 50%); }
+
+.kg-settings-foot { display: flex; justify-content: flex-end; padding: 10px 20px 16px; }
+
+.kg-btn {
+  min-width: 80px;
+  padding: 5px 16px;
+  background: var(--w-btn);
+  border: 1px solid var(--w-btn-border);
+  border-radius: 5px;
+  color: var(--w-fg);
+  font: inherit;
+  cursor: pointer;
+}
+.kg-btn:hover { filter: brightness(0.96); }
+.kg-primary { background: var(--w-accent); border-color: var(--w-accent); color: var(--w-accent-fg); }
+[data-os='power'] .kg-btn { border-radius: 6px; font-weight: 700; }
+[data-os='quality'] .kg-btn { border-radius: 6px; }
+[data-os='phone'] .kg-btn { width: 100%; padding: 10px; border-radius: 10px; font-size: 15px; }
+[data-os='phone'] .kg-settings-foot { padding: 6px 20px 18px; }

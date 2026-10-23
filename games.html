@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Games · Kramps Games</title>
+  <script src="os/os.js"></script>
+  <link rel="stylesheet" href="os/os.css">
+  <link rel="stylesheet" href="os/site.css">
+</head>
+<body>
+  <div class="window" id="files" data-app="Files">
+    <div class="titlebar">
+      <div class="lights"><span class="close"></span><span class="min"></span><span class="max"></span></div>
+      <div class="window-title" id="files-title">Games</div>
+    </div>
+    <div class="files-toolbar">
+      <button class="nav-btn" id="up" type="button" aria-label="Up one folder">&#8593;</button>
+      <div class="crumbs" id="crumbs"></div>
+    </div>
+    <div class="files-body">
+      <nav class="files-side" id="side" aria-label="Folders"></nav>
+      <section class="files-main">
+        <div class="files-list" id="list"></div>
+        <div class="files-status" id="status"></div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    // The Games folder: one subfolder per category, each game a file inside.
+    // The open folder lives in the URL hash so Back works and links can point
+    // straight at a category (games.html#word-games).
+    const FOLDERS = [
+      {
+        id: 'word-games',
+        name: 'Word Games',
+        games: [
+          { name: 'Letter Groups', href: 'letter-groups/', kind: 'Word puzzle', desc: 'Cover every letter in as few words as you can.' },
+        ],
+      },
+      {
+        id: 'evergreen',
+        name: 'World of Evergreen',
+        games: [
+          { name: "Jamie's Journal", href: 'jamies-journal/', kind: 'Word deduction', desc: "Find the key to decrypt each entry of Jamie's journal." },
+          { name: "Jo's Discovery", href: 'jos-discovery/', kind: 'Deckbuilder', desc: "Write a script and break into Evergreen's restricted records." },
+        ],
+      },
+    ];
+
+    const FOLDER_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 7a2 2 0 0 1 2-2h5l2 2h9a2 2 0 0 1 2 2v1H2z" class="i-folder-back"/><rect x="2" y="9" width="20" height="11" rx="2" class="i-folder"/></svg>';
+    const GAME_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="3" class="i-term"/><path d="m6 9 3 3-3 3M11 15h6" class="i-term-mark"/></svg>';
+
+    const $ = (id) => document.getElementById(id);
+    const esc = (s) => s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+
+    function current() {
+      return FOLDERS.find((f) => `#${f.id}` === location.hash) || null;
+    }
+
+    function row({ href, icon, name, kind, desc }) {
+      return `<a class="file-row" href="${href}">
+        <span class="file-name">${icon}<span>${esc(name)}</span></span>
+        <span class="file-kind">${esc(kind)}</span>
+        <span class="file-desc">${esc(desc)}</span>
+      </a>`;
+    }
+
+    function render() {
+      const folder = current();
+      const sep = KG.pick({ value: '›', quality: '›', power: '/' });
+
+      $('files-title').textContent = folder ? folder.name : 'Games';
+      $('up').disabled = !folder;
+      $('crumbs').innerHTML = folder
+        ? `<a href="#">Games</a><span class="sep">${sep}</span><span>${esc(folder.name)}</span>`
+        : '<span>Games</span>';
+
+      $('side').innerHTML =
+        '<h2>Games</h2>' +
+        [{ id: '', name: 'All games' }, ...FOLDERS]
+          .map((f) => {
+            const on = (folder?.id || '') === f.id ? ' aria-current="true"' : '';
+            return `<a href="#${f.id}"${on}>${FOLDER_ICON}<span>${esc(f.name)}</span></a>`;
+          })
+          .join('');
+
+      const rows = folder
+        ? folder.games.map((g) => row({ ...g, icon: GAME_ICON }))
+        : FOLDERS.map((f) =>
+            row({ href: `#${f.id}`, icon: FOLDER_ICON, name: f.name, kind: 'Folder', desc: `${f.games.length} ${f.games.length === 1 ? 'game' : 'games'}` }),
+          );
+      $('list').innerHTML = `<div class="files-head"><span>Name</span><span>Type</span><span>Description</span></div>${rows.join('')}`;
+      const count = rows.length;
+      $('status').textContent = `${count} ${count === 1 ? 'item' : 'items'}`;
+    }
+
+    $('up').addEventListener('click', () => (location.hash = ''));
+    window.addEventListener('hashchange', render);
+    KG.onChange(render);
+    render();
+
+    KG.makeWindow($('files'), {
+      minW: 420,
+      minH: 260,
+      rect: (a) => {
+        const w = Math.min(820, a.w - 60);
+        const h = Math.min(460, a.h - 60);
+        return { x: a.x + (a.w - w) / 2, y: a.y + (a.h - h) / 2.6, w, h };
+      },
+    });
+  </script>
+</body>
+</html>

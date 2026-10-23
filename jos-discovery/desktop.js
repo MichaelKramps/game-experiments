@@ -1,15 +1,15 @@
 // The desktop: three windows (terminal, files, notepad). Drag a window by its
 // title bar, resize from any edge or corner, double-click the title bar to
 // maximize/restore, click anywhere in it to bring it to the front. Positions
-// and sizes are remembered per browser. On narrow screens the windows stack
-// in a column instead.
+// and sizes are remembered per browser. Windows stay inside the site shell's
+// work area (../os/os.js); on phones they stack in a column instead.
 
 const Desktop = (() => {
   const LAYOUT_KEY = 'jos-discovery-windows';
   const MIN_W = 320;
   const MIN_H = 180;
   const MARGIN = 24; // how much of the title bar must stay on screen
-  const narrow = window.matchMedia('(max-width: 760px)');
+  const narrow = { get matches() { return KG.os() === 'phone'; } };
 
   const wins = {};
   let saved = load();
@@ -34,31 +34,29 @@ const Desktop = (() => {
   }
 
   function defaultRects() {
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
-    const pad = 20;
-    const topH = Math.round(vh * 0.6);
-    const termW = Math.round(Math.min(780, vw * 0.54));
-    const filesX = pad + termW + 14;
+    const a = KG.workArea();
+    const pad = 16;
+    const topH = Math.round(a.h * 0.6);
+    const termW = Math.round(Math.min(780, a.w * 0.54));
+    const filesX = a.x + pad + termW + 14;
     return {
-      terminal: { x: pad, y: pad, w: termW, h: topH },
-      files: { x: filesX, y: pad + 28, w: Math.max(MIN_W, vw - filesX - pad), h: topH },
+      terminal: { x: a.x + pad, y: a.y + pad, w: termW, h: topH },
+      files: { x: filesX, y: a.y + pad + 28, w: Math.max(MIN_W, a.x + a.w - filesX - pad), h: topH },
       notepad: {
-        x: pad + 40,
-        y: pad + topH + 14,
-        w: Math.round(Math.min(620, vw * 0.45)),
-        h: Math.max(MIN_H, vh - topH - pad * 2 - 14),
+        x: a.x + pad + 40,
+        y: a.y + pad + topH + 14,
+        w: Math.round(Math.min(620, a.w * 0.45)),
+        h: Math.max(MIN_H, a.h - topH - pad * 2 - 14),
       },
     };
   }
 
   function clamp(r) {
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
-    const w = Math.max(MIN_W, Math.min(r.w, vw));
-    const h = Math.max(MIN_H, Math.min(r.h, vh));
-    const x = Math.min(Math.max(r.x, MARGIN - w), vw - MARGIN * 3);
-    const y = Math.min(Math.max(r.y, 0), vh - MARGIN);
+    const a = KG.workArea();
+    const w = Math.max(MIN_W, Math.min(r.w, a.w));
+    const h = Math.max(MIN_H, Math.min(r.h, a.h));
+    const x = Math.max(a.x, Math.min(r.x, a.x + a.w - w)); // never over the desktop icons
+    const y = Math.min(Math.max(r.y, a.y), a.y + a.h - MARGIN);
     return { x, y, w, h };
   }
 
@@ -67,6 +65,7 @@ const Desktop = (() => {
       w.el.style.cssText = '';
       return;
     }
+    if (w.restoreRect) w.rect = { ...KG.workArea() };
     w.rect = clamp(w.rect);
     Object.assign(w.el.style, {
       left: `${w.rect.x}px`,
@@ -137,7 +136,7 @@ const Desktop = (() => {
     el.addEventListener('pointerdown', () => focus(id), true);
 
     titlebar.addEventListener('pointerdown', (e) => {
-      if (e.button !== 0 || narrow.matches) return;
+      if (e.button !== 0 || narrow.matches || e.target.closest('.lights')) return;
       track(e, w, (dx, dy, s) => {
         if (w.restoreRect) {
           // Dragging a maximized window restores it under the cursor.
@@ -152,18 +151,19 @@ const Desktop = (() => {
       });
     });
 
-    titlebar.addEventListener('dblclick', () => {
+    const toggleMax = () => {
       if (narrow.matches) return;
       if (w.restoreRect) {
         w.rect = w.restoreRect;
         w.restoreRect = null;
       } else {
         w.restoreRect = w.rect;
-        w.rect = { x: 0, y: 0, w: window.innerWidth, h: window.innerHeight };
       }
       apply(w);
       persist();
-    });
+    };
+    titlebar.addEventListener('dblclick', (e) => !e.target.closest('.lights') && toggleMax());
+    titlebar.querySelector('.lights .max').addEventListener('click', toggleMax);
 
     apply(w);
   }
@@ -193,7 +193,7 @@ const Desktop = (() => {
   }
 
   window.addEventListener('resize', () => Object.values(wins).forEach(apply));
-  narrow.addEventListener('change', () => Object.values(wins).forEach(apply));
+  KG.onChange(() => Object.values(wins).forEach(apply));
 
   return { register, focus, setTitle, close, open, resetLayout };
 })();

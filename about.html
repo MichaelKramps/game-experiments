@@ -1,62 +1,38 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>About</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      background: #0d0d1a;
-      color: #ffffff;
-      font-family: monospace;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 60px 20px;
-    }
-    main {
-        max-width: 800px;
-    }
-    nav {
-      position: absolute;
-      top: 20px;
-      left: 20px;
-    }
-    nav a {
-      color: #666;
-      text-decoration: none;
-      font-size: 0.85rem;
-      letter-spacing: 0.05em;
-    }
-    nav a:hover { color: #44ff88; }
-    h1 {
-      font-size: 2rem;
-      margin-bottom: 72px;
-      letter-spacing: 0.1em;
-    }
-    p {
-      color: #ccc;
-      font-size: 0.9rem;
-      margin-bottom: 36px;
-    }
-    p a {
-      color: #44ff88;
-      text-decoration: none;
-    }
-    p a:hover {
-      text-decoration: underline;
-    }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>About · Kramps Games</title>
+  <script src="os/os.js"></script>
+  <link rel="stylesheet" href="os/os.css">
+  <link rel="stylesheet" href="os/site.css">
 </head>
 <body>
-  <nav><a href="index.html">← back</a></nav>
-  <main>
+  <div class="window" id="notes" data-app="Notes">
+    <div class="titlebar">
+      <div class="lights"><span class="close"></span><span class="min"></span><span class="max"></span></div>
+      <div class="window-title">About.txt — Notes</div>
+    </div>
+    <div class="notes-menu"><span>File</span><span>Edit</span><span>Format</span><span>View</span><span>Help</span></div>
+    <div class="notes-page">
       <h1>About Kramps Games</h1>
       <p>Kramps Games is named after me, Michael Kramps, the sole developer. My games can be played directly in your browser with any device.</p>
-      <p>All my games are free of advertisements. The <a href="free-games.html">free games</a> require no sign up. The <a href="full-games.html">full games</a> require a Google account to log in, and each game can be purchased in full for a one time price.</p>
+      <p>All my games are free of advertisements and require no sign up.</p>
       <p>I tend to build low stress games, which often means turn-based, or untimed game speed. I also enjoy strategy in games more than real time skill.</p>
-  </main>
+    </div>
+    <div class="notes-status"><span>Ln 1, Col 1</span><span>100%</span><span>UTF-8</span></div>
+  </div>
+  <script>
+    KG.makeWindow(document.getElementById('notes'), {
+      minW: 340,
+      minH: 240,
+      rect: (a) => {
+        const w = Math.min(640, a.w - 60);
+        const h = Math.min(420, a.h - 60);
+        return { x: a.x + (a.w - w) / 2, y: a.y + (a.h - h) / 2.6, w, h };
+      },
+    });
+  </script>
 </body>
 </html>

@@ -14,6 +14,15 @@ const viewEl = document.getElementById('view');
 const hintsEl = document.getElementById('hints');
 const titleEl = document.getElementById('window-title');
 
+// The shell's look follows the site's OS setting (../os/os.js): prompts,
+// paths, commands and the window title all change with it.
+const USER = 'jtaylor';
+const HOST = 'fernway';
+const shell = (cmd) => `${KG.prompt(USER, HOST, '~/journal')}${KG.pick({ value: cmd.value, power: cmd.unix })}`;
+const LIST_CMD = { value: 'dir', unix: 'ls -l ~/journal' };
+const READ_CMD = (file) => ({ value: `type ${file}`, unix: `cat ${file}` });
+const DECRYPT_CMD = (file) => ({ value: `decrypt ${file}`, unix: `decrypt ${file}` });
+
 // ---------------------------------------------------------------------------
 // Progress: per entry (keyed by title) the current key, guesses so far and
 // whether it's been decrypted. Saved so a refresh can't reset a bad run.
@@ -108,9 +117,16 @@ function gap() {
   return el('div', 'gap');
 }
 
-function setStatus(left, right) {
+// `file` is an entry's file name, or omitted for the journal folder itself.
+function setStatus(file, right) {
+  const dir = file ? `~/journal/${file}` : '~/journal';
+  const left = KG.pick({ value: KG.path(dir.replace('~', `C:/Users/${USER}`)), power: `${USER}@${HOST}:${dir}` });
   statusEl.replaceChildren(el('span', '', left), el('span', '', right));
-  titleEl.textContent = `${left.replace('jtaylor@fernway:', '')} — jtaylor — zsh`;
+  titleEl.textContent = KG.pick({
+    value: `Terminal — ${file || 'journal'}`,
+    quality: `${file || 'journal'} — ${USER} — zsh`,
+    power: `${USER}@${HOST}: ${dir}`,
+  });
 }
 
 function setHints(hints) {
@@ -144,6 +160,7 @@ function unlockedCount() {
 let screen = 'list';
 let selected = 0;
 let typing = null; // active typewriter, so a keypress can skip it
+let redraw = null; // repaints the current screen when the OS setting changes
 
 function stopTyping() {
   if (typing) {
@@ -155,7 +172,8 @@ function stopTyping() {
 function showList() {
   stopTyping();
   screen = 'list';
-  setStatus('jtaylor@fernway:~/journal', `${unlockedCount()}/${ENTRIES.length} decrypted`);
+  redraw = showList;
+  setStatus(null, `${unlockedCount()}/${ENTRIES.length} decrypted`);
   setHints([
     ['[↑/↓] select', null],
     ['[enter] open', () => openEntry(selected)],
@@ -180,7 +198,7 @@ function showList() {
     list.append(row);
   });
 
-  viewEl.replaceChildren(line('$ ls -l ~/journal', 'dim'), gap(), list);
+  viewEl.replaceChildren(line(shell(LIST_CMD), 'dim'), gap(), list);
   list.children[selected]?.scrollIntoView({ block: 'nearest' });
 }
 
@@ -203,18 +221,19 @@ function openEntry(i) {
 function showDecrypt(i, messages = []) {
   stopTyping();
   screen = 'decrypt';
+  redraw = () => showDecrypt(i, messages);
   const entry = ENTRIES[i];
   const state = entryState(entry);
   const left = MAX_GUESSES - state.guesses.length;
 
-  setStatus(`jtaylor@fernway:~/journal/${fileName(i)}`, 'ENCRYPTED');
+  setStatus(fileName(i), 'ENCRYPTED');
   setHints([
     ['[enter] submit key', null],
     ['[esc] back', showList],
   ]);
 
   const nodes = [
-    line(`$ decrypt ${fileName(i)}`, 'dim'),
+    line(shell(DECRYPT_CMD(fileName(i))), 'dim'),
     gap(),
     line(`${fileName(i)} is encrypted.`),
     line(`key: common english word, ${KEY_LEN} letters`, 'dim'),
@@ -349,10 +368,11 @@ function submitGuess(i, raw) {
 
 function showDenied(i, oldKey) {
   screen = 'denied';
-  setStatus(`jtaylor@fernway:~/journal/${fileName(i)}`, 'LOCKED OUT');
+  redraw = () => showDenied(i, oldKey);
+  setStatus(fileName(i), 'LOCKED OUT');
   setHints([['[enter] back to journal', showList]]);
   viewEl.replaceChildren(
-    line(`$ decrypt ${fileName(i)}`, 'dim'),
+    line(shell(DECRYPT_CMD(fileName(i))), 'dim'),
     gap(),
     line(`ACCESS DENIED — ${MAX_GUESSES} failed attempts.`, 'bad'),
     line(`the key was: ${oldKey.toUpperCase()}`),
@@ -365,12 +385,13 @@ function showDenied(i, oldKey) {
 function showRead(i, fresh) {
   stopTyping();
   screen = 'read';
+  redraw = () => showRead(i, false);
   const entry = ENTRIES[i];
-  setStatus(`jtaylor@fernway:~/journal/${fileName(i)}`, 'DECRYPTED');
+  setStatus(fileName(i), 'DECRYPTED');
   setHints([['[esc] back', showList]]);
 
   const body = el('div', 'entry-body');
-  const header = [line(`$ cat ${fileName(i)}`, 'dim'), gap()];
+  const header = [line(shell(READ_CMD(fileName(i))), 'dim'), gap()];
   if (fresh) header.unshift(line('KEY ACCEPTED. decrypting…'), gap());
   viewEl.replaceChildren(...header, line(`— ${entry.title} —`), gap(), body);
 
@@ -433,5 +454,7 @@ viewEl.addEventListener('click', () => {
   if (screen === 'decrypt') viewEl.querySelector('.prompt input')?.focus();
   else if (screen === 'read' && typing) stopTyping();
 });
+
+KG.onChange(() => redraw?.());
 
 showList();

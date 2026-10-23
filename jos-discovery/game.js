@@ -1,11 +1,11 @@
 // Jo's Discovery — the three programs and the operation's flow.
 // Terminal: recon, running a hack, results. Files: /script, /incoming,
-// /tools, /records. Notepad: Jo's own words. Rules live in engine.js; this
+// /tools, /records. Notes: Jo's own words. Rules live in engine.js; this
 // file only plays back the events the engine returns.
 
 const SAVE_KEY = 'jos-discovery-save';
 const SETTINGS_KEY = 'jos-discovery-settings';
-const PS1 = 'jo@ev-ws-4471:~$ ';
+const OLD_PS1 = 'jo@ev-ws-4471:~$ '; // saved logs from before the OS setting baked this in
 const GLYPHS = '▓▒░█▚▞▙▟';
 const LINE_MS = 1520; // per line at 1x; slow enough to follow each card
 const SPEEDS = [1, 2, 4, 8];
@@ -106,8 +106,21 @@ const BAR_MID = '\x02';
 const BAR_CLOSE = '\x03';
 const BAR_RE = /\x01(jo|sys)\x02([^\x03]*)\x03/g;
 
+// The shell follows the site's OS setting (../os/os.js). Command lines are
+// logged without their prompt, and paths are translated when drawn, so the
+// whole log redraws in the current OS's style.
+const ps1 = () => KG.prompt('jo', 'ev-ws-4471');
+const GAME_PATH = /(?<![\w.])(\.?\/)(script|incoming|tools|records)\b[^\s,)]*/g;
+
+function osText(text, cls) {
+  if (cls === 'cmd') text = ps1() + (text.startsWith(OLD_PS1) ? text.slice(OLD_PS1.length) : text);
+  if (KG.os() === 'value') text = text.replace(GAME_PATH, (p) => KG.path(p));
+  return text;
+}
+
 function renderLine({ text, cls }) {
   const line = el('div', `tl ${cls || ''}`.trim());
+  text = osText(text, cls);
   let last = 0;
   for (const m of text.matchAll(BAR_RE)) {
     line.append(text.slice(last, m.index), el('span', `bar-${m[1]}`, m[2]));
@@ -137,8 +150,8 @@ function renderTermLog() {
 
 function setPrompt(cmd, action) {
   prompt = cmd ? { cmd, action } : null;
-  termPrompt.replaceChildren(el('span', 'ps1', PS1));
-  if (cmd) termPrompt.append(el('span', 'cmd', cmd));
+  termPrompt.replaceChildren(el('span', 'ps1', ps1()));
+  if (cmd) termPrompt.append(el('span', 'cmd', osText(cmd)));
   if (cmd || S.phase !== 'ending') termPrompt.append(el('span', 'cursor'));
   scrollTerm();
 }
@@ -479,8 +492,8 @@ function renderFiles() {
   if (fs.file || fs.sub) {
     fsPath.append(button('‹', () => (fs.file ? fsGoto(fs.dir, fs.sub) : fsGoto(fs.dir)), 'back'));
   }
-  fsPath.append(el('span', '', fsPathText()));
-  Desktop.setTitle('files', `Files — ${fsPathText()}`);
+  fsPath.append(el('span', '', KG.path(fsPathText())));
+  Desktop.setTitle('files', `Files — ${KG.path(fsPathText())}`);
 
   fsNote.textContent = '';
   fsView.classList.remove('as-file');
@@ -698,7 +711,7 @@ function fsOpenRecord(pid, idx, animate = false) {
 }
 
 // ---------------------------------------------------------------------------
-// Notepad
+// Notes
 
 const npList = $('np-list');
 const npPage = $('np-page');
@@ -723,7 +736,7 @@ function renderNotepad() {
   );
   const note = S.notes.find((n) => n.id === selectedNote);
   if (!typing) npPage.textContent = note ? note.text : '';
-  Desktop.setTitle('notepad', note ? `Notepad — ${fmtDate(note.date)}` : 'Notepad');
+  Desktop.setTitle('notepad', note ? `Notes — ${fmtDate(note.date)}` : 'Notes');
 }
 
 let typeToken = 0;
@@ -772,7 +785,7 @@ function enterReady() {
   const info = hackInfo(S.hack);
   if (!S.reconShown) {
     const types = CARD_POOL.filter((c) => makeCountermeasures(S.opSeed, S.hack).includes(c)).map((c) => CARDS[c].name);
-    appendLine(`${PS1}recon --target ${info.target}`, 'cmd');
+    appendLine(`recon --target ${info.target}`, 'cmd');
     appendLine(`[recon]  ${info.label}    integrity ${info.integrity}`, 'recon');
     appendLine(`[recon]  countermeasures: ${types.join(', ')}    (counts unknown)`, 'recon');
     appendLine(statusLine(), 'recon');
@@ -796,7 +809,7 @@ function runHack() {
 
 function startRun(instant) {
   const result = simulateHack(hackInput(S.opSeed, S.run.hack, S.run));
-  appendLine(`${PS1}run ./script --target ${hackInfo(S.run.hack).target}`, 'cmd');
+  appendLine(`run ./script --target ${hackInfo(S.run.hack).target}`, 'cmd');
   renderFiles();
   const maxes = { jo: S.run.maxCover, sys: hackInfo(S.run.hack).integrity };
   const base = { maxCover: maxes.jo, maxIntegrity: maxes.sys };
@@ -866,7 +879,7 @@ async function revealProgram(program) {
 }
 
 function reconnect() {
-  appendLine(`${PS1}reconnect`, 'cmd');
+  appendLine('reconnect', 'cmd');
   newOperation(S);
   appendLine(`[session] operation ${S.opNumber}`, 'recon');
   save();
@@ -990,7 +1003,7 @@ async function runEnding() {
   document.body.classList.add('last-note');
   selectedNote = null;
   npPage.textContent = '';
-  Desktop.setTitle('notepad', 'Notepad');
+  Desktop.setTitle('notepad', 'Notes');
   Desktop.open('notepad');
   await sleep(900);
   await typeInto(npPage, STORY.closing, 55);
@@ -1127,5 +1140,12 @@ function boot() {
 
   if (firstVisit) addNote('opening', STORY.opening);
 }
+
+// Redraw everything that's written in the OS's style.
+KG.onChange(() => {
+  renderTermLog();
+  if (termPrompt.querySelector('.ps1')) setPrompt(prompt?.cmd, prompt?.action);
+  renderFiles();
+});
 
 boot();

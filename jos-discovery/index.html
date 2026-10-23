@@ -4,10 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Jo's Discovery</title>
+  <script src="../os/os.js"></script>
+  <link rel="stylesheet" href="../os/os.css">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="window terminal" data-win="terminal">
+  <div class="window terminal" data-win="terminal" data-app="Terminal">
     <div class="titlebar">
       <div class="lights"><span class="close"></span><span class="min"></span><span class="max"></span></div>
       <div class="window-title">Terminal — jo@ev-ws-4471</div>
@@ -20,7 +22,7 @@
     <div id="term-hints"></div>
   </div>
 
-  <div class="window files" data-win="files">
+  <div class="window files" data-win="files" data-app="Files">
     <div class="titlebar">
       <div class="lights"><span class="close"></span><span class="min"></span><span class="max"></span></div>
       <div class="window-title">Files</div>
@@ -36,10 +38,10 @@
     </div>
   </div>
 
-  <div class="window notepad" data-win="notepad">
+  <div class="window notepad" data-win="notepad" data-app="Notes">
     <div class="titlebar">
       <div class="lights"><span class="close"></span><span class="min"></span><span class="max"></span></div>
-      <div class="window-title">Notepad</div>
+      <div class="window-title">Notes</div>
     </div>
     <div class="notepad-body">
       <ul id="np-list"></ul>

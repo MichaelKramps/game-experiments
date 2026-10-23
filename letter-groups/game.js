@@ -279,7 +279,10 @@ kbEl.addEventListener('input', () => {
   render();
 });
 
-function focusKeyboard() {
+// The site shell (icons, menus, Settings) keeps its own focus.
+function focusKeyboard(e) {
+  if (e?.target?.closest?.('.kg-icons, .kg-bar, .kg-menu, .kg-modal')) return;
+  if (document.querySelector('.kg-modal:not([hidden])')) return;
   kbEl.focus({ preventScroll: true });
 }
 
