@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Jo's Discovery</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="window terminal" data-win="terminal">
+    <div class="titlebar">
+      <div class="lights"><span class="close"></span><span class="min"></span><span class="max"></span></div>
+      <div class="window-title">Terminal — jo@ev-ws-4471</div>
+    </div>
+    <div class="term-body">
+      <div id="term-log"></div>
+      <div id="term-prompt"></div>
+    </div>
+    <div id="term-panel" hidden></div>
+    <div id="term-hints"></div>
+  </div>
+
+  <div class="window files" data-win="files">
+    <div class="titlebar">
+      <div class="lights"><span class="close"></span><span class="min"></span><span class="max"></span></div>
+      <div class="window-title">Files</div>
+    </div>
+    <div class="files-body">
+      <nav id="fs-side"></nav>
+      <section class="fs-main">
+        <div id="fs-path"></div>
+        <div id="fs-note"></div>
+        <div id="fs-view"></div>
+        <div id="fs-status"></div>
+      </section>
+    </div>
+  </div>
+
+  <div class="window notepad" data-win="notepad">
+    <div class="titlebar">
+      <div class="lights"><span class="close"></span><span class="min"></span><span class="max"></span></div>
+      <div class="window-title">Notepad</div>
+    </div>
+    <div class="notepad-body">
+      <ul id="np-list"></ul>
+      <div id="np-page"></div>
+    </div>
+  </div>
+
+  <div id="fade"><div id="title-card"></div><button id="begin-again" type="button">new operation</button></div>
+
+  <script src="data.js"></script>
+  <script src="records.js"></script>
+  <script src="engine.js"></script>
+  <script src="desktop.js"></script>
+  <script src="game.js"></script>
+  <script src="debug.js"></script>
+</body>
+</html>

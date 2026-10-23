@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Letter Groups</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <footer id="credits">
+    Word lists from SCOWL 2020.12.07 (wordlist.aspell.net), Copyright 2000-2018 Kevin Atkinson and contributors, used under its permissive license.
+  </footer>
+  <div class="window" id="term">
+    <div class="titlebar" id="titlebar">
+      <div class="lights"><span class="close"></span><span class="min"></span><span class="max"></span></div>
+      <div class="window-title">Terminal — letter-groups</div>
+    </div>
+    <main id="screen" aria-live="polite"></main>
+  </div>
+  <!-- Keeps a text field focused so phones open their keyboard. -->
+  <input id="kb" type="text" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" aria-label="Type a word">
+  <script src="words.js"></script>
+  <script src="engine.js"></script>
+  <script src="window.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
