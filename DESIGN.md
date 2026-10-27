@@ -31,6 +31,7 @@ Every site page **and** every listed game shows the same desktop icons:
 - **Home (`index.html`)**: solid desktop color, the icons, and a small "Welcome" window explaining the site.
 - **Games (`games.html`)**: one file-explorer window with a folder per category and each game as a file inside.
   - **Word Games**: Letter Groups (`letter-groups/`)
+  - **Deckbuilding Games**: Ctrl+Alt+Deal (`ctrl-alt-deal/`), Jo's Discovery (`jos-discovery/`)
   - **World of Evergreen**: Jamie's Journal (`jamies-journal/`), Jo's Discovery (`jos-discovery/`)
 - **About (`about.html`)**: a desktop with a notepad window open holding the about text. Keep the current text minus the full-games/Google-login part (not built yet).
 - **`free-games.html`, `full-games.html`**: deleted, and 301-redirected to `/games` via `_redirects` (Cloudflare static assets).

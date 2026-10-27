@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ctrl+Alt+Deal</title>
+  <script src="../os/os.js"></script>
+  <link rel="stylesheet" href="../os/os.css">
+  <link rel="stylesheet" href="../os/site.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Phones show one window at a time; this switches between them. -->
+  <div class="screen-tabs" role="tablist" aria-label="Windows">
+    <button type="button" role="tab" data-screen="account">Account</button>
+    <button type="button" role="tab" data-screen="cards">Cards</button>
+  </div>
+
+  <div class="window account" id="account" data-app="Account">
+    <div class="titlebar">
+      <div class="lights"><span class="close"></span><span class="min"></span><span class="max"></span></div>
+      <div class="window-title" id="account-title">Account</div>
+    </div>
+    <div class="acct">
+      <section class="acct-sheet">
+        <div class="acct-row"><span class="acct-label">Bankroll</span><b class="acct-bankroll" id="bankroll"></b></div>
+        <div class="acct-row"><span class="acct-label">Progress</span><span id="stage"></span></div>
+        <div class="acct-pips" id="pips" aria-hidden="true"></div>
+        <div class="acct-row"><span class="acct-label">Boss</span><span id="boss"></span></div>
+      </section>
+
+      <section class="acct-group">
+        <h3>Bet</h3>
+        <div class="acct-range" id="range"></div>
+        <div class="bet-row">
+          <button class="kg-btn step" type="button" id="bet-down" aria-label="Lower bet">−</button>
+          <label class="bet-field"><span>$</span><input id="bet" type="number" inputmode="numeric" min="1" step="1" aria-label="Bet in dollars"></label>
+          <button class="kg-btn step" type="button" id="bet-up" aria-label="Raise bet">+</button>
+          <button class="kg-btn mini" type="button" id="bet-min">Min</button>
+          <button class="kg-btn mini" type="button" id="bet-max">Max</button>
+        </div>
+        <button class="kg-btn kg-primary deal" type="button" id="deal">Deal</button>
+        <p class="acct-note" id="bet-note"></p>
+      </section>
+
+      <section class="acct-group" id="last-box">
+        <h3>Last hand</h3>
+        <div id="last"></div>
+      </section>
+
+      <section class="acct-group">
+        <h3>Paytable</h3>
+        <table class="paytable" id="paytable"></table>
+        <p class="acct-note">Profit as a multiple of your bet. −1x loses it. Increase Hand Payout (in the Cards window's Deck folder) doubles a hand's payout.</p>
+      </section>
+
+      <section class="acct-group">
+        <h3>Recent hands</h3>
+        <ol class="log" id="log"></ol>
+      </section>
+
+      <div class="acct-foot"><button class="kg-btn" type="button" id="new-run">New run</button></div>
+    </div>
+  </div>
+
+  <div class="window cards" id="cards" data-app="Files">
+    <div class="titlebar">
+      <div class="lights"><span class="close"></span><span class="min"></span><span class="max"></span></div>
+      <div class="window-title" id="cards-title">Deck</div>
+    </div>
+    <div class="files-toolbar">
+      <button class="nav-btn" id="up" type="button" aria-label="Up one folder">&#8593;</button>
+      <div class="crumbs" id="crumbs"></div>
+      <button class="tool-btn shop danger" id="tool-remove" type="button" title="Permanently delete the selected card (Shift+Del)"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 6h12M8 6V4h4v2M6 6l1 10h6l1-10"/></svg><span></span></button>
+      <button class="tool-btn shop" id="tool-duplicate" type="button" title="Duplicate the selected card (Ctrl+C, Ctrl+V)"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="7" y="7" width="9" height="10" rx="1.5"/><path d="M13 7V4.5A1.5 1.5 0 0 0 11.5 3h-6A1.5 1.5 0 0 0 4 4.5v8A1.5 1.5 0 0 0 5.5 14H7"/></svg><span></span></button>
+      <button class="tool-btn shop" id="tool-suit" type="button" title="Change the selected card's suit"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 7h10l-3-3M16 13H6l3 3"/></svg><span></span></button>
+      <button class="tool-btn shop" id="tool-payout" type="button" title="Double one hand's payout"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 16V4M5 9l5-5 5 5"/></svg><span></span></button>
+      <button class="tool-btn primary" id="tool-draw" type="button" title="Draw (F5)"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M16 10a6 6 0 1 1-1.8-4.3M16 3v4h-4"/></svg><span>Draw</span></button>
+    </div>
+    <div class="files-body">
+      <nav class="files-side" id="side" aria-label="Folders"></nav>
+      <section class="files-main">
+        <div class="banner" id="banner" aria-live="polite"></div>
+        <div class="icon-view" id="view" tabindex="-1"></div>
+        <div class="files-status" id="status"></div>
+      </section>
+    </div>
+  </div>
+
+  <div class="ctx" id="ctx" role="menu" hidden></div>
+
+  <script src="engine.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
