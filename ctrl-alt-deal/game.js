@@ -1,10 +1,9 @@
 // Ctrl+Alt+Deal UI: two windows on the site shell (../os/os.js).
-//   Account — bankroll, progress, the bet and Deal, paytable, recent hands.
-//   Cards   — a file browser where every card is a file: Deck and
-//             Hand. Select cards in Hand, then Draw (Refresh) replaces
-//             them. And
-//             between hands the right-click menu duplicates or permanently
-//             deletes cards from Deck.
+//   Account — bankroll, bet size, progress, the paytable.
+//   Cards   — a file browser where every card is a file: Deck and Hand.
+//             Deal sits at the left of its toolbar. Select cards in Hand,
+//             then Draw (Refresh) replaces them. Between hands the Deck
+//             toolbar and right-click menu are the shop.
 // Rules live in engine.js. The run is saved to localStorage after every move.
 
 (() => {
@@ -34,10 +33,12 @@
   let folder = run.phase === 'hold' ? 'hand' : 'deck';
   let selected = new Set();
   let clipboard = null; // card id copied with Ctrl+C
-  let betValue = null;
   let screen = 'account'; // phones show one window at a time
   let modalOpen = false;
   let fresh = new Set(); // ids drawn in the last draw, highlighted once
+  let helpHidden = false; // the banner's how-to text, dismissed until the page reloads
+
+  const HOW_TO_KEY = 'ctrl-alt-deal-how-to-seen'; // the how-to note opens by itself only on a first visit
 
   // -------------------------------------------------------------------------
   // Saving
@@ -96,26 +97,12 @@
     </div>`;
   }
 
-  function folderTile(id, name, count) {
-    return `<div class="file folder-file" data-open="${id}" tabindex="0" role="option">
-      <span class="folder-icon">${FOLDER_ICON}</span>
-      <span class="file-label">${esc(name)}</span>
-      <span class="file-sub">${count} ${count === 1 ? 'item' : 'items'}</span>
-    </div>`;
-  }
-
   // -------------------------------------------------------------------------
   // Folders
 
   function folderName(id) {
-    if (id === 'root') return 'Cards';
     if (id === 'deck') return 'Deck';
     return 'Hand';
-  }
-
-  function parentOf(id) {
-    if (id === 'root') return null;
-    return 'root';
   }
 
   function handCards() {
@@ -135,7 +122,6 @@
 
   function counts() {
     return {
-      root: 2,
       deck: run.deck.length,
       hand: handCards().length,
     };
@@ -154,15 +140,7 @@
 
   function renderCards() {
     const n = counts();
-    const sep = KG.pick({ value: '›', quality: '›', power: '/' });
     $('cards-title').textContent = folderName(folder);
-    $('up').disabled = folder === 'root';
-
-    const trail = [];
-    for (let f = folder; f; f = parentOf(f)) trail.unshift(f);
-    $('crumbs').innerHTML = trail
-      .map((f, i) => (i === trail.length - 1 ? `<span>${folderName(f)}</span>` : `<a href="#" data-open="${f}">${folderName(f)}</a>`))
-      .join(`<span class="sep">${sep}</span>`);
 
     const side = (id, icon, cls = '') =>
       `<a href="#" data-open="${id}" class="${cls}"${folder === id ? ' aria-current="true"' : ''}>${icon}<span>${folderName(id)}</span><em>${n[id]}</em></a>`;
@@ -172,8 +150,7 @@
       side('hand', FOLDER_ICON);
 
     let tiles;
-    if (folder === 'root') tiles = ['deck', 'hand'].map((f) => folderTile(f, folderName(f), n[f]));
-    else if (folder === 'deck') tiles = deckCards().map((c) => cardTile(c));
+    if (folder === 'deck') tiles = deckCards().map((c) => cardTile(c));
     else if (folder === 'hand') tiles = handCards().map((c) => cardTile(c, { extra: run.phase === 'hold' ? '' : 'done' }));
 
     const empty = {
@@ -191,14 +168,16 @@
     const p = E.prices(run);
     const count = run.phase === 'hold' && folder === 'hand' ? run.round.trashed.length : selected.size;
     const sel = count ? ` · ${count} selected` : '';
-    $('status').textContent = `${run.deck.length} cards in deck · Delete ${money(p.remove)} · Duplicate ${money(p.duplicate)} · Change suit ${money(p.suit)} · Payout ${money(p.payout)}${sel}`;
+    $('status').textContent = `${run.deck.length} cards in deck · Delete ${money(p.remove)} · Duplicate ${money(p.duplicate)} · Change suit ${money(p.suit)}${sel}`;
   }
 
   function renderBanner() {
     const b = $('banner');
     let html = '';
     let tone = '';
+    let help = false;
     if (run.phase === 'hold') {
+      help = true;
       const max = E.maxDiscards(run);
       const used = run.round.trashed.length;
       html =
@@ -208,13 +187,15 @@
     } else if (run.phase === 'bet' && folder === 'hand' && run.last) {
       html = resultLine(run.last);
       tone = run.last.net > 0 ? 'good' : run.last.net < 0 ? 'bad' : '';
-      if (KG.os() === 'phone') html += ' <button class="kg-btn mini" type="button" data-screen="account">Next hand</button>';
     } else if (run.phase === 'bet') {
+      help = true;
       html = 'Shop is open: select a card in Deck, then Delete card, Duplicate card or Change suit. Increase Hand Payout needs no card.';
     } else {
       html = run.phase === 'won' ? 'Run won.' : 'Run over.';
     }
-    b.className = `banner ${tone}`;
+    if (help && helpHidden) html = '';
+    else if (help) html = `<span>${html}</span><button class="banner-x" type="button" data-dismiss-help aria-label="Hide help" title="Hide help">×</button>`;
+    b.className = `banner ${tone}${help ? ' help' : ''}`;
     b.innerHTML = html;
   }
 
@@ -224,7 +205,17 @@
       lose: ` · Fell short of the boss (${r.target}x needed)`,
     };
     const verdict = r.outcome ? verdicts[r.outcome] : '';
-    return `<b>${esc(r.handName)}</b> · ${mult(r.mult)} on ${money(r.bet)} · <b>${signed(r.net)}</b>${verdict}`;
+    // Every hand matched pays, so list each one and the total.
+    const list = r.matches || [{ name: r.handName, mult: r.mult }]; // runs saved before matches existed
+    const pays = list.length > 1 ? `${list.map((m) => `${esc(m.name)} ${mult(m.mult)}`).join(' + ')} = ${mult(r.mult)}` : mult(r.mult);
+    return `<b>${esc(r.handName)}</b> · ${pays} on ${money(r.bet)} · <b>${signed(r.net)}</b>${verdict}${bossCardsLine(r.bossCards)}`;
+  }
+
+  // The cards a boss put in your deck as its hand came up.
+  function bossCardsLine(cards) {
+    if (!cards?.length) return '';
+    const n = cards.length;
+    return `<span class="boss-cards">The boss put ${n === 1 ? 'a random card' : `${n} random cards`} in your deck: ${cards.map((c) => `<span class="suit-${c.suit}">${E.cardLabel(c)}</span>`).join(', ')}</span>`;
   }
 
   const DRAW_ICON = '<path d="M16 10a6 6 0 1 1-1.8-4.3M16 3v4h-4"/>';
@@ -243,8 +234,9 @@
     draw.querySelector('svg').innerHTML = edit ? EDIT_ICON : DRAW_ICON;
     draw.querySelector('span').textContent = edit ? 'Edit deck' : n ? `Draw ${n}` : hold ? 'Keep hand' : 'Draw';
 
-    // Shop buttons: always show the price. They light up once a card is
-    // selected and you can pay for it and still cover the next minimum bet.
+    // Shop buttons: card actions always show the price. Increase Hand Payout
+    // doesn't, since each hand has its own price (shown in its menu). They
+    // light up once a card is selected and you can pay without dropping to $0.
     // A purchase that would end the run stays clickable (it asks first) but
     // isn't highlighted.
     const p = E.prices(run);
@@ -264,19 +256,13 @@
       btn.disabled = (needsCard && !card) || !!block;
       const strands = !btn.disabled && E.strands(run, action);
       btn.classList.toggle('primary', !btn.disabled && !strands);
-      btn.querySelector('span').innerHTML = `${labels[action]} <b>${money(p[action])}</b>`;
-      btn.title = block || (needsCard && !card ? 'Select a card first' : strands ? "You couldn't cover the next minimum bet after this" : '');
+      btn.querySelector('span').innerHTML = needsCard ? `${labels[action]} <b>${money(p[action])}</b>` : labels[action];
+      btn.title = block || (needsCard && !card ? 'Select a card first' : strands ? 'This would spend your last dollar and end the run' : '');
     }
   }
 
   // -------------------------------------------------------------------------
   // Rendering: Account window
-
-  function clampBet(range) {
-    if (range.fixed) return range.min;
-    const want = betValue ?? run.lastBet ?? range.min;
-    return Math.min(Math.max(want, range.min), range.max);
-  }
 
   function renderAccount() {
     $('account-title').textContent = KG.pick({ value: 'Account Properties', quality: 'Account', power: 'Account' });
@@ -296,42 +282,32 @@
     renderBet();
     renderLast();
     renderPaytable();
-    renderLog();
   }
 
   function renderBet() {
-    const range = E.betRange(run);
     const playing = run.phase === 'bet';
     const gate = E.isGateHand(run.hand);
 
-    $('range').innerHTML = playing || run.phase === 'hold'
-      ? `Min <b>${money(range.min)}</b> · Max <b>${money(range.max)}</b>`
-      : '';
-
-    if (playing) betValue = clampBet(range);
-    const input = $('bet');
-    input.value = run.phase === 'hold' ? run.round.bet : betValue ?? '';
-    input.min = range.min;
-    input.max = range.max;
-    const lock = !playing || range.fixed;
-    for (const id of ['bet', 'bet-down', 'bet-up', 'bet-min', 'bet-max']) $(id).disabled = lock;
+    // The bet is set by the level ($10, 4x each level); short of it, you bet everything.
+    const bet = run.phase === 'hold' ? run.round.bet : playing ? E.nextBet(run).bet : null;
+    $('bet-size').textContent = bet === null ? '—' : money(bet);
     $('deal').disabled = !playing;
-    $('deal').textContent = run.phase === 'hold' ? 'Hand in play' : 'Deal';
+    // Gone while a hand is in play; it keeps its space so the toolbar doesn't shift.
+    $('deal').style.visibility = run.phase === 'hold' ? 'hidden' : '';
+    $('deal').classList.toggle('boss', gate);
+    $('deal').textContent = gate ? `Boss deal (${mult(E.bossTarget(run.level))})` : 'Deal';
 
     let note = '';
     if (run.phase === 'hold') {
       note = 'Select the cards to replace in the Cards window, then press Draw.';
       if (KG.os() === 'phone') note += ' <button class="kg-btn mini" type="button" data-screen="cards">Go to cards</button>';
     } else if (run.phase === 'won') note = `<b>You beat level ${E.LEVELS}'s boss.</b> Run won with ${money(run.bankroll)}.`;
-    else if (run.phase === 'lost') note = run.lostTo ? `<b>Run over.</b> Your hand paid less than the boss's ${run.lostTo}x.` : `<b>Run over.</b> You can't cover the ${money(range.min)} minimum bet.`;
+    else if (run.phase === 'lost') note = run.lostTo ? `<b>Run over.</b> Your hand paid less than the boss's ${run.lostTo}x.` : '<b>Run over.</b> You ran out of money.';
     else if (gate) {
-      note = `Boss hand: make a hand that pays <b>${E.bossTarget(run.level)}x</b> or more to win and move on. Anything less ends the run. Hands that clear it are green in the paytable.`;
-      if (range.fixed) note += ` The bet is fixed at ${money(range.min)}.`;
-    } else {
-      const left = E.HANDS_PER_LEVEL - run.hand;
-      note = `${left} more ${left === 1 ? 'hand' : 'hands'}, then the boss.`;
+      note = `Boss hand: make a hand that pays <b>${E.bossTarget(run.level)}x</b> or more to win and move on. Anything less ends the run. Hands whose total clears it are green in the paytable.${bossCardsLine(run.last?.bossCards)}`;
     }
     $('bet-note').innerHTML = note;
+    $('note-box').hidden = !note;
     $('new-run').classList.toggle('kg-primary', run.phase === 'won' || run.phase === 'lost');
   }
 
@@ -344,32 +320,18 @@
   }
 
   function renderPaytable() {
-    const lastId = run.last?.handId;
+    // Every hand the last hand matched is marked, not just the best one.
+    const lastIds = new Set(run.last ? (run.last.matches || [{ id: run.last.handId }]).map((m) => m.id) : []);
     const target = run.phase === 'won' ? Infinity : E.bossTarget(run.level);
     const rows = [...E.HANDS, E.NOTHING].map((h) => {
       const m = E.multiple(run, h.id);
+      const t = E.total(run, h.id);
       const ups = run.upgrades?.[h.id] || 0;
-      const cls = m < 0 ? 'neg' : m >= target ? 'pass' : '';
+      const cls = t < 0 ? 'neg' : t >= target ? 'pass' : '';
       const tag = ups ? ` <span class="ups" title="Doubled ${ups} ${ups === 1 ? 'time' : 'times'}">×${2 ** ups}</span>` : '';
-      return `<tr class="${h.id === lastId ? 'last' : ''}"><th scope="row">${h.name}${tag}</th><td class="${cls}">${mult(m)}</td></tr>`;
+      return `<tr class="${lastIds.has(h.id) ? 'last' : ''}"><th scope="row">${h.name}${tag}</th><td class="${m < 0 ? 'neg' : ''}">${mult(m)}</td><td class="${cls}">${mult(t)}</td></tr>`;
     });
-    $('paytable').innerHTML = `<thead><tr><th>Hand</th><th>Pays</th></tr></thead><tbody>${rows.join('')}</tbody>`;
-  }
-
-  function renderLog() {
-    $('log').innerHTML = run.log.length
-      ? run.log
-          .slice(0, 12)
-          .map(
-            (r) => `<li class="${r.net > 0 ? 'good' : r.net < 0 ? 'bad' : ''}">
-              <span class="log-where">L${r.level}·${r.gate ? 'Boss' : `H${r.hand}`}</span>
-              <span class="log-hand">${esc(r.handName)}</span>
-              <span class="log-bet">${money(r.bet)}</span>
-              <span class="log-net">${signed(r.net)}</span>
-            </li>`,
-          )
-          .join('')
-      : '<li class="muted">No hands yet.</li>';
+    $('paytable').innerHTML = `<thead><tr><th>Hand</th><th>Pays</th><th title="What the hand pays in all, with the smaller hands it contains">Total</th></tr></thead><tbody>${rows.join('')}</tbody>`;
   }
 
   function renderScreens() {
@@ -397,24 +359,13 @@
 
   function dealHand() {
     if (run.phase !== 'bet') return;
-    const range = E.betRange(run);
-    const bet = range.fixed ? range.min : Math.round(Number($('bet').value));
-    if (!(bet >= range.min && bet <= range.max)) {
-      flashNote(`Bet must be ${money(range.min)}–${money(range.max)}.`);
-      return;
-    }
-    betValue = bet;
-    E.deal(run, bet);
+    E.deal(run);
     fresh = new Set(run.round.cards);
     folder = 'hand';
     selected.clear();
     if (KG.os() === 'phone') screen = 'cards';
     render();
     focusWindow($('cards'));
-  }
-
-  function flashNote(text) {
-    $('bet-note').innerHTML = `<span class="warn">${esc(text)}</span>`;
   }
 
   // During a hand, selecting a card in Hand marks it to be replaced on Draw.
@@ -437,7 +388,6 @@
     fresh = new Set(result.drawn);
     folder = 'hand';
     selected.clear();
-    betValue = null;
     render();
     if (run.phase === 'won') endDialog(true);
     else if (run.phase === 'lost') endDialog(false);
@@ -445,14 +395,14 @@
 
   // `target` is a card id, or a hand id for 'payout' (Increase Hand Payout).
   async function purchase(action, target, suit) {
-    const block = E.shopBlock(run, action);
+    const handId = action === 'payout' ? target : undefined;
+    const block = E.shopBlock(run, action, handId);
     if (block) return;
-    const cost = E.prices(run)[action];
-    if (E.strands(run, action)) {
-      const after = run.bankroll - cost;
+    const cost = E.priceOf(run, action, handId);
+    if (E.strands(run, action, handId)) {
       const ok = await ask({
-        title: 'Not enough left to bet',
-        body: `This costs ${money(cost)} and leaves you ${money(after)}, below the ${money(E.betRange(run, after).min)} minimum bet for the next hand. The run will end.`,
+        title: 'Spend your last dollar?',
+        body: `This costs ${money(cost)}, everything you have. With ${money(0)} left, the run will end.`,
         ok: { remove: 'Delete anyway', duplicate: 'Duplicate anyway', suit: 'Change anyway', payout: 'Increase anyway' }[action],
         danger: true,
       });
@@ -491,7 +441,6 @@
     folder = 'deck';
     selected.clear();
     fresh.clear();
-    betValue = null;
     screen = 'account';
     render();
   }
@@ -503,7 +452,7 @@
         ? `You beat all ${E.LEVELS} bosses and finished with <b>${money(run.bankroll)}</b> in ${run.handsPlayed} hands.`
         : run.lostTo
           ? `Your ${esc(run.last.handName.toLowerCase())} paid ${mult(run.last.mult)}, short of level ${run.level}'s boss target of <b>${run.lostTo}x</b>.`
-          : `You have ${money(run.bankroll)}, below the ${money(E.betRange(run).min)} minimum bet. You reached level ${run.level}.`,
+          : `You ran out of money on level ${run.level}.`,
       ok: 'New run',
       cancel: 'Close',
     });
@@ -512,8 +461,7 @@
       folder = 'deck';
       selected.clear();
       fresh.clear();
-      betValue = null;
-      screen = 'account';
+        screen = 'account';
       render();
     }
   }
@@ -641,12 +589,6 @@
       suppressClick = false;
       return;
     }
-    const opener = e.target.closest('[data-open]');
-    if (opener) {
-      // folders open on double-click on desktop, a tap on phones
-      if (KG.os() === 'phone' || e.detail >= 2) open(opener.dataset.open);
-      return;
-    }
     const tile = e.target.closest('[data-card]');
     if (!tile) {
       selected.clear();
@@ -667,11 +609,10 @@
   });
 
   view.addEventListener('keydown', (e) => {
-    const tile = e.target.closest('[data-open], [data-card]');
+    const tile = e.target.closest('[data-card]');
     if (!tile || (e.key !== 'Enter' && e.key !== ' ')) return;
     e.preventDefault();
-    if (tile.dataset.open) open(tile.dataset.open);
-    else tile.click();
+    tile.click();
   });
 
   view.addEventListener('contextmenu', (e) => {
@@ -704,17 +645,20 @@
   };
   for (const t of ['pointermove', 'pointerup', 'pointercancel']) view.addEventListener(t, cancelPress);
 
-  // Sidebar and breadcrumbs navigate.
-  for (const nav of [$('side'), $('crumbs')]) {
-    nav.addEventListener('click', (e) => {
-      const a = e.target.closest('[data-open]');
-      if (!a) return;
-      e.preventDefault();
-      open(a.dataset.open);
-    });
-  }
+  $('banner').addEventListener('click', (e) => {
+    if (!e.target.closest('[data-dismiss-help]')) return;
+    helpHidden = true;
+    renderBanner();
+  });
 
-  $('up').addEventListener('click', () => parentOf(folder) && open(parentOf(folder)));
+  // The sidebar navigates.
+  $('side').addEventListener('click', (e) => {
+    const a = e.target.closest('[data-open]');
+    if (!a) return;
+    e.preventDefault();
+    open(a.dataset.open);
+  });
+
   $('tool-draw').addEventListener('click', () => (run.phase === 'bet' ? open('deck') : drawHand()));
   for (const action of ['duplicate', 'remove']) {
     $(`tool-${action}`).addEventListener('click', () => selected.size === 1 && purchase(action, [...selected][0]));
@@ -732,7 +676,9 @@
       Math.min(r.left, innerWidth),
       r.bottom + 4,
       E.HANDS.map((h) => ({
-        label: `${h.name}: ${mult(E.multiple(run, h.id))} → ${mult(E.multiple(run, h.id) * 2)}`,
+        label: `${h.name}: ${mult(E.multiple(run, h.id))} → ${mult(E.multiple(run, h.id) * 2)}`, // its own payout; totals that include it rise too
+        key: money(E.payoutPrice(run, h.id)),
+        disabled: !!E.shopBlock(run, 'payout', h.id),
         run: () => purchase('payout', h.id),
       })),
     );
@@ -741,24 +687,9 @@
   // -------------------------------------------------------------------------
   // Input: Account window
 
-  function nudgeBet(delta) {
-    const range = E.betRange(run);
-    betValue = Math.min(Math.max((Number($('bet').value) || range.min) + delta, range.min), range.max);
-    renderBet();
-  }
-
-  $('bet-down').addEventListener('click', () => nudgeBet(-1));
-  $('bet-up').addEventListener('click', () => nudgeBet(1));
-  $('bet-min').addEventListener('click', () => nudgeBet(-Infinity));
-  $('bet-max').addEventListener('click', () => nudgeBet(Infinity));
-  $('bet').addEventListener('change', () => nudgeBet(0));
-  $('bet').addEventListener('keydown', (e) => {
-    if (e.key !== 'Enter') return;
-    e.preventDefault();
-    dealHand();
-  });
   $('deal').addEventListener('click', dealHand);
   $('new-run').addEventListener('click', newRun);
+  $('how-to').addEventListener('click', showHowTo);
 
   document.addEventListener('click', (e) => {
     if (!e.target.closest('#ctx')) hideMenu();
@@ -808,6 +739,61 @@
   });
 
   // -------------------------------------------------------------------------
+  // How to play: a Notes window with the rules you need to start
+
+  const HOW_TO = `
+    <h1>How to play Ctrl+Alt+Deal</h1>
+    <ol>
+      <li>Get through all ${E.LEVELS * E.HANDS_PER_LEVEL} hands without running out of money or losing to a boss.</li>
+      <li>Each hand is a round of 5 card draw and you get paid out based on every poker hand you get
+        <ul><li>if you get two pair, you get paid out for two pair and one pair</li></ul>
+      </li>
+      <li>Start with a normal 52 card deck and use your money to change your deck and make more powerful hands</li>
+      <li>When you reach a boss hand, you must make a hand that meets or surpasses the payout requirement, otherwise you lose
+        <ul><li>Each boss puts 1 or more randomized cards into your deck</li></ul>
+      </li>
+    </ol>`;
+
+  function showHowTo() {
+    if (modalOpen) return;
+    modalOpen = true;
+    hideMenu();
+    try {
+      localStorage.setItem(HOW_TO_KEY, '1');
+    } catch {
+      // storage unavailable — it shows again next visit
+    }
+    const wrap = document.createElement('div');
+    wrap.className = 'kg-modal cad-howto';
+    wrap.innerHTML = `<div class="window kg-dialog" role="dialog" aria-modal="true" aria-labelledby="cad-howto-title">
+      <div class="titlebar">
+        <div class="lights"><span class="close" data-close></span><span class="min"></span><span class="max"></span></div>
+        <div class="window-title" id="cad-howto-title">how-to-play.txt — Notes</div>
+      </div>
+      <div class="notes-menu"><span>File</span><span>Edit</span><span>Format</span><span>View</span><span>Help</span></div>
+      <div class="notes-page">${HOW_TO}</div>
+      <div class="notes-status"><span>Ln 1, Col 1</span><span>UTF-8</span><button class="kg-btn kg-primary" type="button" data-close>Start playing</button></div>
+    </div>`;
+    const done = () => {
+      wrap.remove();
+      document.removeEventListener('keydown', onKey, true);
+      modalOpen = false;
+    };
+    const onKey = (e) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        done();
+      }
+    };
+    wrap.addEventListener('click', (e) => {
+      if (e.target.closest('[data-close]') || e.target === wrap) done();
+    });
+    document.addEventListener('keydown', onKey, true);
+    document.body.append(wrap);
+    wrap.querySelector('.kg-btn[data-close]').focus();
+  }
+
+  // -------------------------------------------------------------------------
   // Windows
 
   let topZ = 20;
@@ -841,4 +827,12 @@
 
   KG.onChange(render);
   render();
+
+  let seenHowTo = false;
+  try {
+    seenHowTo = localStorage.getItem(HOW_TO_KEY) === '1';
+  } catch {
+    // storage unavailable — treat it as a first visit
+  }
+  if (!seenHowTo) showHowTo();
 })();

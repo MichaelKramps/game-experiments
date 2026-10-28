@@ -24,22 +24,13 @@
     <div class="acct">
       <section class="acct-sheet">
         <div class="acct-row"><span class="acct-label">Bankroll</span><b class="acct-bankroll" id="bankroll"></b></div>
+        <div class="acct-row"><span class="acct-label">Bet size</span><b id="bet-size"></b></div>
         <div class="acct-row"><span class="acct-label">Progress</span><span id="stage"></span></div>
         <div class="acct-pips" id="pips" aria-hidden="true"></div>
         <div class="acct-row"><span class="acct-label">Boss</span><span id="boss"></span></div>
       </section>
 
-      <section class="acct-group">
-        <h3>Bet</h3>
-        <div class="acct-range" id="range"></div>
-        <div class="bet-row">
-          <button class="kg-btn step" type="button" id="bet-down" aria-label="Lower bet">−</button>
-          <label class="bet-field"><span>$</span><input id="bet" type="number" inputmode="numeric" min="1" step="1" aria-label="Bet in dollars"></label>
-          <button class="kg-btn step" type="button" id="bet-up" aria-label="Raise bet">+</button>
-          <button class="kg-btn mini" type="button" id="bet-min">Min</button>
-          <button class="kg-btn mini" type="button" id="bet-max">Max</button>
-        </div>
-        <button class="kg-btn kg-primary deal" type="button" id="deal">Deal</button>
+      <section class="acct-group" id="note-box">
         <p class="acct-note" id="bet-note"></p>
       </section>
 
@@ -51,15 +42,9 @@
       <section class="acct-group">
         <h3>Paytable</h3>
         <table class="paytable" id="paytable"></table>
-        <p class="acct-note">Profit as a multiple of your bet. −1x loses it. Increase Hand Payout (in the Cards window's Deck folder) doubles a hand's payout.</p>
       </section>
 
-      <section class="acct-group">
-        <h3>Recent hands</h3>
-        <ol class="log" id="log"></ol>
-      </section>
-
-      <div class="acct-foot"><button class="kg-btn" type="button" id="new-run">New run</button></div>
+      <div class="acct-foot"><button class="kg-btn" type="button" id="how-to">How to play</button><button class="kg-btn" type="button" id="new-run">New run</button></div>
     </div>
   </div>
 
@@ -69,8 +54,7 @@
       <div class="window-title" id="cards-title">Deck</div>
     </div>
     <div class="files-toolbar">
-      <button class="nav-btn" id="up" type="button" aria-label="Up one folder">&#8593;</button>
-      <div class="crumbs" id="crumbs"></div>
+      <button class="kg-btn kg-primary deal" type="button" id="deal">Deal</button>
       <button class="tool-btn shop danger" id="tool-remove" type="button" title="Permanently delete the selected card (Shift+Del)"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 6h12M8 6V4h4v2M6 6l1 10h6l1-10"/></svg><span></span></button>
       <button class="tool-btn shop" id="tool-duplicate" type="button" title="Duplicate the selected card (Ctrl+C, Ctrl+V)"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="7" y="7" width="9" height="10" rx="1.5"/><path d="M13 7V4.5A1.5 1.5 0 0 0 11.5 3h-6A1.5 1.5 0 0 0 4 4.5v8A1.5 1.5 0 0 0 5.5 14H7"/></svg><span></span></button>
       <button class="tool-btn shop" id="tool-suit" type="button" title="Change the selected card's suit"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 7h10l-3-3M16 13H6l3 3"/></svg><span></span></button>
