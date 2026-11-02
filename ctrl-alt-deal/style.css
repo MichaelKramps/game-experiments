@@ -42,12 +42,12 @@
   margin-bottom: 12px;
   border-bottom: 1px solid var(--w-line);
 }
-.acct-row { display: grid; grid-template-columns: 76px 1fr; align-items: baseline; gap: 10px; }
+.acct-row { display: grid; grid-template-columns: 92px 1fr; align-items: baseline; gap: 10px; }
 .acct-label { color: var(--w-muted); }
 .acct-bankroll { font-size: 26px; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
 .gate-tag { color: var(--gate); }
 
-.acct-pips { display: flex; gap: 4px; margin-left: 86px; }
+.acct-pips { display: flex; gap: 4px; margin-left: 102px; }
 .pip {
   display: grid;
   place-items: center;
@@ -84,6 +84,15 @@
 .files-toolbar .deal { margin-right: auto; padding: 4px 22px; font-weight: 600; background: var(--good); border-color: var(--good); color: #ffffff; }
 [data-theme='dark'] .files-toolbar .deal { color: #000000; }
 .files-toolbar .deal.boss { background: var(--gold); border-color: var(--gold-edge); color: var(--gold-fg); }
+/* With every shop tool on, the toolbar wraps onto a second row. */
+.files-toolbar { flex-wrap: wrap; height: auto; min-height: 40px; padding-top: 6px; padding-bottom: 6px; }
+/* Double bet sits right after Deal, so it takes over Deal's push to the left. */
+.files-toolbar .deal:has(+ .double-bet:not([hidden])) { margin-right: 0; }
+.files-toolbar .double-bet { margin-right: auto; min-width: 0; padding: 4px 12px; }
+.files-toolbar .double-bet[aria-pressed='true'] { background: var(--gold); border-color: var(--gold-edge); color: var(--gold-fg); font-weight: 600; }
+
+/* Achievements are off on Easy: the Account row, setup warning and dialogs say so in this colour. */
+.ach-off { color: var(--gate); font-weight: 600; }
 .acct-note { margin-top: 8px; color: var(--w-muted); font-size: 12px; line-height: 1.45; }
 .acct-note:empty { display: none; }
 .acct-note b { color: var(--w-fg); }
@@ -110,6 +119,19 @@
 .mini-card.suit-D { color: var(--suit-D); }
 .mini-card.suit-C { color: var(--suit-C); }
 .mini-card.drawn { border-style: dashed; }
+.mini-card.unscored { opacity: 0.45; }
+.last-result .interest { color: var(--w-muted); }
+
+/* Deck properties: card counts by rank and suit */
+#deck-info p { margin-bottom: 6px; }
+.deck-counts { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 4px; font-variant-numeric: tabular-nums; }
+.deck-counts span { display: inline-flex; gap: 3px; padding: 1px 5px; border: 1px solid var(--w-line); border-radius: 4px; font-size: 12px; }
+.deck-counts span.none { opacity: 0.4; }
+.deck-counts b { font-family: var(--mono); }
+.deck-counts .suit-S b { color: var(--suit-S); }
+.deck-counts .suit-H b { color: var(--suit-H); }
+.deck-counts .suit-D b { color: var(--suit-D); }
+.deck-counts .suit-C b { color: var(--suit-C); }
 .last-result { line-height: 1.45; }
 .good b:last-of-type, .last-result.good b { color: var(--good); }
 .bad b:last-of-type, .last-result.bad b { color: var(--bad); }
@@ -126,9 +148,10 @@
 .paytable tr.last th[scope='row'] { font-weight: 600; }
 .paytable .ups { margin-left: 4px; color: var(--w-accent); font-size: 11px; font-weight: 600; }
 .paytable tr.last { box-shadow: inset 3px 0 0 var(--w-accent); }
+.paytable td.odds { color: var(--w-muted); font-size: 12px; }
 
 
-.acct-foot { display: flex; justify-content: flex-end; gap: 8px; }
+.acct-foot { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 8px; }
 
 /* ---------------------------------------------------------------------------
    Cards window: a file browser */
@@ -219,6 +242,7 @@
 [data-os='quality'] .file.selected { border-color: transparent; }
 [data-os='quality'] .file.selected .file-label { background: var(--w-accent); color: var(--w-accent-fg); }
 .file.done { cursor: default; }
+.file.unscored { opacity: 0.45; }
 .file.done:hover { background: none; }
 
 .file-label {
@@ -267,6 +291,52 @@
 .file.selected .card-icon::after { background: linear-gradient(225deg, var(--w-select) 50%, #dfe4ea 50%); }
 .file:hover:not(.selected) .card-icon::after { background: linear-gradient(225deg, var(--w-hover) 50%, #dfe4ea 50%); }
 .file.done:hover .card-icon::after { background: linear-gradient(225deg, var(--w-bg) 50%, #dfe4ea 50%); }
+
+/* A card with Add 2x carries a small gold tag */
+.card-bonus {
+  position: absolute;
+  bottom: -5px;
+  right: -7px;
+  padding: 0 3px;
+  background: var(--gold);
+  border: 1px solid var(--gold-edge);
+  border-radius: 3px;
+  color: var(--gold-fg);
+  font-size: 10px;
+  line-height: 1.3;
+}
+
+/* A locked card carries a padlock tag; the icon sits on white paper, so the
+   tag keeps fixed colors in both themes */
+.card-lock {
+  position: absolute;
+  bottom: -5px;
+  left: -7px;
+  display: flex;
+  padding: 1px 3px;
+  background: #3b4450;
+  border: 1px solid #262c34;
+  border-radius: 3px;
+  color: #ffffff;
+}
+
+/* Draw odds: a strip under the banner during a hand */
+.draw-odds {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  padding: 6px 14px;
+  border-bottom: 1px solid var(--w-line);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.draw-odds b { font-family: var(--mono); }
+.draw-odds .sep { width: 1px; align-self: stretch; background: var(--w-line); }
+.draw-odds .suit-S b { color: var(--suit-S); }
+.draw-odds .suit-H b { color: var(--suit-H); }
+.draw-odds .suit-D b { color: var(--suit-D); }
+.draw-odds .suit-C b { color: var(--suit-C); }
 
 .file.fresh .card-icon { animation: arrive 0.5s ease-out; }
 @keyframes arrive {
@@ -321,6 +391,79 @@
 .dlg-foot { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 20px 16px; }
 .kg-primary.danger { background: var(--w-danger); border-color: var(--w-danger); color: #ffffff; }
 [data-theme='dark'] .kg-primary.danger { color: #000000; }
+
+/* End-of-run achievements */
+.dlg-ach { margin-top: 10px; }
+.dlg-ach-list { margin: 4px 0 0; padding-left: 1.3em; }
+
+/* New run setup */
+.cad-setup .kg-dialog { display: flex; flex-direction: column; width: min(520px, 100%); }
+.cad-setup .dlg-body { flex: 1 1 auto; min-height: 0; overflow: auto; }
+.setup-selects { display: grid; gap: 10px; margin-bottom: 14px; }
+.setup-field label { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 3px; font-weight: 600; }
+.setup-field label .muted { font-size: 12px; font-weight: 400; }
+.setup-field select {
+  width: 100%;
+  padding: 5px 8px;
+  background: var(--w-bg);
+  border: 1px solid var(--w-btn-border);
+  border-radius: 5px;
+  color: var(--w-fg);
+  font: inherit;
+}
+.setup-hint { margin-top: 3px; color: var(--w-muted); font-size: 12px; }
+.setup-group { margin: 0 0 12px; padding: 0; border: none; }
+.setup-group legend { margin-bottom: 4px; padding: 0; font-weight: 600; }
+.setup-toggle { display: flex; align-items: flex-start; gap: 8px; padding: 4px 0; cursor: pointer; }
+.setup-toggle input { margin-top: 3px; }
+.setup-toggle > span { display: grid; }
+.setup-toggle .muted { font-size: 12px; }
+.setup-toggle.locked { cursor: default; }
+.setup-toggle.locked b { color: var(--w-muted); font-weight: 400; }
+.setup-warn { margin: -6px 0 14px; }
+.setup-intro { margin: 0 0 12px; font-size: 13px; }
+
+/* Achievements list */
+.cad-achievements .kg-dialog { display: flex; flex-direction: column; width: min(520px, 100%); }
+.cad-achievements .dlg-body { flex: 1 1 auto; min-height: 0; overflow: auto; }
+.ach-banner { margin-bottom: 8px; }
+.ach-count { margin-bottom: 8px; color: var(--w-muted); }
+.ach-list { margin: 0; padding: 0; list-style: none; }
+.ach-list li { display: flex; align-items: flex-start; gap: 10px; padding: 6px 0; border-top: 1px solid var(--w-line); }
+.ach-list li > span:last-child { display: grid; }
+.ach-list .muted { font-size: 12px; }
+.ach-list li:not(.got) b { font-weight: 400; }
+.ach-check {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  border: 1px solid var(--w-line);
+  border-radius: 4px;
+  color: var(--good);
+  font-size: 12px;
+  font-weight: 700;
+}
+.ach-list li.got .ach-check { border-color: var(--good); }
+
+/* Achievement toasts, bottom right */
+.cad-toasts { position: fixed; right: 16px; bottom: 72px; z-index: 5000; display: grid; gap: 8px; width: min(320px, calc(100vw - 32px)); pointer-events: none; }
+.cad-toast {
+  display: grid;
+  gap: 2px;
+  padding: 10px 14px;
+  background: var(--w-bg);
+  border: 1px solid var(--gold-edge);
+  border-left: 4px solid var(--gold);
+  border-radius: 6px;
+  box-shadow: var(--w-shadow);
+  color: var(--w-fg);
+  animation: arrive 0.3s ease-out;
+}
+.cad-toast span { color: var(--w-muted); font-size: 12px; }
+[data-os='phone'] .cad-toasts { top: 56px; bottom: auto; }
 
 /* How to play: a Notes window (site.css) shown as a modal */
 .cad-howto .kg-dialog { display: flex; flex-direction: column; width: min(460px, 100%); }
@@ -400,3 +543,6 @@
 [data-os='phone'] .dlg-foot .kg-btn { width: auto; flex: 1; }
 [data-os='phone'] .banner-x { width: 32px; height: 32px; margin: -6px -10px -6px 0; font-size: 20px; }
 [data-os='phone'] .files-toolbar .deal { width: auto; padding: 4px 16px; }
+[data-os='phone'] .files-toolbar .double-bet { width: auto; padding: 4px 10px; font-size: 13px; }
+[data-os='phone'] .cad-setup .kg-dialog,
+[data-os='phone'] .cad-achievements .kg-dialog { max-height: calc(100vh - 112px); }

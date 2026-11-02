@@ -24,12 +24,13 @@ Ctrl+Alt+Deal is a solo deckbuilder built on five-card draw (video poker). Your 
 | Deck | Your cards. It starts as a standard 52-card deck and changes in the shop |
 | Remove | Shop action that takes a card out of your deck permanently |
 | Duplicate | Shop action that adds an identical copy of a card to your deck |
+| Locked card | A boss card that can't be deleted, duplicated or changed. How many boss cards are locked depends on the difficulty |
 
 ## Run structure
 
 1. Start the run with a bankroll of $25 and a standard 52-card deck.
 2. Each level has 5 hands. Hands 1 to 4 are ordinary hands: win or lose, you move on to the next hand.
-3. Hand 5 is the boss hand. Each level's boss has a target payout multiple (see Bosses). The boss hand uses the same paytable and betting range as every other hand. As soon as the boss hand comes up (right after hand 4 is paid), the boss puts as many random cards into your deck as its level (see Bosses).
+3. Hand 5 is the boss hand. Each level's boss has a target payout multiple (see Bosses). The boss hand uses the same paytable and betting range as every other hand. As soon as the boss hand comes up (right after hand 4 is paid), the boss puts as many random cards into your deck as its level, some of them locked (see Bosses).
    - **Pay the target or more:** you're paid your winnings and move to the next level.
    - **Pay less than the target:** the run is lost (you're still paid what the hand made).
 4. Beating level 8's boss wins the run.
@@ -55,16 +56,15 @@ Duplicated cards mean a hand can hold identical cards, so some hands are possibl
 
 | Rank | Hand | Definition |
 |---|---|---|
-| 1 (best) | Flush Five | 5 cards of the same rank and the same suit, such as five A♠ |
-| 2 | Five of a kind | 5 cards of the same rank, not all one suit |
-| 3 | Straight flush | 5 consecutive ranks, all one suit |
-| 4 | Four of a kind | 4 cards of the same rank |
-| 5 | Full house | 3 of one rank and 2 of another |
-| 6 | Flush | 5 cards of the same suit |
-| 7 | Straight | 5 consecutive ranks |
-| 8 | Three of a kind | 3 cards of the same rank |
-| 9 | Two pair | 2 of one rank and 2 of another |
-| 10 | Pair | 2 cards of the same rank. Any pair counts; there's no "jacks or better" rule |
+| 1 (best) | Five of a kind | 5 cards of the same rank |
+| 2 | Straight flush | 5 consecutive ranks, all one suit |
+| 3 | Four of a kind | 4 cards of the same rank |
+| 4 | Full house | 3 of one rank and 2 of another |
+| 5 | Flush | 5 cards of the same suit |
+| 6 | Straight | 5 consecutive ranks |
+| 7 | Three of a kind | 3 cards of the same rank |
+| 8 | Two pair | 2 of one rank and 2 of another |
+| 9 | Pair | 2 cards of the same rank. Any pair counts; there's no "jacks or better" rule |
 | — | Nothing | Anything else. Always -1x |
 
 - **Straights:** aces count high or low, so A-2-3-4-5 and 10-J-Q-K-A both count. Straights don't wrap around, so Q-K-A-2-3 isn't one.
@@ -78,7 +78,6 @@ The bases (changed 2026-10-28) are set so each hand's **total** roughly follows 
 
 | Hand | Own payout | Also pays | Total | Chance (standard deck) |
 |---|---|---|---|---|
-| Flush Five | 138x | Five of a kind, Four of a kind, Flush, Three of a kind, Pair | 300x | — |
 | Five of a kind | 110x | Four of a kind, Three of a kind, Pair | 150x | — |
 | Straight flush | 78x | Flush, Straight | 100x | 0.01% |
 | Four of a kind | 35x | Three of a kind, Pair | 40x | 0.24% |
@@ -90,7 +89,7 @@ The bases (changed 2026-10-28) are set so each hand's **total** roughly follows 
 | Pair | 1x | — | 1x | 50% |
 | Nothing | -1x | — | -1x | 27% |
 
-Totals in the table assume a hand in more than one suit; a one-suit full house or four of a kind adds Flush too. With these bases a standard deck returns about +1.5x the bet per hand on average, up from about +0.9x with the old table, and the boss targets haven't been retuned for it yet.
+Totals in the table assume a hand in more than one suit; a one-suit full house, four of a kind or five of a kind adds Flush too. There's no separate Flush Five hand: five of one card pays Five of a kind plus Flush (removed 2026-10-29 as redundant). With these bases a standard deck returns about +1.5x the bet per hand on average, up from about +0.9x with the old table, and the boss targets haven't been retuned for it yet.
 
 ## Bosses
 
@@ -101,7 +100,22 @@ The boss hand must pay at least the level's target multiple. Any hand type can d
 | Target | 2x | 6x | 20x | 60x | 175x | 550x | 1,650x | 5,000x |
 | Cards added | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
 
-**Boss cards** (added 2026-10-28). When a level's boss hand comes up, right after hand 4 is paid, the boss adds as many cards to your deck as its level: 1 on level 1, up to 8 on level 8, 36 over a full run. Each card's rank and suit are picked at random, independently, so a card can match one you already own; it's then a copy (named like a Duplicate). They're permanent deck cards like any other. Because they arrive before the shop opens for the boss hand, you can see them and pay to delete them before dealing. The hand 4 result and the boss note in the Account window list them ("The boss put 3 random cards in your deck: 7H, KS, 2C").
+**Boss cards** (added 2026-10-28). When a level's boss hand comes up, right after hand 4 is paid, the boss adds as many cards to your deck as its level: 1 on level 1, up to 8 on level 8, 36 over a full run. Each card's rank and suit are picked at random, independently, so a card can match one you already own; it's then a copy (named like a Duplicate). They're permanent deck cards like any other. Because they arrive before the shop opens for the boss hand, you can see them and pay to delete them before dealing, unless they're locked. The hand 4 result and the boss note in the Account window list them and say which are locked ("The boss put 3 random cards in your deck: 7H (locked), KS, 2C. 1 is locked.").
+
+**Locked cards** (added 2026-10-30). Each boss card is locked by chance, set by the difficulty: none on Easy, each with a 50% chance on Normal, all on Hard. A locked card can't be deleted, duplicated or changed (Change suit, Increase or Decrease rank, Split, Add 2x). The way to deal with locked cards is to outnumber them by duplicating your other cards. (Duplicating them was allowed at first, with an unlocked copy; it was blocked on 2026-10-30 so the rule is simply "a locked card can't be touched". Simulations showed little difference either way.) Locked cards show a padlock tag on the card icon.
+
+Why: simulations showed a winning run was decided by level 3–4 (a standard-deck flush build that reached level 4 won every time), and the Face and Flush Five decks won every run. By then money had stopped mattering: prices depend only on how many purchases you've made, while winnings grow with the bet and the payout, so every boss card could simply be deleted. Locked cards are the one boss threat money can't buy off. With them, the same flush build that reaches level 4 wins about 68% of the time on Normal. Simulated win rates by difficulty (bots, 200 runs each; a person should do better at levels 1–2):
+
+| Deck | Easy | Normal | Hard |
+|---|---|---|---|
+| Standard (flush) | 47% | 28% | 14% |
+| Numbers (flush) | 84% | 57% | 16% |
+| Half (flush) | 62% | 41% | 23% |
+| Face (four of a kind) | 100% | 88% | 38% |
+| Straight (flush) | 55% | 39% | 33% |
+| Flush Five | 100% | 84% | 42% |
+
+Face and Flush Five are still the strongest decks and never lose before level 5; they need their own tuning.
 
 2x and 5,000x were set by @Michael; the levels between follow a steady ×3.06 curve (rounded). With no increases, two pair clears level 1 (a lone pair doesn't), a straight or better level 2, and four of a kind level 3. (Changed 2026-10-28: first from 1, 3, 6, 10, 18, 32, 60, 120x to 1, 2, 5, 12, 25, 60, 130, 300x, then to these.) For scale at level 8: a flush clears 5,000x after 9 increases (12x × 512), four of a kind after 8 (35x × 256 + 5x), five of a kind after 6 (110x × 64 + 40x).
 
@@ -132,14 +146,16 @@ The boss hand must pay at least the level's target multiple. Any hand type can d
 
 Open between every hand, with as many purchases per visit as you can afford.
 
-- **Remove:** take any one card out of your deck permanently. Not available at 5 cards, the minimum deck size.
-- **Duplicate:** add an exact copy (same rank and suit) of any card in your deck. Copies of copies are allowed. No maximum deck size.
-- **Change suit:** change any one card to a suit of your choice; its rank stays. (Added 2026-10-27.)
+- **Remove:** take any one card out of your deck permanently. Not available at 5 cards, the minimum deck size, or on a locked card.
+- **Duplicate:** add an exact copy (same rank and suit) of any card in your deck except a locked one. Copies of copies are allowed. No maximum deck size.
+- **Change suit:** change any one card to a suit of your choice; its rank stays. Not available on a locked card. (Added 2026-10-27.)
 - **Increase Hand Payout:** pick any hand type except Nothing and double its payout (see Paytable). The paytable tags upgraded hands with the total factor (×2, ×4, …). Needs no card. The button has no price on it; it opens a list of hands showing each one's payout before and after and its own price (e.g. "Full house: 8x → 16x   $8"). Hands you can't afford are greyed out. (Added 2026-10-27; per-hand prices 2026-10-28.)
 
 **Pricing.** Every action starts at $2. Each Remove, Duplicate or Change suit purchase raises that action's next price by 50%: `price(n) = ceil(2 × 1.5^(n − 1))`, where n counts this purchase.
 
 Increase Hand Payout has a separate price for each hand, all starting at $2. Upgrading a hand multiplies that hand's next price by 4 and every other hand's by 1.5: `price = ceil(2 × 4^own × 1.5^others)`, where own is how many times this hand has been upgraded and others is how many upgrades went to other hands. So stacking one hand gets expensive fast ($2, $8, $32, $128, …), and every upgrade makes the rest a little dearer too. (Changed 2026-10-28; before, one price shared by all hands went up 2.5x per purchase.)
+
+**Inflation** (added 2026-10-30). On Normal and Hard every shop price, card actions and Increase Hand Payout alike, is also multiplied by 1.1 (Normal) or 1.2 (Hard) for each hand played so far: `price × (1 + rate)^handsPlayed`. Easy has none. Free Duplicate stays free. Simulated win rates moved from 28% to 16% on Normal and 14% to 5% on Hard for a standard-deck flush build; the extra losses come mostly at levels 2–4 for big decks that are still being reshaped. Face (four of a kind) and Flush Five lose much less to it (88% → 84% on Normal), so the gap between them and the other decks grows.
 
 All prices are computed from the unrounded formula each time, so rounding doesn't compound.
 
@@ -167,6 +183,32 @@ Two windows on the site shell (`KG.makeWindow`), in all three OS looks and both 
 
 **Phones** (≤ 760px): each window is full-screen, so the two windows are two screens, with the Account screen first. Selecting is a tap; Remove and Duplicate come from a long-press menu.
 
+## Run setup, unlocks and achievements (added 2026-10-29)
+
+The full list of options and achievements, and how each achievement is read, is in `PROPOSAL-achievements-unlocks.md`. This section covers how they work in the game.
+
+**Game setup.** A Game setup button in the Account window opens a dialog with dropdowns for starting deck, hand size (5–10) and difficulty, and checkboxes for game mechanics, shop tools and information displays. Locked options are greyed out: a dropdown shows "(locked)" and "N of M unlocked", and a locked checkbox names the achievement that unlocks it. Save keeps the setup in the profile, and every new run (New run, or New run in the won/lost dialog) starts with it straight away; the current run keeps its own settings. Anything still locked falls back to the default. Settings can't change once the run starts; they're saved on the run (`run.settings`), and runs saved before this feature load with the defaults.
+
+**Achievements count everywhere except Easy.** On Easy only *Beat Easy mode* can be earned. The player is told in four places:
+- **Setup dialog:** Easy reads "Easy (no achievements)". Picking it shows "Achievements are off on Easy mode, except Beat Easy mode." under Difficulty, and the button reads "Start run (no achievements)".
+- **Account window:** a Run row lists the run's settings, and an Achievements row reads "On", or "Off (Easy mode) · only Beat Easy mode can be earned".
+- **End-of-run dialog:** lists the achievements first earned that run, and on Easy says the run didn't count.
+- **Achievements window** (button in the Account window): a banner on an Easy run.
+
+Achievements are checked after every draw and purchase. A newly earned one pops up as a toast naming what it unlocked. Earned achievements and the last setup are kept in localStorage (`ctrl-alt-deal-profile`), separate from the run.
+
+**Rules added for the options:**
+- **Hand size:** deals that many cards; the best 5 (the ones that pay most) are scored, and the rest are dimmed after the hand. The minimum deck size is the hand size.
+- **Extra draw:** if you replace cards on the first draw, you get a second draw; keeping the hand scores it right away. **No draw:** nothing can be replaced.
+- **Straights may skip a rank:** each step of a straight may jump one rank (2-4-6-7-9); aces still play high or low, with no wrapping.
+- **Interest:** after each hand that doesn't lose the run, 10% of the bankroll (rounded down) is added and shown in the result line.
+- **Free Duplicate:** Duplicate costs $0 (shown as "Free") and also adds a random card. It still counts as duplicating.
+- **Difficulty:** every boss adds as many cards as its level. None are locked on Easy, each has a 50% chance on Normal, and all are on Hard (see Bosses). Prices also rise 10% (Normal) or 20% (Hard) after every hand (see Inflation under Shop). (Changed 2026-10-30; before, bosses added 0, the level or twice the level cards and none were locked.) Boss cards carry a flag. Changing one (suit or rank) keeps it a boss card, and so does splitting it (both halves stay boss cards, and splitting isn't deleting). Only Delete counts as deleting it. A duplicate of a boss card isn't one.
+- **Increase / Decrease rank:** one step, wrapping (A → 2, 2 → A). **Split card:** the card is replaced by its two neighbouring ranks in its suit (2 → A and 3). Each has its own price counter ($2, ×1.5).
+- **Add 2x to card:** a gold "2x" tag on the card. Every 2x card in the final hand, scored or not, doubles the payout, except on Nothing; the doubled payout counts for the boss. One per card. Price $2, ×4 per purchase, because each one doubles whole hands. A duplicate of a 2x card keeps the 2x; split halves don't.
+- **Double bet:** a toggle beside Deal. The next hand bets twice its bet (or everything you have), once per level, boss hands included.
+- **Deck properties:** an Account section with card counts by rank and suit, plus copies, boss cards, locked cards and 2x cards. **Deck odds:** an Odds column in the paytable, the chance a fresh deal contains each hand: some 5 of the dealt cards make it, at any hand size, so a full house also counts toward Three of a kind, Two pair and Pair, and a 10-card deal with a flush and a separate pair counts for both (changed 2026-10-30; it first showed the chance each hand was the best one) (simulated from the current deck, 400–3,000 deals depending on hand size). **Draw odds:** during a hand, a strip under the banner with each rank's and suit's share of the cards left to draw. **Payout increase:** each hand in the Increase Hand Payout menu also shows how much more you'd win by making that hand at the next bet ("Pair: 1x → 2x · +$10 if you make it": the hand's current payout × the bet). Hands that include it gain the same amount.
+
 ## Constants
 
 | Constant | Value |
@@ -175,9 +217,9 @@ Two windows on the site shell (`KG.makeWindow`), in all three OS looks and both 
 | STARTING_DECK | Standard 52 cards |
 | LEVELS | 8 |
 | HANDS_PER_LEVEL | 5 (the 5th is the boss hand) |
-| HAND_SIZE | 5 |
-| DRAWS_PER_HAND | 1 |
-| MIN_DECK_SIZE | 5 |
+| HAND_SIZE | 5 (6–10 unlockable; best 5 scored) |
+| DRAWS_PER_HAND | 1 (2 with Extra draw, 0 with No draw) |
+| MIN_DECK_SIZE | 5, or the hand size if bigger |
 | BASE_BETS | $10, $12, $14, $16, $20 for hands 1–5, ×4 each level (BET_GROWTH) |
 | BOSS_TARGETS | 2x, 6x, 20x, 60x, 175x, 550x, 1,650x, 5,000x |
 | PAYOUT_BASE_PRICE | $2 (Increase Hand Payout, each hand) |
@@ -186,7 +228,7 @@ Two windows on the site shell (`KG.makeWindow`), in all three OS looks and both 
 | SHOP_PRICE_GROWTH | ×1.5 per purchase, separate for each action |
 | PAYOUT_OWN_GROWTH | ×4 to a hand's upgrade price when it's upgraded |
 | PAYOUT_OTHER_GROWTH | ×1.5 to every other hand's upgrade price |
-| Base payouts | Pair 1x, Two pair 2x, Three of a kind 4x, Straight 10x, Flush 12x, Full house 8x, Four of a kind 35x, Straight flush 78x, Five of a kind 110x, Flush Five 138x (each paid alongside the hands it contains) |
+| Base payouts | Pair 1x, Two pair 2x, Three of a kind 4x, Straight 10x, Flush 12x, Full house 8x, Four of a kind 35x, Straight flush 78x, Five of a kind 110x (each paid alongside the hands it contains) |
 
 ## Assumptions to confirm
 
@@ -199,7 +241,7 @@ Two windows on the site shell (`KG.makeWindow`), in all three OS looks and both 
 
 ## Open questions
 
-- **Balance.** Boss targets, the per-hand payout prices ($2, ×4 own / ×1.5 others) and 4x bet growth all interact. A simulation of a few strategies (stack one hand, spread upgrades, upgrade plus duplicate) would show whether each can win before tuning by feel.
+- **Balance.** Face and Flush Five decks are still too strong even with locked boss cards (see Bosses). Boss targets, the per-hand payout prices ($2, ×4 own / ×1.5 others) and 4x bet growth all interact. A simulation of a few strategies (stack one hand, spread upgrades, upgrade plus duplicate) would show whether each can win before tuning by feel.
 - **Onboarding.** Probably a short first-run walkthrough of one hand and one shop purchase. Not built; content to be agreed first.
 
 ## Implementation (first build, 2026-10-26)
