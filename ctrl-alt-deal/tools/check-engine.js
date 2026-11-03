@@ -70,7 +70,7 @@ assert.equal(E.shopBlock(poor, 'payout', 'flush'), null); // $2
 assert.throws(() => E.buy(poor, 'payout', 'pair'));
 assert.throws(() => E.buy(E.newRun(), 'payout', 'nothing'));
 assert.deepEqual(E.BOSS_TARGETS.length, E.LEVELS);
-assert.equal(E.bossTarget(Object.assign(E.newRun(), { level: 8 })), 25000);
+assert.equal(E.bossTarget(Object.assign(E.newRun(), { level: 8 })), 16000);
 
 // Shop prices
 assert.deepEqual([...Array(10).keys()].map((n) => E.price(n)), [2, 3, 5, 7, 11, 16, 23, 35, 52, 77]);
@@ -102,28 +102,29 @@ small.deck = small.deck.slice(0, 7);
 E.deal(small, rand);
 assert.equal(E.trash(small, small.round.cards).length, 2);
 
-// Boss: after the 5th hand the bankroll must reach the threshold
-const bossRun = (cards, level = 1, upgrades = {}, bankroll = 0) => {
+// Boss: after the 5th hand the level's earnings must reach the threshold; the bankroll doesn't count
+const bossRun = (cards, level = 1, upgrades = {}, earned = 0, bankroll = 0) => {
   const g = E.newRun();
   g.level = level;
   g.hand = 5;
+  g.earned = earned;
   g.bankroll = bankroll;
   g.upgrades = upgrades;
   g.deck = hand(cards).map((c, i) => ({ ...c, id: i + 1, copy: 0 }));
   E.deal(g, rand);
   return [g, E.draw(g, rand)];
 };
-let [g, gr] = bossRun('7♣ 7♦ 2♠ 2♥ 3♣', 1, {}, 10); // two pair 2x + pair 1x = $30, $10 + $30 = $40 ≥ $20
-assert.deepEqual([gr.mult, gr.paid, gr.outcome, gr.bankroll], [3, 30, 'beat', 40]);
-assert.deepEqual([g.level, g.hand, g.bankroll, g.phase], [2, 1, 40, 'bet']); // the whole bankroll carries into level 2
-[g, gr] = bossRun('2♣ 4♦ 6♠ 8♥ 10♣', 1, {}, 19); // Nothing: $19 < $20
+let [g, gr] = bossRun('7♣ 7♦ 2♠ 2♥ 3♣', 1, {}, 10, 15); // two pair 2x + pair 1x = $30, earned $10 + $30 = $40 ≥ $20
+assert.deepEqual([gr.mult, gr.paid, gr.outcome, gr.earned, gr.bankroll], [3, 30, 'beat', 40, 45]);
+assert.deepEqual([g.level, g.hand, g.bankroll, g.earned, g.phase], [2, 1, 45, 0, 'bet']); // the bankroll carries into level 2, earned starts again
+[g, gr] = bossRun('2♣ 4♦ 6♠ 8♥ 10♣', 1, {}, 19, 10 ** 6); // Nothing: earned $19 < $20, however big the bankroll
 assert.deepEqual([gr.outcome, g.phase, g.lostTo], ['lose', 'lost', 20]);
-[g, gr] = bossRun('2♣ 4♦ 6♠ 8♥ 10♣', 1, {}, 100); // Nothing pays $0, but the bankroll already clears it
+[g, gr] = bossRun('2♣ 4♦ 6♠ 8♥ 10♣', 1, {}, 100); // Nothing pays $0, but the level already earned enough
 assert.deepEqual([gr.paid, gr.outcome], [0, 'beat']);
-[g, gr] = bossRun('7♣ 7♦ 7♠ 2♥ 2♣', 4, { pair: 2 }); // full house 8 + trips 4 + two pair 2 + pair 1×3 = 17x = $170 < $1,000
+[g, gr] = bossRun('7♣ 7♦ 7♠ 2♥ 2♣', 4, { pair: 2 }); // full house 8 + trips 4 + two pair 2 + pair 1×3 = 17x = $170 < $750
 assert.deepEqual([gr.mult, gr.paid, gr.outcome], [17, 170, 'lose']);
-[g, gr] = bossRun('2♣ 7♣ 9♣ J♣ K♣', 8, { flush: 208 }); // 12x × 209 = $25,080 ≥ $25,000
-assert.deepEqual([g.phase, g.level, g.bankroll], ['won', 8, 25080]);
+[g, gr] = bossRun('2♣ 7♣ 9♣ J♣ K♣', 8, { flush: 133 }); // 12x × 134 = $16,080 ≥ $16,000
+assert.deepEqual([g.phase, g.level, g.bankroll], ['won', 8, 16080]);
 
 // Duplicate and remove
 const s = E.newRun();
@@ -254,8 +255,8 @@ const bossCards = (difficulty) => {
 assert.deepEqual(['easy', 'normal', 'hard'].map((d) => bossCards(d).length), [0, 3, 3]);
 assert.equal(bossCards('normal').every((c) => c.boss && !c.locked), true);
 const at = (difficulty, level) => E.bossTarget(Object.assign(E.newRun({ difficulty }), { level }));
-assert.deepEqual([at('easy', 4), at('normal', 4)], [1000, 1000]);
-assert.deepEqual([at('hard', 1), at('hard', 8)], [25, 50000]);
+assert.deepEqual([at('easy', 4), at('normal', 4)], [750, 750]);
+assert.deepEqual([at('hard', 1), at('hard', 4), at('hard', 8)], [20, 1000, 25000]);
 // Boss cards can be deleted and changed like any other
 const bk = E.newRun();
 bk.bankroll = 100;
@@ -335,20 +336,36 @@ const finalWin = (cards, settings = {}, upgrades = {}) => {
   const g = E.newRun(settings);
   g.level = 8;
   g.hand = 5;
-  g.bankroll = 10 ** 6;
+  g.earned = 10 ** 6;
   g.upgrades = upgrades;
   g.deck = hand(cards).map((c, i) => ({ ...c, id: i + 1, copy: 0 }));
   E.deal(g, rand);
   E.draw(g, rand);
   return g;
 };
-// (a $1M bankroll clears the last boss whatever the hand)
+// ($1M already earned clears the last boss whatever the hand)
 const fk = finalWin('A♠ A♥ A♦ A♣ A♠', {}, { 'five-kind': 8 }); // 110x × 9 + 40x = 1,030x = $10,300
 assert.equal(fk.phase, 'won');
 for (const id of ['final-pair', 'final-five-kind', 'win-no-duplicate', 'win-no-delete', 'beat-normal', 'finish-run', 'keep-boss-cards', 'hand-5000', 'win-no-pair-upgrade', 'five-card-deck', 'small-deck']) {
   assert.ok(fk.achieved.includes(id), id); // five of a kind also pays a pair
 }
 assert.equal(fk.achieved.includes('final-flush'), false);
+// Made on level 8 counts on any hand, won or not; level 7 doesn't
+const madeOn = (level, handNo, cards) => {
+  const g = E.newRun();
+  g.level = level;
+  g.hand = handNo;
+  g.deck = hand(cards).map((c, i) => ({ ...c, id: i + 1, copy: 0 }));
+  E.deal(g, rand);
+  E.draw(g, rand);
+  return g;
+};
+assert.ok(madeOn(8, 1, '2♥ 5♥ 7♥ 9♥ J♥').achieved.includes('final-flush')); // first hand of level 8
+const lostFlush = madeOn(8, 5, '2♥ 5♥ 7♥ 9♥ J♥'); // $50 against $16,000
+assert.equal(lostFlush.phase, 'lost');
+assert.ok(lostFlush.achieved.includes('final-flush'));
+assert.equal(madeOn(7, 1, '2♥ 5♥ 7♥ 9♥ J♥').achieved.includes('final-flush'), false);
+assert.ok(madeOn(1, 1, '5♣ 6♦ 7♠ 8♥ 9♣').achieved.includes('boss-straight')); // Make a straight: any hand, not just a boss
 const sf = finalWin('9♥ 10♥ J♥ Q♥ K♥', { difficulty: 'hard' }, { straight: 1500 }); // 10x × 1,501 × $10 = $150,100 on one hand
 for (const id of ['final-straight', 'final-flush', 'boss-straight', 'straight-flush', 'beat-hard', 'straight-20', 'straight-1280', 'big-bet']) assert.ok(sf.achieved.includes(id), id);
 // Just short: straight $400 and $900, a $9,200 hand type, $14,990 on one hand

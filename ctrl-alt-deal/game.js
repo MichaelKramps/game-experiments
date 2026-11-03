@@ -325,8 +325,8 @@
 
   function resultLine(r) {
     const verdicts = {
-      beat: ` · <b>Beat the boss</b>: ${money(r.bankroll)} of ${money(r.target)} needed`,
-      lose: ` · Fell short of the boss: ${money(r.bankroll)} of ${money(r.target)} needed`,
+      beat: ` · <b>Beat the boss</b>: earned ${money(r.earned)} of ${money(r.target)} needed`,
+      lose: ` · Fell short of the boss: earned ${money(r.earned)} of ${money(r.target)} needed`,
     };
     const verdict = r.outcome ? verdicts[r.outcome] : '';
     // Every hand matched pays, so list each one and the total.
@@ -403,18 +403,20 @@
   function renderAccount() {
     $('account-title').textContent = KG.pick({ value: 'Account Properties', quality: 'Account', power: 'Account' });
     $('bankroll').textContent = money(run.bankroll);
+    const target = E.bossTarget(run);
+    $('earned').textContent = `${money(run.earned)} / ${money(target)}`;
     const gate = E.isGateHand(run.hand);
     $('stage').innerHTML = `Level ${run.level} of ${E.LEVELS} · Hand ${run.hand} of ${E.HANDS_PER_LEVEL}${gate ? ' · <b class="gate-tag">Boss</b>' : ''}`;
-    const target = E.bossTarget(run);
-    $('boss').innerHTML = `Have <b>${money(target)}</b> after hand ${E.HANDS_PER_LEVEL}${gate ? ' <span class="gate-tag">this hand</span>' : ''}`;
-    // One box per hand in this level; the last is the boss, labeled with its threshold.
+    $('boss').innerHTML = `Earn <b>${money(target)}</b> this level by hand ${E.HANDS_PER_LEVEL}${gate ? ' <span class="gate-tag">this hand</span>' : ''}`;
+    // One box per hand in this level; the last is the boss, labeled with how many cards it adds.
+    const adds = E.bossCardCount(run);
     const over = run.phase === 'won' || (run.phase === 'lost' && run.lostTo);
     $('pips').innerHTML = Array.from({ length: E.HANDS_PER_LEVEL }, (_, i) => {
       const h = i + 1;
       const boss = E.isGateHand(h);
       const state = h < run.hand || over ? 'done' : h === run.hand ? 'now' : '';
-      const title = boss ? `Boss: have ${money(target)} or more after this hand` : `Hand ${h}`;
-      return `<span class="pip ${state}${boss ? ' boss' : ''}" title="${title}">${boss ? money(target) : h}</span>`;
+      const title = boss ? `Boss: adds ${adds} card${adds === 1 ? '' : 's'} to your deck` : `Hand ${h}`;
+      return `<span class="pip ${state}${boss ? ' boss' : ''}" title="${title}">${boss ? `+${adds}` : h}</span>`;
     }).join('');
 
     // The run's settings, and whether it can earn achievements (only Easy stops it).
@@ -461,8 +463,8 @@
     const gate = E.isGateHand(run.hand);
     const target = E.bossTarget(run);
 
-    // How much more the bankroll needs by the end of the level.
-    const needed = Math.max(0, target - run.bankroll);
+    // How much more the level needs to earn by its last hand.
+    const needed = Math.max(0, target - run.earned);
     $('deal').disabled = !playing;
     // Gone while a hand is in play; it keeps its space so the toolbar doesn't shift.
     $('deal').style.visibility = run.phase === 'hold' ? 'hidden' : '';
@@ -474,9 +476,9 @@
       note = E.maxDiscards(run) === 0 ? 'Press Keep hand in the Cards window to score this hand.' : 'Select the cards to replace in the Cards window, then press Draw.';
       if (KG.os() === 'phone') note += ' <button class="kg-btn mini" type="button" data-screen="cards">Go to cards</button>';
     } else if (run.phase === 'won') note = `<b>You beat level ${E.LEVELS}'s boss.</b> Run won with ${money(run.bankroll)}.`;
-    else if (run.phase === 'lost') note = `<b>Run over.</b> You had ${money(run.last.bankroll)}, short of the boss's ${money(run.lostTo)}.`;
+    else if (run.phase === 'lost') note = `<b>Run over.</b> You earned ${money(run.last.earned)} this level, short of the boss's ${money(run.lostTo)}.`;
     else if (gate) {
-      note = `Boss hand: after this hand you need <b>${money(target)}</b> in your bankroll${needed ? `, so this hand must pay <b>${money(needed)}</b> or more` : ' (you have it already)'}. Anything less ends the run. Hands that would cover it are green in the paytable.${bossCardsLine(run.last?.bossCards)}`;
+      note = `Boss hand: this level needs to earn <b>${money(target)}</b>${needed ? `, so this hand must pay <b>${money(needed)}</b> or more` : ' (you have it already)'}. Anything less ends the run. Hands that would cover it are green in the paytable.${bossCardsLine(run.last?.bossCards)}`;
     }
     $('bet-note').innerHTML = note;
     $('note-box').hidden = !note;
@@ -494,8 +496,8 @@
   function renderPaytable() {
     // Every hand the last hand matched is marked, not just the best one.
     const lastIds = new Set(run.last ? run.last.matches.map((m) => m.id) : []);
-    // Green: hands that would cover what the bankroll still needs for the boss, on their own.
-    const need = run.phase === 'bet' || run.phase === 'hold' ? Math.max(1, E.bossTarget(run) - run.bankroll) : Infinity;
+    // Green: hands that would cover what the level still needs to earn for the boss, on their own.
+    const need = run.phase === 'bet' || run.phase === 'hold' ? Math.max(1, E.bossTarget(run) - run.earned) : Infinity;
     // Double payout: on the boss hand every hand pays double.
     const bossDouble = E.settingsOf(run).doubleBet && E.isGateHand(run.hand) ? 2 : 1;
     // The chance a fresh deal contains each hand (any 5 of the dealt cards make it), not that it's the best hand.
@@ -627,7 +629,7 @@
   async function endDialog(won) {
     const summary = won
       ? `You beat all ${E.LEVELS} bosses and finished with <b>${money(run.bankroll)}</b> in ${run.handsPlayed} hands.`
-      : `You finished level ${run.level} with ${money(run.last.bankroll)}, short of its boss's <b>${money(run.lostTo)}</b>.`;
+      : `You earned ${money(run.last.earned)} on level ${run.level}, short of its boss's <b>${money(run.lostTo)}</b>.`;
     const ok = await ask({ title: won ? 'Run won' : 'Run over', body: summary + runAchievementsNote(), ok: 'New run', cancel: 'Close' });
     if (ok) startRun();
   }
@@ -732,7 +734,7 @@
       return `<fieldset class="setup-group"><legend>${g.group}</legend>${items.join('')}</fieldset>`;
     });
     const warn = '<p class="setup-warn ach-off" id="setup-warn" hidden>Achievements are off on Easy mode, except Beat Easy mode.</p>';
-    const intro = '<p class="setup-intro muted">Changes apply when you start a new run. The current run keeps its settings.</p>';
+    const intro = '<p class="setup-intro muted">Information options apply right away. Everything else applies when you start a new run; the current run keeps its settings.</p>';
     const body = `${intro}<div class="setup-selects">${decks}${sizes}${modes}</div>${warn}${groups.join('')}`;
 
     // Hints under the dropdowns, the Easy warning and the Start label follow the choices.
@@ -770,7 +772,10 @@
     });
     if (!settings) return;
     profile.setup = settings;
-    save();
+    // Information displays only show things, so the current run picks them up straight away.
+    const info = TOGGLES.find((g) => g.group === 'Information').items;
+    run.settings = { ...run.settings, ...Object.fromEntries(info.map((t) => [t.key, settings[t.key]])) };
+    render();
   }
 
   // -------------------------------------------------------------------------
@@ -1060,12 +1065,13 @@
           <li>there's no bet: a hand that makes nothing just pays nothing</li></ul>
       </li>
       <li>Start with ${money(E.STARTING_BANKROLL)} and a normal 52 card deck, and spend your money between hands to change your deck and make more powerful hands</li>
-      <li>After the boss hand you need the boss's amount in your bankroll, otherwise you lose
-        <ul><li>On Normal and Hard, each boss puts random cards into your deck: 1 for the first boss, 2 for the second, and so on</li>
+      <li>By the end of the boss hand, that level's hands need to have earned the boss's amount, otherwise you lose
+        <ul><li>only money won this level counts: your bankroll doesn't, and spending doesn't take away from it</li>
+          <li>On Normal and Hard, each boss puts random cards into your deck: 1 for the first boss, 2 for the second, and so on</li>
           <li>Hard bosses need more money</li></ul>
       </li>
       <li>Spend money in the shop on Increase Hand Payout: each one adds the hand's starting payout again (a pair goes $10 → $20 → $30)</li>
-      <li>Beat a boss and your whole bankroll carries into the next level</li>
+      <li>Beat a boss and your whole bankroll carries into the next level, but earned this level starts again at $0</li>
     </ol>`;
 
   function showHowTo() {

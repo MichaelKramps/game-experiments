@@ -4,10 +4,10 @@ Oct 26, 2026 · @Michael
 
 ## Overview
 
-Ctrl+Alt+Deal is a solo deckbuilder built on five-card draw (video poker). Each hand you draw once and get paid a fixed amount by the paytable for the poker hand you make; there are no bets. Between hands you can spend that money to remove, duplicate or change cards, so strong hands come up more reliably, or to raise a hand's payout. Each level is a race: after its 5th hand your bankroll must reach the boss's threshold. The whole bankroll carries into the next level. The thresholds climb steeply, so you have to keep improving both to stay ahead.
+Ctrl+Alt+Deal is a solo deckbuilder built on five-card draw (video poker). Each hand you draw once and get paid a fixed amount by the paytable for the poker hand you make; there are no bets. Between hands you can spend that money to remove, duplicate or change cards, so strong hands come up more reliably, or to raise a hand's payout. Each level is a race: by the end of its 5th hand, that level's hands must have earned the boss's threshold. The bankroll carries into the next level, but earnings start again at $0, so money saved up can't carry you past a boss. The thresholds climb steeply, so you have to keep improving both to stay ahead.
 
 - You win by beating the boss of level 8.
-- You lose when your bankroll is short of a boss's threshold after its hand.
+- You lose when a level's earnings are short of its boss's threshold after the boss hand.
 
 (Changed 2026-11-02 from bets that grew 4x per level and boss hands that had to pay a target multiple; see Bankroll. Later the same day prizes were removed; boss credits, chained thresholds and bosses taking money were tried and removed again on 2026-11-03.)
 
@@ -19,8 +19,9 @@ Ctrl+Alt+Deal is a solo deckbuilder built on five-card draw (video poker). Each 
 | Bankroll | The money you have right now |
 | Level | A stage of the run. There are 8, and each has 5 hands |
 | Hand | One deal, draw and payout |
-| Boss hand | The 5th hand of each level. After it your bankroll must reach the level's threshold to move on (called "gate hand" in the code) |
-| Threshold | What the bankroll must reach after a level's boss hand |
+| Earned this level | What this level's hands have paid so far (`run.earned`). Spending doesn't lower it and Interest doesn't add to it; it goes back to $0 when a new level starts |
+| Boss hand | The 5th hand of each level. After it, earned this level must reach the level's threshold to move on (called "gate hand" in the code) |
+| Threshold | What earned this level must reach after a level's boss hand |
 | Payout | What a poker hand pays, in dollars. The engine keeps it as a multiple (Pair 1x) and pays $10 per 1x |
 | Paytable | What each poker hand pays |
 | Deck | Your cards. It starts as a standard 52-card deck and changes in the shop |
@@ -31,11 +32,11 @@ Ctrl+Alt+Deal is a solo deckbuilder built on five-card draw (video poker). Each 
 
 1. Start the run with a bankroll of $0 and a standard 52-card deck.
 2. Each level has 5 hands, all played and paid the same way.
-3. Hand 5 is the boss hand. As soon as it comes up (right after hand 4 is paid), on Normal and Hard the boss puts as many random cards into your deck as its level (see Bosses). After hand 5 is paid, the bankroll is checked against the level's threshold.
-   - **At or above the threshold:** you beat the boss, and the next level starts with the bankroll as it is.
+3. Hand 5 is the boss hand. As soon as it comes up (right after hand 4 is paid), on Normal and Hard the boss puts as many random cards into your deck as its level (see Bosses). After hand 5 is paid, earned this level is checked against the level's threshold.
+   - **At or above the threshold:** you beat the boss, and the next level starts with the bankroll as it is and earned back at $0.
    - **Below it:** the run is lost.
 4. Beating level 8's boss wins the run.
-5. The shop is open between every hand, and spends from the bankroll, so every purchase is money you'll have to win back before the boss.
+5. The shop is open between every hand, and spends from the bankroll. Spending doesn't count against the boss, which only looks at what the level earned.
 
 ## A hand, step by step
 
@@ -92,12 +93,12 @@ Totals in the table assume a hand in more than one suit; a one-suit full house, 
 
 ## Bosses
 
-After the boss hand (the level's 5th), the bankroll must be at least the level's threshold. Any build can get there, as long as it earns enough over the level's 5 hands after what it spent in the shop. (Changed 2026-11-02; before, the boss hand alone had to pay a target multiple, 2x to 5,000x, and before 2026-10-27 it had to beat a named poker hand.)
+After the boss hand (the level's 5th), the level's 5 hands must have paid at least the threshold between them. Any build can get there, as long as it earns enough within the level. (Changed 2026-11-03 from checking the bankroll: a strong early run could bank far more than later thresholds, e.g. $20,000 by level 3, and coast to the end. Changed 2026-11-02; before, the boss hand alone had to pay a target multiple, 2x to 5,000x, and before 2026-10-27 it had to beat a named poker hand.)
 
 | Level | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
 |---|---|---|---|---|---|---|---|---|
-| Threshold (Easy, Normal) | $20 | $100 | $250 | $1,000 | $3,000 | $8,000 | $15,000 | $25,000 |
-| Threshold (Hard) | $25 | $125 | $300 | $1,500 | $6,000 | $15,000 | $25,000 | $50,000 |
+| Threshold (Easy, Normal) | $20 | $100 | $200 | $750 | $2,000 | $4,000 | $8,000 | $16,000 |
+| Threshold (Hard) | $20 | $100 | $250 | $1,000 | $3,000 | $8,000 | $15,000 | $25,000 |
 | Cards added (Normal, Hard) | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
 
 **Boss cards** (added 2026-10-28). When a level's boss hand comes up, right after hand 4 is paid, the boss adds as many cards to your deck as its level: 1 on level 1, up to 8 on level 8, 36 over a full run. Each card's rank and suit are picked at random, independently, so a card can match one you already own; it's then a copy (named like a Duplicate). They're permanent deck cards like any other. Because they arrive before the shop opens for the boss hand, you can see them and pay to delete or change them before dealing. The hand 4 result and the boss note in the Account window list them ("The boss put 3 random cards in your deck: 7H, KS, 2C."). Easy bosses add no cards.
@@ -113,7 +114,7 @@ After the boss hand (the level's 5th), the bankroll must be at least the level's
 | Straight (flush) | 55% | 39% | 33% |
 | Flush Five | 100% | 84% | 42% |
 
-**Thresholds** (set 2026-11-03: $20, $100, $250, $1,000, $3,000, $8,000, $15,000, $25,000 for Easy and Normal). Hard: $25, $125, $300, $1,500, $6,000, $15,000, $25,000, $50,000. Simulated without locks (standard deck, best of 4 bots, 10,000 runs each): Easy 63% win, Normal 39%, Hard about 3%, with Hard's level 8 ending 28% of runs (median bankroll there about $38,000). With locked cards still in, the standard deck's best bot won about 39% on every difficulty with these (10,000 runs per bot), with 4–7% of runs ending at most levels, 11% at level 2 and 13–14% at level 8. Before that (2026-11-02) they were $40, $100, $250, $600, $1,500, $4,000, $10,000, $25,000, with level 1 lowered to $20 when the start went to $0. Simulated 2026-11-03 with those (standard deck, best of 4 bots, 1,000 runs): about 23–27% win on every difficulty; runs end 6–8% at level 1, 10–12% at level 2, 3–7% at each of levels 3–7 and about 34% at level 8, whose $25,000 is close to the median bankroll there (about $23,000). Earlier note: level 1 at $40 had to be earned from nothing; an unchanged standard deck reaches $40 in 5 hands about 85% of the time even from $0. After that they grow about 2.5x a level, a bit more than one doubling per level, since income now grows only through payout increases and deck shaping. Level 8's $25,000 is about $5,000 a hand: a flush build gets there with 6 Flush increases ($120 × 64 = $7,680) if it makes a flush about two-thirds of the time.
+**Thresholds** (set 2026-11-03 for earned-this-level, not yet simulated: Easy and Normal $20, $100, $200, $750, $2,000, $4,000, $8,000, $16,000; Hard takes the old Easy/Normal list, $20, $100, $250, $1,000, $3,000, $8,000, $15,000, $25,000. Everything below checked the bankroll. Earlier, set 2026-11-03: $20, $100, $250, $1,000, $3,000, $8,000, $15,000, $25,000 for Easy and Normal). Hard: $25, $125, $300, $1,500, $6,000, $15,000, $25,000, $50,000. Simulated without locks (standard deck, best of 4 bots, 10,000 runs each): Easy 63% win, Normal 39%, Hard about 3%, with Hard's level 8 ending 28% of runs (median bankroll there about $38,000). With locked cards still in, the standard deck's best bot won about 39% on every difficulty with these (10,000 runs per bot), with 4–7% of runs ending at most levels, 11% at level 2 and 13–14% at level 8. Before that (2026-11-02) they were $40, $100, $250, $600, $1,500, $4,000, $10,000, $25,000, with level 1 lowered to $20 when the start went to $0. Simulated 2026-11-03 with those (standard deck, best of 4 bots, 1,000 runs): about 23–27% win on every difficulty; runs end 6–8% at level 1, 10–12% at level 2, 3–7% at each of levels 3–7 and about 34% at level 8, whose $25,000 is close to the median bankroll there (about $23,000). Earlier note: level 1 at $40 had to be earned from nothing; an unchanged standard deck reaches $40 in 5 hands about 85% of the time even from $0. After that they grow about 2.5x a level, a bit more than one doubling per level, since income now grows only through payout increases and deck shaping. Level 8's $25,000 is about $5,000 a hand: a flush build gets there with 6 Flush increases ($120 × 64 = $7,680) if it makes a flush about two-thirds of the time.
 
 Simulated (bots, 1,000 runs per deck, before any tuning, with the bankroll reset to $0 each level and prizes, so these predate the current rules), Normal averaged over all 9 deck/strategy combinations: 4% of runs end at level 1, 9% at level 2, 7% at level 3, 3–4% at each of levels 4–6, 9% at level 7, 14% at level 8, and 46% win. Under the old bet economy it was 13% at level 1 and 9% at level 8 with 50% wins, so losses moved late. Known issues from the same run: Face (four of a kind) and Flush Five win 93–100% even on Hard; difficulty matters little (Easy 50%, Hard 40%) because duplicating outnumbers locked cards; level 3 ($250) is a wall for big decks (Standard loses 19% there); the Straight deck loses 46% at level 2 because it can't make pairs. Raising level 1 to $80 brought back early losses (18% at level 1).
 
@@ -121,9 +122,11 @@ Simulated (bots, 1,000 runs per deck, before any tuning, with the bankroll reset
 
 (Added 2026-11-02, replacing bets.)
 
-**Bankroll.** You start the run with $0, so the first hand has to earn something before you can shop. Every hand adds its payout, and the shop spends from it. There's no bet and no way to go broke: a hand that makes nothing pays $0, and spending your last dollar just leaves you at $0. Paytable totals that would cover what the bankroll still needs for this level's boss, on their own, are green.
+**Bankroll.** You start the run with $0, so the first hand has to earn something before you can shop. Every hand adds its payout, and the shop spends from it. There's no bet and no way to go broke: a hand that makes nothing pays $0, and spending your last dollar just leaves you at $0. Paytable totals that would cover what the level still needs to earn for its boss, on their own, are green.
 
-**After the boss.** If the bankroll reached the threshold, the next level starts with the whole bankroll; nothing is taken and nothing is awarded.
+**Earned this level.** Each hand's payout also adds to `run.earned`, which the boss checks. Spending doesn't lower it and Interest doesn't add to it. It starts at $0 on each new level and shows under Bankroll in the Account window.
+
+**After the boss.** If earned this level reached the threshold, the next level starts with the whole bankroll and earned at $0; nothing is taken and nothing is awarded.
 
 (History, all 2026-11-02 to 11-03: the bankroll first reset to $0 each level, and the money left over above the threshold picked a prize, one of the 3 dearest payout increases or free Delete / Duplicate / Change suit it could buy. Then boss credits replaced buying payout increases and prizes: boss N gave N credits that had to be spent, each doubling a hand's payout and the next threshold, which chained from $40 ($80, $320, $2,560, …), and the boss took its threshold out of the bankroll. All of that was removed; Increase Hand Payout is back in the shop.)
 
@@ -166,7 +169,7 @@ Two windows on the site shell (`KG.makeWindow`), in all three OS looks and both 
 - **Change suit:** select a card in Deck, press "Change suit $X" and pick one of the other three suits (also in the right-click menu). The file is renamed, e.g. `king-clubs.card` → `king-hearts.card`; if that card already exists it becomes a copy (`king-hearts - Copy.card`).
 - Status bar: the deck's card count and the Delete, Duplicate and Change suit prices.
 
-**Account window (game state).** Styled as a Properties panel: bankroll; level and hand ("Level 3 of 8 · Hand 5 of 5 · Boss"); a row of five boxes for this level's hands, filled as you play, where the fifth is gold and shows the threshold ("$250") instead of "5"; this level's threshold ("Have $250 after hand 5", ); a note box that appears only when there's something to say (during a hand, on boss hands, at the end of a run); the paytable, with each hand's own payout and its total in dollars, every hand the last hand matched marked, and totals that would cover what's still needed in green. The result line lists every match and the sum, e.g. "Full house · Full house $80 + Three of a kind $40 + Two pair $20 + Pair $10 = $150 · +$150", and after the boss the bankroll against the threshold ("Beat the boss: $310 of $250 needed"). (A recent-hands log, a "N more hands, then the boss" note and a paytable footnote were removed 2026-10-27.)
+**Account window (game state).** Styled as a Properties panel: bankroll; earned this level against the threshold ("$0 / $20"); level and hand ("Level 3 of 8 · Hand 5 of 5 · Boss"); a row of five boxes for this level's hands, filled as you play, where the fifth is gold and shows how many cards the boss adds ("+3") instead of "5"; this level's threshold ("Earn $250 this level by hand 5"); a note box that appears only when there's something to say (during a hand, on boss hands, at the end of a run); the paytable, with each hand's own payout and its total in dollars, every hand the last hand matched marked, and totals that would cover what's still needed in green. The result line lists every match and the sum, e.g. "Full house · Full house $80 + Three of a kind $40 + Two pair $20 + Pair $10 = $150 · +$150", and after the boss what the level earned against the threshold ("Beat the boss: earned $310 of $250 needed"). (A recent-hands log, a "N more hands, then the boss" note and a paytable footnote were removed 2026-10-27.)
 
 **Phones** (≤ 760px): each window is full-screen, so the two windows are two screens, with the Account screen first. Selecting is a tap; Remove and Duplicate come from a long-press menu.
 
@@ -174,7 +177,7 @@ Two windows on the site shell (`KG.makeWindow`), in all three OS looks and both 
 
 The full list of options and achievements, and how each achievement is read, is in `PROPOSAL-achievements-unlocks.md`. This section covers how they work in the game.
 
-**Game setup.** A Game setup button in the Account window opens a dialog with dropdowns for starting deck, hand size (5–10) and difficulty, and checkboxes for game mechanics, shop tools and information displays. Locked options are greyed out: a dropdown shows "(locked)" and "N of M unlocked", and a locked checkbox names the achievement that unlocks it. Save keeps the setup in the profile, and every new run (New run, or New run in the won/lost dialog) starts with it straight away; the current run keeps its own settings. Anything still locked falls back to the default. Settings can't change once the run starts; they're saved on the run (`run.settings`), and runs saved before this feature load with the defaults.
+**Game setup.** A Game setup button in the Account window opens a dialog with dropdowns for starting deck, hand size (5–10) and difficulty, and checkboxes for game mechanics, shop tools and information displays. Locked options are greyed out: a dropdown shows "(locked)" and "N of M unlocked", and a locked checkbox names the achievement that unlocks it. Save keeps the setup in the profile, and every new run (New run, or New run in the won/lost dialog) starts with it straight away. The information displays also apply to the current run as soon as you save; every other setting stays as the run started. Anything still locked falls back to the default. Apart from the information displays, settings can't change once the run starts; they're saved on the run (`run.settings`), and runs saved before this feature load with the defaults.
 
 **Achievements count everywhere except Easy.** On Easy only *Beat Easy mode* can be earned. The player is told in four places:
 - **Setup dialog:** Easy reads "Easy (no achievements)". Picking it shows "Achievements are off on Easy mode, except Beat Easy mode." under Difficulty, and the button reads "Start run (no achievements)".
@@ -188,7 +191,7 @@ Achievements are checked after every draw and purchase. A newly earned one pops 
 - **Hand size:** deals that many cards; the best 5 (the ones that pay most) are scored, and the rest are dimmed after the hand. The minimum deck size is the hand size.
 - **Extra draw:** if you replace cards on the first draw, you get a second draw; keeping the hand scores it right away. **No draw:** nothing can be replaced.
 - **Straights may skip a rank:** each step of a straight may jump one rank (2-4-6-7-9); aces still play high or low, with no wrapping.
-- **Interest:** after each hand, 10% of the bankroll (rounded down) is added and shown in the result line. On the boss hand it's added before the threshold check.
+- **Interest:** after each hand, 10% of the bankroll (rounded down) is added and shown in the result line. It goes into the bankroll only, not earned this level, so it doesn't help against bosses.
 - **Free Duplicate:** Duplicate costs $0 (shown as "Free") and also adds a random card. It still counts as duplicating.
 - **Difficulty:** on Easy bosses add no cards; on Normal and Hard every boss adds as many cards as its level; Hard has higher thresholds (see Bosses). (Changed 2026-11-03; from 2026-10-30 boss cards were locked by chance by difficulty, and before that bosses added 0, the level or twice the level cards.) Boss cards carry a flag. Changing one (suit or rank) keeps it a boss card, and so does splitting it (both halves stay boss cards, and splitting isn't deleting). Only Delete counts as deleting it. A duplicate of a boss card isn't one.
 - **Increase / Decrease rank:** one step, wrapping (A → 2, 2 → A). **Split card:** the card is replaced by its two neighbouring ranks in its suit (2 → A and 3). Each has its own price counter ($2, ×1.5).
@@ -208,8 +211,8 @@ Achievements are checked after every draw and purchase. A newly earned one pops 
 | DRAWS_PER_HAND | 1 (2 with Extra draw, 0 with No draw) |
 | MIN_DECK_SIZE | 5, or the hand size if bigger |
 | PAYOUT_UNIT | $10 per 1x of payout |
-| BOSS_TARGETS | Easy and Normal: $20, $100, $250, $1,000, $3,000, $8,000, $15,000, $25,000 |
-| HARD_BOSS_TARGETS | Hard: $25, $125, $300, $1,500, $6,000, $15,000, $25,000, $50,000 |
+| BOSS_TARGETS | Easy and Normal: $20, $100, $200, $750, $2,000, $4,000, $8,000, $16,000 |
+| HARD_BOSS_TARGETS | Hard: $20, $100, $250, $1,000, $3,000, $8,000, $15,000, $25,000 |
 | PAYOUT_BASE_PRICE | $2 (Increase Hand Payout, each hand) |
 | SHOP_BASE_PRICE | $2 each for Remove, Duplicate, Change suit |
 | SHOP_PRICE_GROWTH | ×1.5 per purchase, separate for each action |
@@ -220,7 +223,7 @@ Achievements are checked after every draw and purchase. A newly earned one pops 
 
 1. The base payouts follow simulated standard-deck odds but haven't been playtested. Deck shaping changes the odds a lot (Change suit makes flushes easy), so late-game balance still depends on shop prices.
 2. Boss targets for levels 2–7 (see Bosses) were filled in during the build.
-3. The bankroll at the threshold check includes the boss hand's own payout (and Interest).
+3. Earned this level at the threshold check includes the boss hand's own payout, but not Interest.
 4. Increase Hand Payout prices each hand separately (×1.5 per upgrade of that hand), and each upgrade adds the base, so payouts grow linearly while prices grow by 1.5x.
 5. All money is in whole dollars. Shop prices round up.
 6. You can discard at most (deck size − 5) cards, so the hand can always be refilled.

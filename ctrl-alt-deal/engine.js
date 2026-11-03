@@ -8,15 +8,17 @@
 // A card a boss added also has boss: true, and one with Add 2x has bonus: true.
 //
 // The run's settings (starting deck, hand size, difficulty, toggles) are
-// chosen at New run and never change during the run.
+// chosen at New run and never change during the run, except the information
+// displays, which Game setup applies to the current run straight away.
 //
 // There are no bets. Each hand pays its payout multiple × $10 into the
 // bankroll (Nothing pays $0), and the shop spends from it. After a level's 5th
-// hand the bankroll must reach the boss's threshold, and the whole bankroll
-// carries into the next level.
+// hand, what the level's hands paid (run.earned) must reach the boss's
+// threshold. The bankroll carries into the next level; earned starts at $0.
+// Spending doesn't lower earned, and interest doesn't add to it.
 
 const Engine = (() => {
-  const RUN_VERSION = 8; // 8: no locked cards, thresholds by difficulty; older saves are dropped
+  const RUN_VERSION = 9; // 9: bosses check earned this level, not the bankroll; older saves are dropped
   const STARTING_BANKROLL = 0;
   const LEVELS = 8;
   const HANDS_PER_LEVEL = 5; // the threshold is checked after the 5th (the boss hand)
@@ -71,10 +73,10 @@ const Engine = (() => {
     { id: 'flush-five', name: 'Flush Five deck', desc: 'Copies of one random card, as many as your hand size.' },
   ];
 
-  // Each level's boss threshold: after the level's last hand your bankroll
-  // must be at least this to move on; anything less ends the run.
-  const BOSS_TARGETS = [20, 100, 250, 1000, 3000, 8000, 15000, 25000];
-  const HARD_BOSS_TARGETS = [25, 125, 300, 1500, 6000, 15000, 25000, 50000];
+  // Each level's boss threshold: after the level's last hand the level's
+  // hands must have paid at least this in total; anything less ends the run.
+  const BOSS_TARGETS = [20, 100, 200, 750, 2000, 4000, 8000, 16000];
+  const HARD_BOSS_TARGETS = [20, 100, 250, 1000, 3000, 8000, 15000, 25000];
 
   // On Normal and Hard every boss adds as many random cards as its level;
   // on Easy bosses add none. Hard has its own thresholds.
@@ -517,6 +519,7 @@ const Engine = (() => {
       version: RUN_VERSION,
       settings: s,
       bankroll: STARTING_BANKROLL,
+      earned: 0, // what this level's hands have paid; the boss checks this
       level: 1,
       hand: 1,
       deck: [],
@@ -635,13 +638,14 @@ const Engine = (() => {
     const mult = sum * bonus;
     const paid = mult * PAYOUT_UNIT;
     run.bankroll += paid;
+    run.earned += paid;
     run.handsPlayed++;
     // Interest: 10% of the bankroll after every hand, before the boss checks it.
     const interest = s.interest && run.bankroll > 0 ? Math.floor(run.bankroll * INTEREST_RATE) : 0;
     run.bankroll += interest;
-    // After the boss hand the bankroll must reach the threshold; anything less ends the run.
+    // After the boss hand the level's earnings must reach the threshold; anything less ends the run.
     const target = r.gate ? bossTarget(run) : null;
-    const outcome = r.gate ? (run.bankroll >= target ? 'beat' : 'lose') : null;
+    const outcome = r.gate ? (run.earned >= target ? 'beat' : 'lose') : null;
 
     const result = {
       level: run.level,
@@ -659,6 +663,7 @@ const Engine = (() => {
       mult,
       paid,
       bankroll: run.bankroll,
+      earned: run.earned,
       target,
       outcome,
       passed: outcome === 'beat',
@@ -678,9 +683,10 @@ const Engine = (() => {
     } else if (run.level === LEVELS) {
       run.phase = 'won';
     } else {
-      // Beat the boss: the next level starts with the bankroll as it is.
+      // Beat the boss: the next level keeps the bankroll and starts earning from $0.
       run.level++;
       run.hand = 1;
+      run.earned = 0;
     }
     if (interest) result.interest = interest;
     checkAchievements(run);
@@ -696,26 +702,25 @@ const Engine = (() => {
 
   const BIG_DUPLICATE = 1000; // Pay $1,000 to duplicate a card
   const lastPaid = (run, id) => !!run.last?.matches?.some((m) => m.id === id);
-  const bossBeatWith = (run, id) => !!run.last?.passed && lastPaid(run, id);
   const won = (run) => run.phase === 'won';
-  const wonWith = (run, id) => won(run) && lastPaid(run, id);
+  const madeOnLast = (run, id) => run.last?.level === LEVELS && lastPaid(run, id); // any hand on level 8, won or not
 
   const ACHIEVEMENTS = [
     { id: 'numbers-only', name: 'Have a deck of only number cards', unlock: ['deck', 'numbers'], test: (run) => run.deck.every((c) => c.rank <= 10) },
     { id: 'face-only', name: 'Have a deck of only face cards', unlock: ['deck', 'face'], test: (run) => run.deck.every((c) => c.rank >= 11) },
     { id: 'small-deck', name: 'Have a deck of 26 cards or fewer', unlock: ['deck', 'half'], test: (run) => run.deck.length <= 26 },
-    { id: 'boss-straight', name: 'Beat any boss with a straight', unlock: ['deck', 'straight'], test: (run) => bossBeatWith(run, 'straight') },
+    { id: 'boss-straight', name: 'Make a straight', unlock: ['deck', 'straight'], test: (run) => lastPaid(run, 'straight') },
     { id: 'win-odd-deck', name: 'Win with a non-standard deck', unlock: ['deck', 'random'], test: (run) => won(run) && settingsOf(run).deck !== 'standard' },
     { id: 'keep-boss-cards', name: 'Win without deleting any boss cards', unlock: ['deck', 'corrupted'], test: (run) => won(run) && !run.stats?.bossDeleted },
     { id: 'five-card-deck', name: 'Have a deck of only 5 cards', unlock: ['deck', 'flush-five'], test: (run) => run.deck.length === 5 },
-    { id: 'final-pair', name: 'Beat the final boss with a pair', unlock: ['handSize', 6], test: (run) => wonWith(run, 'pair') },
-    { id: 'final-flush', name: 'Beat the final boss with a flush', unlock: ['handSize', 7], test: (run) => wonWith(run, 'flush') },
-    { id: 'final-five-kind', name: 'Beat the final boss with a five of a kind', unlock: ['handSize', 8], test: (run) => wonWith(run, 'five-kind') },
+    { id: 'final-pair', name: 'Make a pair on level 8', unlock: ['handSize', 6], test: (run) => madeOnLast(run, 'pair') },
+    { id: 'final-flush', name: 'Make a flush on level 8', unlock: ['handSize', 7], test: (run) => madeOnLast(run, 'flush') },
+    { id: 'final-five-kind', name: 'Make a five of a kind on level 8', unlock: ['handSize', 8], test: (run) => madeOnLast(run, 'five-kind') },
     { id: 'win-no-duplicate', name: 'Beat the final boss without duplicating a card', unlock: ['handSize', 9], test: (run) => won(run) && !run.bought.duplicate },
     { id: 'win-no-delete', name: 'Beat the final boss without deleting a card', unlock: ['handSize', 10], test: (run) => won(run) && !run.bought.remove },
     { id: 'beat-easy', name: 'Beat Easy mode', unlock: ['extraDraw', true], test: (run) => won(run) && settingsOf(run).difficulty === 'easy' },
     { id: 'beat-hard', name: 'Beat Hard mode', unlock: ['noDraw', true], test: (run) => won(run) && settingsOf(run).difficulty === 'hard' },
-    { id: 'final-straight', name: 'Beat the final boss with a straight', unlock: ['skipStraights', true], test: (run) => wonWith(run, 'straight') },
+    { id: 'final-straight', name: 'Make a straight on level 8', unlock: ['skipStraights', true], test: (run) => madeOnLast(run, 'straight') },
     { id: 'billion', name: 'Have $100,000 in your bankroll', unlock: ['interest', true], test: (run) => run.bankroll >= 100000 }, // ids kept from older goals so saved profiles keep them
     { id: 'big-duplicate', name: 'Pay $1,000 to duplicate a card', unlock: ['freeDuplicate', true], test: (run) => !!run.stats?.bigDuplicate },
     { id: 'straight-20', name: 'Increase the payout for a straight to $500', unlock: ['rankUp', true], test: (run) => total(run, 'straight') * PAYOUT_UNIT >= 500 },

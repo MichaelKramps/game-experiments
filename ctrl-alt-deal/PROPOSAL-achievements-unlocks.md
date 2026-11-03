@@ -11,18 +11,18 @@ Each achievement unlocks exactly one option.
 | Have a deck of only number cards (2–10) | Numbers deck |
 | Have a deck of only face cards (J–A) | Face deck |
 | Have a deck of 26 cards or fewer | Half deck |
-| Beat any boss with a straight | Straight deck |
+| Make a straight | Straight deck |
 | Win with a non-standard deck | Random deck |
 | Win without deleting any boss cards | Corrupted deck |
 | Have a deck of only 5 cards | Flush Five deck |
-| Beat the final boss with a pair | 6-card hands |
-| Beat the final boss with a flush | 7-card hands |
-| Beat the final boss with a five of a kind | 8-card hands |
+| Make a pair on level 8 | 6-card hands |
+| Make a flush on level 8 | 7-card hands |
+| Make a five of a kind on level 8 | 8-card hands |
 | Beat the final boss without duplicating a card | 9-card hands |
 | Beat the final boss without deleting a card | 10-card hands |
 | Beat Easy mode | Extra draw |
 | Beat Hard mode | No draw |
-| Beat the final boss with a straight | Straights may skip a rank |
+| Make a straight on level 8 | Straights may skip a rank |
 | Have $100,000 in your bankroll | Interest |
 | Pay $1,000 to duplicate a card | Free Duplicate |
 | Increase the payout for a straight to $500 | Increase rank |
@@ -39,7 +39,8 @@ Each achievement unlocks exactly one option.
 
 ### How each achievement is read
 
-- **"Beat a boss with X"** means you clear the boss and X is one of the hands you were paid for on that boss hand. Every hand that includes X counts. A five of a kind also pays a pair, so it earns "Beat the final boss with a pair". A straight flush earns the straight achievements and the flush one.
+- **"Make a straight"** means a straight is one of the hands you were paid for, on any hand. A straight flush counts, and earns the flush ones too. (Changed 2026-11-03 from "Beat any boss with a straight", which needed the straight on a boss hand that cleared the boss. Its id, `boss-straight`, didn't change.)
+- **"Make X on level 8"** means X is one of the hands you were paid for on any of level 8's five hands, whether or not you go on to win. Every hand that includes X counts, so a five of a kind also earns "Make a pair on level 8". (Changed 2026-11-03: these were "Beat the final boss with X" and needed the winning hand. Their ids didn't change.)
 - **"Have a deck of …"** only needs to be true for a moment. It's checked after every deck change and after boss cards are added.
 - **Number cards** are 2–10 and **face cards** are J, Q, K and A, the same split as the Numbers and Face decks.
 - **Boss cards** are the cards a boss added.
@@ -113,7 +114,7 @@ The one exception is **Beat Easy mode**, the only achievement an Easy run can ea
 ### Settings lock at run start
 
 - Every option above is chosen in a **Game setup dialog** opened from a button in the Account window. New run starts straight away with the saved setup (changed 2026-10-29 from opening the dialog on every New run).
-- Once the run starts, its settings can't change. They're stored on the run (`run.settings`), and the engine works out `run.countsForAchievements` once, at start.
+- Once the run starts, its settings can't change, except the information displays, which apply to the current run when Game setup is saved (changed 2026-11-03). They don't affect achievements. They're stored on the run (`run.settings`), and the engine works out `run.countsForAchievements` once, at start.
 - A saved run from before this feature loads as Standard deck, Normal, 5 cards, nothing on, so it counts.
 
 ### Telling the player
@@ -149,7 +150,7 @@ Scripts are in the session scratchpad, not the repo. Results come from a bot tha
 - An Easy run can earn only **Beat Easy mode**.
 - The minimum deck size equals the hand size. The Flush Five deck starts with as many copies as the hand size.
 - The Flush Five deck stays as it is for now, even if it makes some achievements easy. It can be tuned later.
-- "Beat the final boss with a pair" counts any paid pair, so it's reachable without upgrading Pair a lot.
+- "Make a pair on level 8" (was "Beat the final boss with a pair") counts any paid pair, so it's reachable without upgrading Pair a lot.
 - No Hard-only achievements for now. They may come later if the game gets popular.
 
 ## Decided while building (2026-10-29)
