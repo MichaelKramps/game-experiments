@@ -41,70 +41,59 @@ for (const [s, id] of [['K♣ K♦ K♠ 2♥ 2♣', 'full-house'], ['K♣ K♦ K
 const base = E.newRun();
 assert.equal(E.total(base, 'full-house'), 8 + 4 + 2 + 1);
 assert.equal(E.total(base, 'pair'), 1);
-assert.equal(E.total(base, 'nothing'), -1);
+assert.equal(E.total(base, 'nothing'), 0); // Nothing pays $0
 
-// Paytable and Increase Hand Payout: each purchase doubles the hand's payout
+// Paytable and Increase Hand Payout: each purchase adds the hand's base payout
 const up = E.newRun();
 up.bankroll = 100;
 assert.equal(E.multiple(up, 'pair'), 1);
-assert.equal(E.multiple(up, 'nothing'), -1);
+assert.equal(E.multiple(up, 'nothing'), 0);
 E.buy(up, 'payout', 'full-house');
 E.buy(up, 'payout', 'full-house');
-assert.equal(E.multiple(up, 'full-house'), 32);
-// Each hand has its own price: $2, ×4 when it's upgraded, ×1.5 when another hand is
-assert.equal(up.bankroll, 100 - 2 - 8);
-assert.equal(E.payoutPrice(up, 'full-house'), 32); // 2 × 4²
-assert.equal(E.payoutPrice(up, 'pair'), 5); // 2 × 1.5² = 4.5, rounded up
+assert.equal(E.multiple(up, 'full-house'), 24); // 8 + 8 + 8
+E.buy(up, 'payout', 'four-kind');
+assert.equal(E.multiple(up, 'four-kind'), 70); // $350 → $700
+// Each hand has its own price: $2, ×1.5 each time it's upgraded; other hands don't change it
+assert.equal(up.bankroll, 100 - 2 - 3 - 2);
+assert.equal(E.payoutPrice(up, 'full-house'), 5); // 2 × 1.5² = 4.5, rounded up
+assert.equal(E.payoutPrice(up, 'pair'), 2);
 E.buy(up, 'payout', 'pair');
-assert.equal(E.payoutPrice(up, 'pair'), 18); // 2 × 4 × 1.5² = 18
-assert.equal(E.payoutPrice(up, 'full-house'), 48); // 2 × 4² × 1.5
-assert.equal(E.payoutPrice(up, 'flush'), 7); // 2 × 1.5³ = 6.75, rounded up
-assert.equal(E.priceOf(up, 'payout'), 7); // no hand: the cheapest
-assert.equal(up.bankroll, 90 - 5);
+assert.deepEqual([E.payoutPrice(up, 'pair'), E.payoutPrice(up, 'full-house')], [3, 5]);
+up.upgrades.pair = 3;
+assert.equal(E.payoutPrice(up, 'pair'), 7); // 2 × 1.5³ = 6.75, rounded up
+assert.equal(E.priceOf(up, 'payout'), 2); // no hand: the cheapest
 const poor = E.newRun();
-poor.bankroll = 6;
-E.buy(poor, 'payout', 'pair'); // $2, leaves $4; pair now costs $8
+poor.bankroll = 4;
+E.buy(poor, 'payout', 'pair'); // $2, leaves $2; pair now costs $3
 assert.equal(E.shopBlock(poor, 'payout', 'pair'), "You can't afford it.");
-assert.equal(E.shopBlock(poor, 'payout', 'flush'), null); // $3
+assert.equal(E.shopBlock(poor, 'payout', 'flush'), null); // $2
 assert.throws(() => E.buy(poor, 'payout', 'pair'));
 assert.throws(() => E.buy(E.newRun(), 'payout', 'nothing'));
 assert.deepEqual(E.BOSS_TARGETS.length, E.LEVELS);
-assert.equal(E.bossTarget(8), 5000);
+assert.equal(E.bossTarget(Object.assign(E.newRun(), { level: 8 })), 25000);
 
 // Shop prices
 assert.deepEqual([...Array(10).keys()].map((n) => E.price(n)), [2, 3, 5, 7, 11, 16, 23, 35, 52, 77]);
 
-// Betting: $10–$20 across level 1's hands, 4x per level; short of that you bet everything; $0 loses
-assert.deepEqual([1, 2, 3, 4, 5].map((h) => E.handBet(1, h)), [10, 12, 14, 16, 20]);
-assert.deepEqual([1, 2, 3, 4, 5].map((h) => E.handBet(2, h)), [40, 48, 56, 64, 80]);
-assert.deepEqual([1, 2, 3, 4, 5].map((h) => E.handBet(3, h)), [160, 192, 224, 256, 320]);
-const run = E.newRun();
-assert.deepEqual(E.nextBet(run), { bet: 10, full: 10, allIn: false });
-run.level = 3;
-run.hand = 2;
-run.bankroll = 1000;
-assert.deepEqual(E.nextBet(run), { bet: 192, full: 192, allIn: false });
-run.bankroll = 100;
-assert.deepEqual(E.nextBet(run), { bet: 100, full: 192, allIn: true });
-run.deck = hand('2♣ 4♦ 6♠ 8♥ 10♣').map((c, i) => ({ ...c, id: i + 1, copy: 0 }));
-E.deal(run, Math.random);
-assert.equal(run.bankroll, 0); // all in
-E.draw(run); // nothing: the bet is lost, and with $0 the run is over
-assert.equal(run.phase, 'lost');
+// No bets: dealing costs nothing, and spending your last dollar doesn't end the run
 const broke = E.newRun();
 broke.bankroll = 2;
-assert.equal(E.strands(broke, 'remove'), true); // spending your last $2 ends the run
+E.buy(broke, 'remove', broke.deck[0].id);
+assert.deepEqual([broke.bankroll, broke.phase], [0, 'bet']);
+E.deal(broke, Math.random);
+assert.equal(broke.phase, 'hold');
 
 // A full hand: deal, discard, draw, pay out
 const r = E.newRun();
 let seed = 1;
 const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
 E.deal(r, rand);
-assert.equal(r.bankroll, 15);
+assert.equal(r.bankroll, 0); // $0 to start, and dealing is free
 assert.equal(r.round.cards.length, 5);
 assert.equal(E.trash(r, r.round.cards.slice(0, 2)).length, 2);
 const res = E.draw(r);
-assert.equal(r.bankroll, 15 + (res.mult < 0 ? 0 : 10 + 10 * res.mult));
+assert.equal(res.paid, res.mult * 10); // $10 per 1x
+assert.equal(r.bankroll, res.paid);
 assert.equal(r.hand, 2);
 
 // Discard limit: deck size − 5
@@ -113,55 +102,50 @@ small.deck = small.deck.slice(0, 7);
 E.deal(small, rand);
 assert.equal(E.trash(small, small.round.cards).length, 2);
 
-// Boss hands: pay at least the target to move on, anything less ends the run
-const bossRun = (cards, level = 1, upgrades = {}) => {
+// Boss: after the 5th hand the bankroll must reach the threshold
+const bossRun = (cards, level = 1, upgrades = {}, bankroll = 0) => {
   const g = E.newRun();
   g.level = level;
   g.hand = 5;
-  g.bankroll = 10 ** 6;
+  g.bankroll = bankroll;
   g.upgrades = upgrades;
   g.deck = hand(cards).map((c, i) => ({ ...c, id: i + 1, copy: 0 }));
   E.deal(g, rand);
-  return [g, E.draw(g)];
+  return [g, E.draw(g, rand)];
 };
-let [g, gr] = bossRun('2♣ 2♦ 7♠ 4♥ 3♣', 1, { pair: 1 }); // pair doubled to 2x, boss 1 needs 2x
-assert.equal(gr.outcome, 'beat');
-assert.deepEqual([g.level, g.hand, g.phase], [2, 1, 'bet']);
-assert.equal(g.bankroll, 10 ** 6 + 20 * 2); // the boss bets $20 on level 1
-[g, gr] = bossRun('7♣ 7♦ 4♠ 2♥ 3♣'); // pair 1x < 2x
-assert.equal(gr.outcome, 'lose');
-assert.equal(g.phase, 'lost');
-assert.equal(g.lostTo, 2);
-[g, gr] = bossRun('7♣ 7♦ 2♠ 2♥ 3♣'); // two pair 2x + pair 1x = 3x
-assert.equal(gr.mult, 3);
-assert.equal(gr.outcome, 'beat');
-assert.deepEqual(gr.matches.map((m) => [m.id, m.mult]), [['two-pair', 2], ['pair', 1]]);
-[g, gr] = bossRun('7♣ 7♦ 7♠ 2♥ 2♣', 4, { pair: 2 }); // full house 8 + trips 4 + two pair 2 + pair 1×4 = 18x
-assert.equal(gr.mult, 18);
-assert.equal(g.bankroll, 10 ** 6 + 1280 * 18);
-[g, gr] = bossRun('2♣ 7♣ 9♣ J♣ K♣', 8, { flush: 9 }); // 12x × 2^9 = 6,144x
-assert.equal(gr.mult, 6144);
-assert.equal(g.phase, 'won');
+let [g, gr] = bossRun('7♣ 7♦ 2♠ 2♥ 3♣', 1, {}, 10); // two pair 2x + pair 1x = $30, $10 + $30 = $40 ≥ $20
+assert.deepEqual([gr.mult, gr.paid, gr.outcome, gr.bankroll], [3, 30, 'beat', 40]);
+assert.deepEqual([g.level, g.hand, g.bankroll, g.phase], [2, 1, 40, 'bet']); // the whole bankroll carries into level 2
+[g, gr] = bossRun('2♣ 4♦ 6♠ 8♥ 10♣', 1, {}, 19); // Nothing: $19 < $20
+assert.deepEqual([gr.outcome, g.phase, g.lostTo], ['lose', 'lost', 20]);
+[g, gr] = bossRun('2♣ 4♦ 6♠ 8♥ 10♣', 1, {}, 100); // Nothing pays $0, but the bankroll already clears it
+assert.deepEqual([gr.paid, gr.outcome], [0, 'beat']);
+[g, gr] = bossRun('7♣ 7♦ 7♠ 2♥ 2♣', 4, { pair: 2 }); // full house 8 + trips 4 + two pair 2 + pair 1×3 = 17x = $170 < $1,000
+assert.deepEqual([gr.mult, gr.paid, gr.outcome], [17, 170, 'lose']);
+[g, gr] = bossRun('2♣ 7♣ 9♣ J♣ K♣', 8, { flush: 208 }); // 12x × 209 = $25,080 ≥ $25,000
+assert.deepEqual([g.phase, g.level, g.bankroll], ['won', 8, 25080]);
 
 // Duplicate and remove
 const s = E.newRun();
+s.bankroll = 40;
 const ks = s.deck.find((c) => c.rank === 13 && c.suit === 'C');
 E.buy(s, 'duplicate', ks.id);
 E.buy(s, 'duplicate', ks.id);
 assert.equal(s.deck.length, 54);
 assert.deepEqual(s.deck.slice(-2).map((c) => c.copy), [1, 2]);
-assert.equal(s.bankroll, 20);
+assert.equal(s.bankroll, 35);
 E.buy(s, 'remove', ks.id);
 assert.equal(s.deck.length, 53);
 assert.equal(E.prices(s).remove, 3);
 
 // Change suit: own price counter; becomes a copy if that card already exists
 const cs = E.newRun();
+cs.bankroll = 40;
 const kc = cs.deck.find((c) => c.rank === 13 && c.suit === 'C');
 E.buy(cs, 'suit', kc.id, 'H');
 assert.deepEqual([kc.suit, kc.copy], ['H', 1]); // KH was already in the deck
 assert.equal(cs.deck.length, 52);
-assert.equal(cs.bankroll, 23);
+assert.equal(cs.bankroll, 38);
 assert.deepEqual([E.prices(cs).remove, E.prices(cs).duplicate, E.prices(cs).suit], [2, 2, 3]);
 const kh = cs.deck.find((c) => c.rank === 13 && c.suit === 'H' && c.copy === 0);
 E.buy(cs, 'remove', kh.id);
@@ -257,8 +241,8 @@ const xk = E.newRun({ extraDraw: true });
 E.deal(xk, rand);
 assert.equal(E.draw(xk, rand).partial, undefined); // keeping the hand scores it at once
 
-// Difficulty: every boss adds as many cards as its level; Easy locks none,
-// Hard locks all, Normal locks each by chance
+// Difficulty: on Normal and Hard every boss adds as many cards as its level;
+// on Easy none. Thresholds come from the difficulty.
 const bossCards = (difficulty) => {
   const b = E.newRun({ difficulty });
   b.level = 3;
@@ -267,56 +251,30 @@ const bossCards = (difficulty) => {
   E.deal(b, rand);
   return E.draw(b, rand).bossCards;
 };
-for (const d of ['easy', 'normal', 'hard']) assert.equal(bossCards(d).length, 3);
-assert.equal(bossCards('normal').every((c) => c.boss), true);
-assert.equal(bossCards('easy').some((c) => c.locked), false);
-assert.equal(bossCards('hard').every((c) => c.locked), true);
-let lockedN = 0;
-for (let i = 0; i < 200; i++) lockedN += bossCards('normal').filter((c) => c.locked).length;
-assert.ok(lockedN > 200 && lockedN < 400, `Normal locks about half: ${lockedN} of 600`);
-
-// Inflation: every shop price × (1 + rate) per hand played: 0% Easy, 10% Normal, 20% Hard
-for (const [difficulty, played, want] of [['easy', 10, 2], ['normal', 3, 3], ['hard', 10, 13]]) {
-  const inf = E.newRun({ difficulty });
-  inf.handsPlayed = played;
-  assert.equal(E.prices(inf).remove, want, `${difficulty} remove`); // ceil(2 × rate^played)
-  assert.equal(E.prices(inf).suit, want, `${difficulty} suit`);
-  assert.equal(E.payoutPrice(inf, 'pair'), want, `${difficulty} payout`);
-}
-const infFree = E.newRun({ difficulty: 'hard', freeDuplicate: true });
-infFree.handsPlayed = 20;
-assert.equal(E.prices(infFree).duplicate, 0); // Free Duplicate stays free
-const infGrow = E.newRun({ difficulty: 'normal' });
-infGrow.handsPlayed = 5;
-infGrow.bought.remove = 2;
-assert.equal(E.prices(infGrow).remove, Math.ceil(2 * 1.5 ** 2 * 1.1 ** 5)); // stacks with the ×1.5 per purchase
-
-// Locked cards can't be deleted, duplicated or changed
-const lk = E.newRun({ rankUp: true, rankDown: true, split: true, bonus: true });
-lk.bankroll = 10 ** 6;
-const lockedCard = lk.deck[0];
-lockedCard.locked = true;
-for (const a of ['remove', 'duplicate', 'suit', 'rankUp', 'rankDown', 'split', 'bonus']) {
-  assert.match(E.shopBlock(lk, a, lockedCard.id), /locked/, a);
-  assert.throws(() => E.buy(lk, a, lockedCard.id, 'H'), /locked/, a);
-}
-assert.equal(E.shopBlock(lk, 'remove', lk.deck[1].id), null); // unlocked cards are fine
-assert.equal(E.shopBlock(lk, 'remove'), null); // no card given: only the general checks
-assert.equal(lk.deck.includes(lockedCard), true);
-assert.equal(lk.bankroll, 10 ** 6); // nothing was bought
+assert.deepEqual(['easy', 'normal', 'hard'].map((d) => bossCards(d).length), [0, 3, 3]);
+assert.equal(bossCards('normal').every((c) => c.boss && !c.locked), true);
+const at = (difficulty, level) => E.bossTarget(Object.assign(E.newRun({ difficulty }), { level }));
+assert.deepEqual([at('easy', 4), at('normal', 4)], [1000, 1000]);
+assert.deepEqual([at('hard', 1), at('hard', 8)], [25, 50000]);
+// Boss cards can be deleted and changed like any other
+const bk = E.newRun();
+bk.bankroll = 100;
+bk.deck[0].boss = true;
+assert.equal(E.shopBlock(bk, 'suit', bk.deck[0].id), null);
 
 // Interest: 10% of the bankroll after each hand
 const it = E.newRun({ interest: true });
 it.bankroll = 1000;
 E.deal(it, rand);
 const itr = E.draw(it, rand);
-assert.equal(itr.interest, Math.floor((990 + (itr.mult < 0 ? 0 : 10 + 10 * itr.mult)) * 0.1));
+assert.equal(itr.interest, Math.floor((1000 + itr.paid) * 0.1));
+assert.equal(it.bankroll, 1000 + itr.paid + itr.interest);
 
 // Free Duplicate: costs nothing and adds a random card too
 const fd = E.newRun({ freeDuplicate: true });
 assert.equal(E.prices(fd).duplicate, 0);
 const fdr = E.buy(fd, 'duplicate', fd.deck[0].id, null, rand);
-assert.deepEqual([fdr.cost, fdr.added.length, fd.deck.length, fd.bankroll], [0, 2, 54, 25]);
+assert.deepEqual([fdr.cost, fdr.added.length, fd.deck.length, fd.bankroll], [0, 2, 54, 0]); // free, so the $0 bankroll is untouched
 
 // Shop tools are off unless chosen for the run
 const plain = E.newRun();
@@ -351,19 +309,18 @@ const bonusHand = (s, bonuses) => {
 };
 assert.equal(bonusHand('3♦ 7♣ 7♦ 2♠ 2♥', 1).mult, 6); // two pair 3x, 3♦ isn't in a pair but still counts
 assert.equal(bonusHand('3♦ 7♣ 7♦ 2♠ 2♥', 2).mult, 12);
-assert.equal(bonusHand('2♣ 4♦ 6♠ 8♥ 10♣', 2).mult, -1);
+assert.equal(bonusHand('2♣ 4♦ 6♠ 8♥ 10♣', 2).mult, 0);
 
-// Double bet: once per level, twice the bet
-const db = E.newRun({ doubleBet: true });
-assert.equal(E.canDoubleBet(db), true);
-E.setDoubleBet(db, true);
-assert.equal(E.nextBet(db).bet, 20);
-E.deal(db, rand);
-assert.equal(db.round.bet, 20);
-E.draw(db, rand);
-assert.equal(E.canDoubleBet(db), false);
-assert.throws(() => E.setDoubleBet(db, true));
-assert.equal(E.canDoubleBet(E.newRun()), false);
+// Double payout: boss hands pay double, other hands don't
+const dbHand = (hand5, settings) => {
+  const g = E.newRun(settings);
+  g.hand = hand5 ? 5 : 1;
+  g.bankroll = 1000;
+  g.deck = hand('7♣ 7♦ 2♠ 2♥ 3♣').map((c, i) => ({ ...c, id: i + 1, copy: 0 }));
+  E.deal(g, rand);
+  return E.draw(g, rand);
+};
+assert.deepEqual([dbHand(true, { doubleBet: true }).paid, dbHand(false, { doubleBet: true }).paid, dbHand(true, {}).paid], [60, 30, 30]); // two pair $30
 
 // Achievements
 const ach = (run) => run.achieved;
@@ -385,30 +342,50 @@ const finalWin = (cards, settings = {}, upgrades = {}) => {
   E.draw(g, rand);
   return g;
 };
-const fk = finalWin('A♠ A♥ A♦ A♣ A♠', {}, { 'five-kind': 6 });
+// (a $1M bankroll clears the last boss whatever the hand)
+const fk = finalWin('A♠ A♥ A♦ A♣ A♠', {}, { 'five-kind': 8 }); // 110x × 9 + 40x = 1,030x = $10,300
 assert.equal(fk.phase, 'won');
 for (const id of ['final-pair', 'final-five-kind', 'win-no-duplicate', 'win-no-delete', 'beat-normal', 'finish-run', 'keep-boss-cards', 'hand-5000', 'win-no-pair-upgrade', 'five-card-deck', 'small-deck']) {
   assert.ok(fk.achieved.includes(id), id); // five of a kind also pays a pair
 }
 assert.equal(fk.achieved.includes('final-flush'), false);
-const sf = finalWin('9♥ 10♥ J♥ Q♥ K♥', { difficulty: 'hard' }, { straight: 14 }); // 10x × 2^14 = 163,840x;
+const sf = finalWin('9♥ 10♥ J♥ Q♥ K♥', { difficulty: 'hard' }, { straight: 1500 }); // 10x × 1,501 × $10 = $150,100 on one hand
 for (const id of ['final-straight', 'final-flush', 'boss-straight', 'straight-flush', 'beat-hard', 'straight-20', 'straight-1280', 'big-bet']) assert.ok(sf.achieved.includes(id), id);
+// Just short: straight $400 and $900, a $9,200 hand type, $14,990 on one hand
+const near = E.newRun();
+near.upgrades = { straight: 3, 'five-kind': 7 }; // five of a kind 110x × 8 + 40x = 920x
+E.checkAchievements(near);
+assert.equal(['straight-20', 'straight-1280', 'hand-5000'].some((id) => near.achieved.includes(id)), false);
+near.upgrades.straight = 4;
+E.checkAchievements(near);
+assert.deepEqual(['straight-20', 'straight-1280'].map((id) => near.achieved.includes(id)), [true, false]);
+near.upgrades.straight = 9;
+E.checkAchievements(near);
+assert.equal(near.achieved.includes('straight-1280'), true); // $1,000
+near.last = { paid: 14990, matches: [] };
+E.checkAchievements(near);
+assert.equal(near.achieved.includes('big-bet'), false);
+near.last = { paid: 15000, matches: [] };
+E.checkAchievements(near);
+assert.equal(near.achieved.includes('big-bet'), true);
 const lost = E.newRun();
 lost.hand = 5;
+lost.bankroll = 0; // and Nothing pays $0, short of $20
 lost.deck = hand('2♣ 4♦ 6♠ 8♥ 10♣').map((c, i) => ({ ...c, id: i + 1, copy: 0 }));
 E.deal(lost, rand);
 E.draw(lost, rand);
 assert.deepEqual(lost.achieved.filter((id) => ['lose-boss', 'finish-run'].includes(id)), ['lose-boss', 'finish-run']);
 const bd = E.newRun();
-bd.bankroll = 10 ** 10;
-bd.bought.duplicate = 44; // the 45th duplicate costs over $100M
+bd.bankroll = 99000;
+bd.bought.duplicate = 16; // the 17th duplicate costs $1,314 (the 16th $876)
 E.buy(bd, 'duplicate', bd.deck[0].id);
 assert.ok(bd.achieved.includes('big-duplicate'));
-assert.ok(!bd.achieved.includes('billion')); // $10 billion isn't enough
-bd.bankroll = 10 ** 12;
+assert.ok(!bd.achieved.includes('billion')); // under $100,000 isn't enough
+bd.bankroll = 100000;
 E.checkAchievements(bd);
 assert.ok(bd.achieved.includes('billion'));
 const boss = E.newRun();
+boss.bankroll = 40;
 boss.deck[0].boss = true;
 E.buy(boss, 'remove', boss.deck[0].id);
 assert.equal(boss.stats.bossDeleted, 1);

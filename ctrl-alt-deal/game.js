@@ -1,5 +1,5 @@
 // Ctrl+Alt+Deal UI: two windows on the site shell (../os/os.js).
-//   Account — bankroll, bet size, progress, the paytable.
+//   Account — bankroll, what the boss needs, progress, the paytable.
 //   Cards   — a file browser where every card is a file: Deck and Hand.
 //             Deal sits at the left of its toolbar. Select cards in Hand,
 //             then Draw (Refresh) replaces them. Between hands the Deck
@@ -29,7 +29,7 @@
   };
   const money = (n) => (n < 0 ? '−$' : '$') + amount(Math.abs(n));
   const signed = (n) => (n > 0 ? '+' : n < 0 ? '−' : '±') + '$' + amount(Math.abs(n));
-  const mult = (m) => (m < 0 ? '−' : '') + Math.abs(m) + 'x';
+  const pays = (m) => money(m * E.PAYOUT_UNIT); // a payout multiple in dollars
 
   const pct = (p) => (!p ? '0%' : p < 0.001 ? '<0.1%' : `${(p * 100).toFixed(p < 0.1 ? 1 : 0)}%`);
 
@@ -52,7 +52,7 @@
         { key: 'rankDown', name: 'Decrease rank', desc: 'Lower a card one rank; a 2 becomes an ace.' },
         { key: 'split', name: 'Split card', desc: 'A card becomes its two neighbouring ranks, same suit.' },
         { key: 'bonus', name: 'Add 2x to card', desc: 'Any hand with that card in it pays double.' },
-        { key: 'doubleBet', name: 'Double bet', desc: 'Once per level, bet twice as much on one hand.' },
+        { key: 'doubleBet', name: 'Double payout', desc: 'Boss hands pay double.' },
       ],
     },
     {
@@ -61,7 +61,7 @@
         { key: 'deckInfo', name: 'Deck properties', desc: 'Card counts by rank and suit.' },
         { key: 'deckOdds', name: 'Deck odds', desc: 'The chance a fresh deal contains each hand.' },
         { key: 'drawOdds', name: 'Draw odds', desc: 'During a hand, the chance of drawing each rank and suit.' },
-        { key: 'payoutInfo', name: 'Payout increase', desc: 'How much more each payout upgrade pays at your current bet.' },
+        { key: 'payoutInfo', name: 'Payout increase', desc: 'How much more each payout upgrade pays.' },
       ],
     },
   ];
@@ -95,7 +95,8 @@
   function load() {
     try {
       const saved = JSON.parse(localStorage.getItem(SAVE_KEY));
-      if (saved && Array.isArray(saved.deck) && saved.bought) {
+      // Runs saved under other rules (an older version) are dropped.
+      if (saved && Array.isArray(saved.deck) && saved.bought && saved.version === E.RUN_VERSION) {
         E.checkAchievements(saved); // runs saved before achievements existed
         return saved;
       }
@@ -176,19 +177,15 @@
     return folder === 'hand' && run.phase === 'hold' ? run.round.trashed.includes(id) : selected.has(id);
   }
 
-  // A small padlock for locked cards, in the card's own color.
-  const LOCK_ICON = '<svg viewBox="0 0 10 12" width="9" height="11" aria-hidden="true"><path d="M2.5 5V3.5a2.5 2.5 0 0 1 5 0V5" fill="none" stroke="currentColor" stroke-width="1.4"/><rect x="1" y="5" width="8" height="6.5" rx="1" fill="currentColor"/></svg>';
-
   function cardTile(card, { extra = '' } = {}) {
     const on = isSelected(card.id);
     const cls = ['file', 'card-file'];
     if (on) cls.push('selected');
     if (fresh.has(card.id)) cls.push('fresh');
     if (extra) cls.push(extra);
-    if (card.locked) cls.push('locked');
-    const notes = [card.bonus && '2x: any hand with this card pays double', card.locked && "Locked: can't be deleted, duplicated or changed", card.boss && 'Added by a boss'].filter(Boolean).join(' · ');
+    const notes = [card.bonus && '2x: any hand with this card pays double', card.boss && 'Added by a boss'].filter(Boolean).join(' · ');
     return `<div class="${cls.join(' ')}" data-card="${card.id}" tabindex="0" role="option" aria-selected="${on}"${notes ? ` title="${notes}"` : ''}>
-      <span class="card-icon suit-${card.suit}">${E.cardLabel(card)}${card.bonus ? '<span class="card-bonus">2x</span>' : ''}${card.locked ? `<span class="card-lock" aria-label="Locked">${LOCK_ICON}</span>` : ''}</span>
+      <span class="card-icon suit-${card.suit}">${E.cardLabel(card)}${card.bonus ? '<span class="card-bonus">2x</span>' : ''}</span>
       <span class="file-label">${esc(fileName(card))}</span>
     </div>`;
   }
@@ -313,7 +310,7 @@
             : `Select the cards you want to replace, then press <b>Draw</b>, or press <b>Keep hand</b> to keep all ${size}. Unselected cards are held.${more}${best} <span class="muted">Replacing ${used} of up to ${Math.min(max, size)}</span>`;
     } else if (run.phase === 'bet' && folder === 'hand' && run.last) {
       html = resultLine(run.last);
-      tone = run.last.net > 0 ? 'good' : run.last.net < 0 ? 'bad' : '';
+      tone = run.last.outcome === 'lose' || !run.last.paid ? 'bad' : 'good';
     } else if (run.phase === 'bet') {
       help = true;
       html = 'Shop is open: select a card in Deck, then pick a card action from the toolbar. Increase Hand Payout needs no card.';
@@ -328,31 +325,31 @@
 
   function resultLine(r) {
     const verdicts = {
-      beat: ` · <b>Beat the boss</b> (${r.target}x needed)`,
-      lose: ` · Fell short of the boss (${r.target}x needed)`,
+      beat: ` · <b>Beat the boss</b>: ${money(r.bankroll)} of ${money(r.target)} needed`,
+      lose: ` · Fell short of the boss: ${money(r.bankroll)} of ${money(r.target)} needed`,
     };
     const verdict = r.outcome ? verdicts[r.outcome] : '';
     // Every hand matched pays, so list each one and the total.
-    const list = r.matches || [{ name: r.handName, mult: r.mult }]; // runs saved before matches existed
+    const list = r.matches.filter((m) => m.id !== E.NOTHING.id);
     const sum = r.mult / (r.bonus || 1);
-    let pays = list.length > 1 ? `${list.map((m) => `${esc(m.name)} ${mult(m.mult)}`).join(' + ')} = ${mult(sum)}` : mult(sum);
-    // 2x cards double the whole hand, once per card.
+    // A single hand needs no breakdown unless something doubled it.
+    let line = list.length > 1 ? `${list.map((m) => `${esc(m.name)} ${pays(m.mult)}`).join(' + ')} = ${pays(sum)}` : r.bonus > 1 ? pays(sum) : '';
+    // 2x cards and Double payout double the whole hand.
     if (r.bonus > 1) {
-      const n = Math.log2(r.bonus);
-      pays += ` × ${r.bonus} (${n === 1 ? 'a 2x card' : `${n} 2x cards`}) = ${mult(r.mult)}`;
+      const cards = Math.log2(r.bonus) - (r.double ? 1 : 0);
+      const why = [cards && (cards === 1 ? 'a 2x card' : `${cards} 2x cards`), r.double && 'Double payout'].filter(Boolean).join(', ');
+      line += ` × ${r.bonus} (${why}) = ${pays(r.mult)}`;
     }
     const interest = r.interest ? `<span class="interest"> · Interest +${money(r.interest)}</span>` : '';
-    return `<b>${esc(r.handName)}</b> · ${pays} on ${money(r.bet)} · <b>${signed(r.net)}</b>${interest}${verdict}${bossCardsLine(r.bossCards)}`;
+    return `<b>${esc(r.handName)}</b>${line ? ` · ${line}` : ''} · <b>${signed(r.paid)}</b>${interest}${verdict}${bossCardsLine(r.bossCards)}`;
   }
 
-  // The cards a boss put in your deck as its hand came up, and which are locked.
+  // The cards a boss put in your deck as its hand came up.
   function bossCardsLine(cards) {
     if (!cards?.length) return '';
     const n = cards.length;
-    const locked = cards.filter((c) => c.locked).length;
-    const lockNote = !locked ? '' : locked === n ? (n === 1 ? ". It's locked" : '. All are locked') : `. ${locked} ${locked === 1 ? 'is' : 'are'} locked`;
-    const list = cards.map((c) => `<span class="suit-${c.suit}">${E.cardLabel(c)}${c.locked ? ' (locked)' : ''}</span>`).join(', ');
-    return `<span class="boss-cards">The boss put ${n === 1 ? 'a random card' : `${n} random cards`} in your deck: ${list}${lockNote}.</span>`;
+    const list = cards.map((c) => `<span class="suit-${c.suit}">${E.cardLabel(c)}</span>`).join(', ');
+    return `<span class="boss-cards">The boss put ${n === 1 ? 'a random card' : `${n} random cards`} in your deck: ${list}.</span>`;
   }
 
   const DRAW_ICON = '<path d="M16 10a6 6 0 1 1-1.8-4.3M16 3v4h-4"/>';
@@ -373,9 +370,7 @@
 
     // Shop buttons: card actions always show the price. Increase Hand Payout
     // doesn't, since each hand has its own price (shown in its menu). They
-    // light up once a card is selected and you can pay without dropping to $0.
-    // A purchase that would end the run stays clickable (it asks first) but
-    // isn't highlighted.
+    // light up once a card is selected and you can pay.
     const p = E.prices(run);
     const card = folder === 'deck' && selected.size === 1 ? [...selected][0] : null;
     const phone = KG.os() === 'phone';
@@ -396,10 +391,9 @@
       const block = E.shopBlock(run, action, needsCard ? card ?? undefined : undefined) || (action === 'bonus' && hasBonus ? 'That card already has 2x.' : null);
       btn.hidden = folder !== 'deck' || !E.hasAction(run, action); // shop tools only show when chosen for the run
       btn.disabled = (needsCard && !card) || !!block;
-      const strands = !btn.disabled && E.strands(run, action);
-      btn.classList.toggle('primary', !btn.disabled && !strands);
+      btn.classList.toggle('primary', !btn.disabled);
       btn.querySelector('span').innerHTML = needsCard ? `${labels[action]} <b>${price(p[action])}</b>` : labels[action];
-      btn.title = block || (needsCard && !card ? 'Select a card first' : strands ? 'This would spend your last dollar and end the run' : '');
+      btn.title = block || (needsCard && !card ? 'Select a card first' : '');
     }
   }
 
@@ -411,14 +405,16 @@
     $('bankroll').textContent = money(run.bankroll);
     const gate = E.isGateHand(run.hand);
     $('stage').innerHTML = `Level ${run.level} of ${E.LEVELS} · Hand ${run.hand} of ${E.HANDS_PER_LEVEL}${gate ? ' · <b class="gate-tag">Boss</b>' : ''}`;
-    $('boss').innerHTML = `Win <b>${E.bossTarget(run.level)}x</b> or more${gate ? ' <span class="gate-tag">this hand</span>' : ` <span class="muted">on hand ${E.HANDS_PER_LEVEL}</span>`}`;
-    // One box per hand in this level; the last is the boss, labeled with its target.
+    const target = E.bossTarget(run);
+    $('boss').innerHTML = `Have <b>${money(target)}</b> after hand ${E.HANDS_PER_LEVEL}${gate ? ' <span class="gate-tag">this hand</span>' : ''}`;
+    // One box per hand in this level; the last is the boss, labeled with its threshold.
+    const over = run.phase === 'won' || (run.phase === 'lost' && run.lostTo);
     $('pips').innerHTML = Array.from({ length: E.HANDS_PER_LEVEL }, (_, i) => {
       const h = i + 1;
       const boss = E.isGateHand(h);
-      const state = h < run.hand || run.phase === 'won' ? 'done' : h === run.hand ? 'now' : '';
-      const title = boss ? `Boss: win ${E.bossTarget(run.level)}x or more` : `Hand ${h}`;
-      return `<span class="pip ${state}${boss ? ' boss' : ''}" title="${title}">${boss ? `${E.bossTarget(run.level)}x` : h}</span>`;
+      const state = h < run.hand || over ? 'done' : h === run.hand ? 'now' : '';
+      const title = boss ? `Boss: have ${money(target)} or more after this hand` : `Hand ${h}`;
+      return `<span class="pip ${state}${boss ? ' boss' : ''}" title="${title}">${boss ? money(target) : h}</span>`;
     }).join('');
 
     // The run's settings, and whether it can earn achievements (only Easy stops it).
@@ -444,7 +440,6 @@
     const extra = [
       [count((c) => c.copy > 0), 'copies'],
       [count((c) => c.boss), 'boss cards'],
-      [count((c) => c.locked), 'locked'],
       [count((c) => c.bonus), 'with 2x'],
     ].filter(([n]) => n).map(([n, what]) => `${n} ${what}`);
     $('deck-info').innerHTML = `<p>${run.deck.length} cards${extra.length ? ` · ${extra.join(' · ')}` : ''}</p>
@@ -464,33 +459,24 @@
   function renderBet() {
     const playing = run.phase === 'bet';
     const gate = E.isGateHand(run.hand);
+    const target = E.bossTarget(run);
 
-    // The bet is set by the level ($10, 4x each level); short of it, you bet everything.
-    const bet = run.phase === 'hold' ? run.round.bet : playing ? E.nextBet(run).bet : null;
-    $('bet-size').textContent = bet === null ? '—' : money(bet);
+    // How much more the bankroll needs by the end of the level.
+    const needed = Math.max(0, target - run.bankroll);
     $('deal').disabled = !playing;
     // Gone while a hand is in play; it keeps its space so the toolbar doesn't shift.
     $('deal').style.visibility = run.phase === 'hold' ? 'hidden' : '';
     $('deal').classList.toggle('boss', gate);
-    $('deal').textContent = gate ? `Boss deal (${mult(E.bossTarget(run.level))})` : 'Deal';
-
-    // Double bet: a toggle beside Deal, once per level.
-    const dbl = $('double-bet');
-    const used = run.doubledLevel === run.level;
-    dbl.hidden = !E.settingsOf(run).doubleBet || !playing;
-    dbl.disabled = !run.doubleNext && !E.canDoubleBet(run);
-    dbl.setAttribute('aria-pressed', String(!!run.doubleNext));
-    dbl.textContent = run.doubleNext ? 'Double bet: on' : used ? 'Double bet used' : 'Double bet';
-    dbl.title = used ? 'Already used on this level' : 'Bet twice as much on the next hand (once per level)';
+    $('deal').textContent = gate ? 'Boss deal' : 'Deal';
 
     let note = '';
     if (run.phase === 'hold') {
       note = E.maxDiscards(run) === 0 ? 'Press Keep hand in the Cards window to score this hand.' : 'Select the cards to replace in the Cards window, then press Draw.';
       if (KG.os() === 'phone') note += ' <button class="kg-btn mini" type="button" data-screen="cards">Go to cards</button>';
     } else if (run.phase === 'won') note = `<b>You beat level ${E.LEVELS}'s boss.</b> Run won with ${money(run.bankroll)}.`;
-    else if (run.phase === 'lost') note = run.lostTo ? `<b>Run over.</b> Your hand paid less than the boss's ${run.lostTo}x.` : '<b>Run over.</b> You ran out of money.';
+    else if (run.phase === 'lost') note = `<b>Run over.</b> You had ${money(run.last.bankroll)}, short of the boss's ${money(run.lostTo)}.`;
     else if (gate) {
-      note = `Boss hand: make a hand that pays <b>${E.bossTarget(run.level)}x</b> or more to win and move on. Anything less ends the run. Hands whose total clears it are green in the paytable.${bossCardsLine(run.last?.bossCards)}`;
+      note = `Boss hand: after this hand you need <b>${money(target)}</b> in your bankroll${needed ? `, so this hand must pay <b>${money(needed)}</b> or more` : ' (you have it already)'}. Anything less ends the run. Hands that would cover it are green in the paytable.${bossCardsLine(run.last?.bossCards)}`;
     }
     $('bet-note').innerHTML = note;
     $('note-box').hidden = !note;
@@ -502,13 +488,16 @@
     $('last-box').hidden = !r;
     if (!r) return;
     $('last').innerHTML = `<div class="last-cards">${[...r.cards].sort(E.byStrength).map((c) => `<span class="mini-card suit-${c.suit}${r.drawn.includes(c.id) ? ' drawn' : ''}${r.scored && !r.scored.includes(c.id) ? ' unscored' : ''}">${E.cardLabel(c)}</span>`).join('')}</div>
-      <div class="last-result ${r.net > 0 ? 'good' : r.net < 0 ? 'bad' : ''}">${resultLine(r)}</div>`;
+      <div class="last-result ${r.outcome === 'lose' || !r.paid ? 'bad' : 'good'}">${resultLine(r)}</div>`;
   }
 
   function renderPaytable() {
     // Every hand the last hand matched is marked, not just the best one.
-    const lastIds = new Set(run.last ? (run.last.matches || [{ id: run.last.handId }]).map((m) => m.id) : []);
-    const target = run.phase === 'won' ? Infinity : E.bossTarget(run.level);
+    const lastIds = new Set(run.last ? run.last.matches.map((m) => m.id) : []);
+    // Green: hands that would cover what the bankroll still needs for the boss, on their own.
+    const need = run.phase === 'bet' || run.phase === 'hold' ? Math.max(1, E.bossTarget(run) - run.bankroll) : Infinity;
+    // Double payout: on the boss hand every hand pays double.
+    const bossDouble = E.settingsOf(run).doubleBet && E.isGateHand(run.hand) ? 2 : 1;
     // The chance a fresh deal contains each hand (any 5 of the dealt cards make it), not that it's the best hand.
     const odds = E.settingsOf(run).deckOdds ? deckOdds().contains : null;
     const oddsCell = (h) => (odds ? `<td class="odds">${pct(odds[h.id] || 0)}</td>` : '');
@@ -516,9 +505,9 @@
       const m = E.multiple(run, h.id);
       const t = E.total(run, h.id);
       const ups = run.upgrades?.[h.id] || 0;
-      const cls = t < 0 ? 'neg' : t >= target ? 'pass' : '';
-      const tag = ups ? ` <span class="ups" title="Doubled ${ups} ${ups === 1 ? 'time' : 'times'}">×${2 ** ups}</span>` : '';
-      return `<tr class="${lastIds.has(h.id) ? 'last' : ''}"><th scope="row">${h.name}${tag}</th><td class="${m < 0 ? 'neg' : ''}">${mult(m)}</td><td class="${cls}">${mult(t)}</td>${oddsCell(h)}</tr>`;
+      const cls = t <= 0 ? 'neg' : t * E.PAYOUT_UNIT * bossDouble >= need ? 'pass' : '';
+      const tag = ups ? ` <span class="ups" title="Increased ${ups} ${ups === 1 ? 'time' : 'times'}">×${1 + ups}</span>` : '';
+      return `<tr class="${lastIds.has(h.id) ? 'last' : ''}"><th scope="row">${h.name}${tag}</th><td class="${m <= 0 ? 'neg' : ''}">${pays(m)}</td><td class="${cls}">${pays(t)}</td>${oddsCell(h)}</tr>`;
     });
     const oddsHead = odds ? '<th title="The chance a fresh deal from your deck contains this hand (simulated)">Odds</th>' : '';
     $('paytable').innerHTML = `<thead><tr><th>Hand</th><th>Pays</th><th title="What the hand pays in all, with the smaller hands it contains">Total</th>${oddsHead}</tr></thead><tbody>${rows.join('')}</tbody>`;
@@ -591,19 +580,8 @@
 
   // `target` is a card id, or a hand id for 'payout' (Increase Hand Payout).
   async function purchase(action, target, suit) {
-    const handId = action === 'payout' ? target : undefined;
     const block = E.shopBlock(run, action, target);
     if (block) return;
-    const cost = E.priceOf(run, action, handId);
-    if (E.strands(run, action, handId)) {
-      const ok = await ask({
-        title: 'Spend your last dollar?',
-        body: `This costs ${money(cost)}, everything you have. With ${money(0)} left, the run will end.`,
-        ok: { remove: 'Delete anyway', duplicate: 'Duplicate anyway', suit: 'Change anyway', rankUp: 'Change anyway', rankDown: 'Change anyway', split: 'Split anyway', bonus: 'Add anyway', payout: 'Increase anyway' }[action],
-        danger: true,
-      });
-      if (!ok) return;
-    }
     const { added } = E.buy(run, action, target, suit);
     if (action !== 'payout') {
       // Select what the purchase made: the new cards, or the changed card.
@@ -612,7 +590,6 @@
       fresh = new Set(keep);
     }
     render();
-    if (run.phase === 'lost') endDialog(false);
   }
 
   async function confirmRemove(cardId) {
@@ -620,7 +597,7 @@
     const card = E.cardById(run, cardId);
     const ok = await ask({
       title: 'Delete file',
-      body: `Permanently delete <b>${esc(fileName(card))}</b> for ${money(E.prices(run).remove)}? It can't be restored.`,
+      body: `Permanently delete <b>${esc(fileName(card))}</b> for ${E.prices(run).remove ? money(E.prices(run).remove) : 'free'}? It can't be restored.`,
       ok: 'Delete permanently',
       danger: true,
     });
@@ -650,9 +627,7 @@
   async function endDialog(won) {
     const summary = won
       ? `You beat all ${E.LEVELS} bosses and finished with <b>${money(run.bankroll)}</b> in ${run.handsPlayed} hands.`
-      : run.lostTo
-        ? `Your ${esc(run.last.handName.toLowerCase())} paid ${mult(run.last.mult)}, short of level ${run.level}'s boss target of <b>${run.lostTo}x</b>.`
-        : `You ran out of money on level ${run.level}.`;
+      : `You finished level ${run.level} with ${money(run.last.bankroll)}, short of its boss's <b>${money(run.lostTo)}</b>.`;
     const ok = await ask({ title: won ? 'Run won' : 'Run over', body: summary + runAchievementsNote(), ok: 'New run', cancel: 'Close' });
     if (ok) startRun();
   }
@@ -865,12 +840,12 @@
         x,
         y,
         [
-          { label: `Duplicate — ${money(p.duplicate)}`, key: `${mod}C, ${mod}V`, disabled: !!dupBlock, run: () => purchase('duplicate', cardId) },
+          { label: `Duplicate — ${price(p.duplicate)}`, key: `${mod}C, ${mod}V`, disabled: !!dupBlock, run: () => purchase('duplicate', cardId) },
           '-',
           ...suitItems(cardId, 'Change to '),
           ...toolItems(cardId),
           '-',
-          { label: `Delete permanently — ${money(p.remove)}`, key: KG.os() === 'quality' ? '⌥⌘⌫' : 'Shift+Del', disabled: !!remBlock, danger: true, run: () => purchase('remove', cardId) },
+          { label: `Delete permanently — ${price(p.remove)}`, key: KG.os() === 'quality' ? '⌥⌘⌫' : 'Shift+Del', disabled: !!remBlock, danger: true, run: () => purchase('remove', cardId) },
         ],
         dupBlock || remBlock,
       );
@@ -885,7 +860,7 @@
     const items = ['rankUp', 'rankDown', 'split', 'bonus']
       .filter((a) => E.hasAction(run, a))
       .map((a) => ({
-        label: `${names[a]} — ${money(p[a])}`,
+        label: `${names[a]} — ${price(p[a])}`,
         disabled: !!E.shopBlock(run, a, cardId) || (a === 'bonus' && card.bonus),
         run: () => purchase(a, cardId),
       }));
@@ -895,7 +870,6 @@
   // One menu item per suit the card isn't already, priced as Change suit.
   function suitItems(cardId, prefix = '') {
     const card = E.cardById(run, cardId);
-    const cost = money(E.prices(run).suit);
     const block = E.shopBlock(run, 'suit', cardId);
     return E.SUITS.filter((s) => s !== card.suit).map((s) => ({
       label: `${prefix}${E.SUIT_NAMES[s]} (${E.rankLabel(card.rank)}${s})`,
@@ -1002,7 +976,7 @@
       Math.min(r.left, innerWidth),
       r.bottom + 4,
       E.HANDS.map((h) => ({
-        label: `${h.name}: ${mult(E.multiple(run, h.id))} → ${mult(E.multiple(run, h.id) * 2)}${payoutGain(h.id)}`, // its own payout; totals that include it rise too
+        label: `${h.name}: ${pays(E.multiple(run, h.id))} → ${pays(E.multiple(run, h.id) + h.base)}${payoutGain(h.id)}`, // its own payout; totals that include it rise too
         key: money(E.payoutPrice(run, h.id)),
         disabled: !!E.shopBlock(run, 'payout', h.id),
         run: () => purchase('payout', h.id),
@@ -1010,23 +984,18 @@
     );
   });
 
-  // Payout increase: the extra money the upgrade pays when you make the hand
-  // at the next bet. Doubling adds its current payout once more, and the same
-  // goes for every hand that includes it.
+  // Payout increase: the extra money the upgrade pays when you make the hand.
+  // Each upgrade adds the hand's base payout, and the same goes for every
+  // hand that includes it.
   function payoutGain(handId) {
     if (!E.settingsOf(run).payoutInfo) return '';
-    return ` · +${money(E.multiple(run, handId) * E.nextBet(run).bet)} if you make it`;
+    return ` · +${pays(E.HANDS.find((h) => h.id === handId).base)} if you make it`;
   }
 
   // -------------------------------------------------------------------------
   // Input: Account window
 
   $('deal').addEventListener('click', dealHand);
-  $('double-bet').addEventListener('click', () => {
-    if (!run.doubleNext && !E.canDoubleBet(run)) return;
-    E.setDoubleBet(run, !run.doubleNext);
-    render();
-  });
   $('achievements').addEventListener('click', showAchievements);
   $('game-setup').addEventListener('click', showSetup);
   $('new-run').addEventListener('click', newRun);
@@ -1085,17 +1054,18 @@
   const HOW_TO = `
     <h1>How to play Ctrl+Alt+Deal</h1>
     <ol>
-      <li>Get through all ${E.LEVELS * E.HANDS_PER_LEVEL} hands without running out of money or losing to a boss.</li>
-      <li>Each hand is a round of 5 card draw and you get paid out based on every poker hand you get
-        <ul><li>if you get two pair, you get paid out for two pair and one pair</li></ul>
+      <li>Beat all ${E.LEVELS} bosses. Each level is ${E.HANDS_PER_LEVEL} hands, and the 5th is the boss hand.</li>
+      <li>Each hand is a round of 5 card draw and you get paid for every poker hand you make
+        <ul><li>if you get two pair, you get paid for two pair and one pair</li>
+          <li>there's no bet: a hand that makes nothing just pays nothing</li></ul>
       </li>
-      <li>Start with a normal 52 card deck and use your money to change your deck and make more powerful hands
-        <ul><li>On Normal and Hard, prices go up after every hand (10% on Normal, 20% on Hard)</li></ul>
+      <li>Start with ${money(E.STARTING_BANKROLL)} and a normal 52 card deck, and spend your money between hands to change your deck and make more powerful hands</li>
+      <li>After the boss hand you need the boss's amount in your bankroll, otherwise you lose
+        <ul><li>On Normal and Hard, each boss puts random cards into your deck: 1 for the first boss, 2 for the second, and so on</li>
+          <li>Hard bosses need more money</li></ul>
       </li>
-      <li>When you reach a boss hand, you must make a hand that meets or surpasses the payout requirement, otherwise you lose
-        <ul><li>Each boss puts 1 or more randomized cards into your deck</li>
-          <li>Boss cards can be "locked" (you can't delete, duplicate or change them)</li></ul>
-      </li>
+      <li>Spend money in the shop on Increase Hand Payout: each one adds the hand's starting payout again (a pair goes $10 → $20 → $30)</li>
+      <li>Beat a boss and your whole bankroll carries into the next level</li>
     </ol>`;
 
   function showHowTo() {

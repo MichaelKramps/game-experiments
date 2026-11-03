@@ -1,4 +1,4 @@
-// Ctrl+Alt+Deal rules: run state, betting, hand scoring, payouts, the shop
+// Ctrl+Alt+Deal rules: run state, hand scoring, payouts, bosses, the shop,
 // and achievements. No DOM here, so tools/check-engine.js can run it under node.
 //
 // A run is one plain object (saved to localStorage as JSON). Cards are
@@ -6,29 +6,30 @@
 // 0 for an original or n for the nth duplicate of that rank+suit, which is
 // what the file browser uses to name it ("king-clubs - Copy.card" and so on).
 // A card a boss added also has boss: true, and one with Add 2x has bonus: true.
-// A locked card (locked: true) can't be deleted, duplicated or changed; only
-// bosses add them.
 //
 // The run's settings (starting deck, hand size, difficulty, toggles) are
 // chosen at New run and never change during the run.
+//
+// There are no bets. Each hand pays its payout multiple × $10 into the
+// bankroll (Nothing pays $0), and the shop spends from it. After a level's 5th
+// hand the bankroll must reach the boss's threshold, and the whole bankroll
+// carries into the next level.
 
 const Engine = (() => {
-  const STARTING_BANKROLL = 25;
+  const RUN_VERSION = 8; // 8: no locked cards, thresholds by difficulty; older saves are dropped
+  const STARTING_BANKROLL = 0;
   const LEVELS = 8;
-  const HANDS_PER_LEVEL = 5; // the 5th is the gate hand
+  const HANDS_PER_LEVEL = 5; // the threshold is checked after the 5th (the boss hand)
   const SCORED_CARDS = 5; // bigger hands score their best 5
   const HAND_SIZE = 5; // the default hand size
   const MAX_HAND_SIZE = 10;
   const MIN_DECK_SIZE = 5; // with 5-card hands; the minimum is always the hand size
-  const BASE_BETS = [10, 12, 14, 16, 20]; // level 1's bet for hands 1–5 (the 5th is the boss)
-  const BET_GROWTH = 4; // the bet multiplies by this each level
-  const PAYOUT_FLOOR = -1;
+  const PAYOUT_UNIT = 10; // dollars per 1x of payout
   const SHOP_BASE_PRICE = 2;
   const PAYOUT_BASE_PRICE = 2; // Increase Hand Payout, each hand priced on its own
   const SHOP_PRICE_GROWTH = 1.5;
-  const BONUS_PRICE_GROWTH = 4; // Add 2x doubles a whole hand, so it climbs like a payout upgrade
-  const PAYOUT_OWN_GROWTH = 4; // the upgraded hand's next price goes up 4x
-  const PAYOUT_OTHER_GROWTH = 1.5; // every other hand's goes up 1.5x
+  const BONUS_PRICE_GROWTH = 4; // Add 2x doubles a whole hand, so it climbs fast
+  const PAYOUT_GROWTH = 1.5; // the upgraded hand's next price goes up 1.5x
   const INTEREST_RATE = 0.1;
   const LOG_SIZE = 30;
 
@@ -53,7 +54,7 @@ const Engine = (() => {
     { id: 'two-pair', name: 'Two pair', base: 2, includes: ['pair'] },
     { id: 'pair', name: 'Pair', base: 1, includes: [] },
   ];
-  const NOTHING = { id: 'nothing', name: 'Nothing', base: PAYOUT_FLOOR };
+  const NOTHING = { id: 'nothing', name: 'Nothing', base: 0 };
   const HAND_BY_ID = Object.fromEntries([...HANDS, NOTHING].map((h) => [h.id, h]));
 
   // -------------------------------------------------------------------------
@@ -70,13 +71,17 @@ const Engine = (() => {
     { id: 'flush-five', name: 'Flush Five deck', desc: 'Copies of one random card, as many as your hand size.' },
   ];
 
-  // Every boss adds as many random cards as its level; difficulty sets the
-  // chance each one is locked, and how much every shop price rises after
-  // each hand played (inflation).
+  // Each level's boss threshold: after the level's last hand your bankroll
+  // must be at least this to move on; anything less ends the run.
+  const BOSS_TARGETS = [20, 100, 250, 1000, 3000, 8000, 15000, 25000];
+  const HARD_BOSS_TARGETS = [25, 125, 300, 1500, 6000, 15000, 25000, 50000];
+
+  // On Normal and Hard every boss adds as many random cards as its level;
+  // on Easy bosses add none. Hard has its own thresholds.
   const DIFFICULTIES = [
-    { id: 'easy', name: 'Easy', desc: 'Boss cards are never locked. Prices don’t rise.', lockChance: 0, inflation: 0 },
-    { id: 'normal', name: 'Normal', desc: 'Half the boss cards are locked: they can’t be deleted, duplicated or changed. Prices rise 10% after every hand.', lockChance: 0.5, inflation: 0.1 },
-    { id: 'hard', name: 'Hard', desc: 'Every boss card is locked: it can’t be deleted, duplicated or changed. Prices rise 20% after every hand.', lockChance: 1, inflation: 0.2 },
+    { id: 'easy', name: 'Easy', desc: 'Bosses don’t add cards to your deck.', bossCards: false, targets: BOSS_TARGETS },
+    { id: 'normal', name: 'Normal', desc: 'Each boss adds random cards to your deck: 1 for the first boss, 2 for the second, and so on.', bossCards: true, targets: BOSS_TARGETS },
+    { id: 'hard', name: 'Hard', desc: 'Bosses add cards as on Normal, and every boss needs more money.', bossCards: true, targets: HARD_BOSS_TARGETS },
   ];
 
   const DEFAULT_SETTINGS = {
@@ -94,7 +99,7 @@ const Engine = (() => {
     rankDown: false,
     split: false,
     bonus: false,
-    doubleBet: false,
+    doubleBet: false, // Double payout: boss hands pay double (the key is from when it doubled the bet)
     // information displays
     deckInfo: false,
     deckOdds: false,
@@ -302,12 +307,13 @@ const Engine = (() => {
     return { ...best, contains };
   }
 
-  // The hand's payout multiple in this run: its base, doubled for each
-  // Increase Hand Payout bought for it. Nothing can't be upgraded.
+  // The hand's payout multiple in this run: its base, plus the base again for
+  // each Increase Hand Payout bought for it. Nothing can't be upgraded.
+  // A hand pays its multiple × PAYOUT_UNIT dollars.
   function multiple(run, handId) {
     const base = HAND_BY_ID[handId].base;
     if (handId === NOTHING.id) return base;
-    return base * 2 ** (run.upgrades?.[handId] || 0);
+    return base * (1 + (run.upgrades?.[handId] || 0));
   }
 
   // What a hand pays in all when it's the best hand made: its own multiple
@@ -322,22 +328,19 @@ const Engine = (() => {
     return hand === HANDS_PER_LEVEL;
   }
 
-  // Each level's boss (gate) hand: the payout multiple it must reach. Pay at
-  // least this and you move on; anything less ends the run.
-  const BOSS_TARGETS = [2, 6, 20, 60, 175, 550, 1650, 5000];
-
-  function bossTarget(level) {
-    return BOSS_TARGETS[level - 1];
+  function difficultyOf(run) {
+    return DIFFICULTIES.find((d) => d.id === settingsOf(run).difficulty);
   }
 
-  // How many random cards this level's boss adds: as many as its level.
+  // This level's threshold, by difficulty.
+  function bossTarget(run) {
+    return difficultyOf(run).targets[run.level - 1];
+  }
+
+  // How many random cards this level's boss adds: as many as its level, or
+  // none on Easy.
   function bossCardCount(run) {
-    return run.level;
-  }
-
-  // The chance each boss card is locked: 0 on Easy, half on Normal, all on Hard.
-  function lockChance(run) {
-    return DIFFICULTIES.find((d) => d.id === settingsOf(run).difficulty).lockChance;
+    return difficultyOf(run).bossCards ? run.level : 0;
   }
 
   // -------------------------------------------------------------------------
@@ -387,69 +390,34 @@ const Engine = (() => {
   }
 
   // -------------------------------------------------------------------------
-  // Betting
-
-  // The bet is set by the hand, not chosen: $10, $12, $14, $16, $20 on level 1,
-  // and each hand 4x the same hand on the level before.
-  function handBet(level, hand) {
-    return BASE_BETS[hand - 1] * BET_GROWTH ** (level - 1);
-  }
-
-  // The next hand's bet: the hand's bet (twice it with Double bet on), or
-  // everything you have if that's less.
-  function nextBet(run) {
-    const full = handBet(run.level, run.hand) * (run.doubleNext ? 2 : 1);
-    return { bet: Math.min(full, run.bankroll), full, allIn: run.bankroll < full };
-  }
-
-  // Double bet: once per level, the next hand bets twice as much.
-  function canDoubleBet(run) {
-    return settingsOf(run).doubleBet && run.phase === 'bet' && run.doubledLevel !== run.level;
-  }
-
-  function setDoubleBet(run, on) {
-    if (on && !canDoubleBet(run)) throw new Error('Double bet is used up for this level.');
-    run.doubleNext = !!on;
-  }
-
-  // -------------------------------------------------------------------------
   // Shop
 
   // Shop tools a run turns on at New run; the other actions are always there.
   const TOOL_ACTIONS = ['rankUp', 'rankDown', 'split', 'bonus'];
 
-  function price(bought, base = SHOP_BASE_PRICE, growth = SHOP_PRICE_GROWTH, factor = 1) {
-    return Math.ceil(base * growth ** bought * factor);
+  function price(bought, base = SHOP_BASE_PRICE, growth = SHOP_PRICE_GROWTH) {
+    return Math.ceil(base * growth ** bought);
   }
 
-  // What every shop price is multiplied by: 1 + the difficulty's inflation,
-  // once for each hand played so far (1 on Easy).
-  function inflation(run) {
-    const rate = DIFFICULTIES.find((d) => d.id === settingsOf(run).difficulty).inflation;
-    return (1 + rate) ** (run.handsPlayed || 0);
-  }
-
+  // What each card action costs now.
   function prices(run) {
     const b = run.bought;
-    const f = inflation(run);
     return {
-      remove: price(b.remove, SHOP_BASE_PRICE, SHOP_PRICE_GROWTH, f),
-      duplicate: settingsOf(run).freeDuplicate ? 0 : price(b.duplicate, SHOP_BASE_PRICE, SHOP_PRICE_GROWTH, f),
-      suit: price(b.suit || 0, SHOP_BASE_PRICE, SHOP_PRICE_GROWTH, f), // runs saved before Change suit existed lack it
-      rankUp: price(b.rankUp || 0, SHOP_BASE_PRICE, SHOP_PRICE_GROWTH, f),
-      rankDown: price(b.rankDown || 0, SHOP_BASE_PRICE, SHOP_PRICE_GROWTH, f),
-      split: price(b.split || 0, SHOP_BASE_PRICE, SHOP_PRICE_GROWTH, f),
-      bonus: price(b.bonus || 0, SHOP_BASE_PRICE, BONUS_PRICE_GROWTH, f),
+      remove: price(b.remove),
+      duplicate: settingsOf(run).freeDuplicate ? 0 : price(b.duplicate),
+      suit: price(b.suit || 0),
+      rankUp: price(b.rankUp || 0),
+      rankDown: price(b.rankDown || 0),
+      split: price(b.split || 0),
+      bonus: price(b.bonus || 0, SHOP_BASE_PRICE, BONUS_PRICE_GROWTH),
     };
   }
 
-  // Increase Hand Payout for one hand: $2, then 4x for each time this hand
-  // was upgraded and 1.5x for each time another hand was. Worked out from the
-  // counts each time, so rounding doesn't compound.
+  // Increase Hand Payout for one hand: $2, then 1.5x for each time this hand
+  // was bought; other hands' purchases don't change it. Worked out from the
+  // count each time, so rounding doesn't compound.
   function payoutPrice(run, handId) {
-    const own = run.upgrades?.[handId] || 0;
-    const others = (run.bought.payout || 0) - own;
-    return Math.ceil(PAYOUT_BASE_PRICE * PAYOUT_OWN_GROWTH ** own * PAYOUT_OTHER_GROWTH ** others * inflation(run));
+    return Math.ceil(PAYOUT_BASE_PRICE * PAYOUT_GROWTH ** (run.upgrades?.[handId] || 0));
   }
 
   // What an action costs. For 'payout' with no hand, the cheapest hand.
@@ -464,25 +432,16 @@ const Engine = (() => {
     return !TOOL_ACTIONS.includes(action) || settingsOf(run)[action];
   }
 
-  // Card actions a locked card refuses: all of them.
-  const LOCKED_ACTIONS = ['remove', 'duplicate', 'suit', 'rankUp', 'rankDown', 'split', 'bonus'];
-
   // Why a purchase can't happen right now, or null if it can. `target` is the
   // hand id for 'payout', or optionally the card id for a card action.
   function shopBlock(run, action, target) {
     if (run.phase !== 'bet') return run.phase === 'hold' ? 'The shop opens again after this hand.' : 'The run is over.';
     if (!hasAction(run, action)) return 'That tool is off for this run.';
     const handId = action === 'payout' ? target : undefined;
-    if (target !== undefined && action !== 'payout' && LOCKED_ACTIONS.includes(action) && cardById(run, target)?.locked) return "This card is locked: it can't be deleted, duplicated or changed.";
     const min = minDeckSize(run);
     if (action === 'remove' && run.deck.length <= min) return `Your deck is at the minimum of ${min} cards.`;
     if (run.bankroll < priceOf(run, action, handId)) return "You can't afford it.";
     return null;
-  }
-
-  // True if buying this would spend your last dollar, which ends the run.
-  function strands(run, action, handId) {
-    return run.bankroll - priceOf(run, action, handId) <= 0;
   }
 
   // `suit` is the new suit for 'suit' (Change suit); other actions ignore it.
@@ -498,7 +457,6 @@ const Engine = (() => {
       run.bankroll -= cost;
       run.bought.payout = (run.bought.payout || 0) + 1;
       run.upgrades = { ...run.upgrades, [handId]: (run.upgrades?.[handId] || 0) + 1 };
-      checkLost(run);
       checkAchievements(run);
       return { cost, added: [] };
     }
@@ -538,7 +496,7 @@ const Engine = (() => {
       const copy = makeCard(run, card.rank, card.suit, card.bonus ? { bonus: true } : {});
       run.deck.push(copy);
       added.push(copy);
-      if (cost >= 1e8) run.stats.bigDuplicate = true;
+      if (cost >= BIG_DUPLICATE) run.stats.bigDuplicate = true;
       // Free Duplicate also puts a random card in the deck.
       if (settingsOf(run).freeDuplicate) {
         const extra = makeCard(run, randomRank(rand), randomSuit(rand));
@@ -546,7 +504,6 @@ const Engine = (() => {
         added.push(extra);
       }
     }
-    checkLost(run);
     checkAchievements(run);
     return { cost, added };
   }
@@ -557,6 +514,7 @@ const Engine = (() => {
   function newRun(settings, rand = Math.random) {
     const s = cleanSettings(settings);
     const run = {
+      version: RUN_VERSION,
       settings: s,
       bankroll: STARTING_BANKROLL,
       level: 1,
@@ -565,9 +523,9 @@ const Engine = (() => {
       nextId: 1,
       copies: {},
       bought: { remove: 0, duplicate: 0, suit: 0, payout: 0 },
-      upgrades: {}, // hand id → Increase Hand Payout purchases
+      upgrades: {}, // hand id → Increase Hand Payouts bought
       phase: 'bet', // bet → hold → bet …, ending in won or lost
-      round: null, // the hand in play: { bet, gate, cards, trashed, pile, drawsLeft, drawn, replaced }
+      round: null, // the hand in play: { double, gate, cards, trashed, pile, drawsLeft, drawn, replaced }
       last: null, // the most recent finished hand
       log: [],
       handsPlayed: 0,
@@ -592,18 +550,12 @@ const Engine = (() => {
 
   function deal(run, rand) {
     if (run.phase !== 'bet') throw new Error('Not ready to deal.');
-    const { bet } = nextBet(run);
-    if (bet <= 0) throw new Error('Nothing left to bet.');
-    if (run.doubleNext) {
-      run.doubledLevel = run.level;
-      run.doubleNext = false;
-    }
     const s = settingsOf(run);
-    run.bankroll -= bet;
+    const gate = isGateHand(run.hand);
     const order = shuffle(run.deck.map((c) => c.id), rand);
     run.round = {
-      bet,
-      gate: isGateHand(run.hand),
+      double: s.doubleBet && gate, // Double payout: boss hands pay double
+      gate,
       cards: order.slice(0, s.handSize), // ids, in deal order
       trashed: [], // ids in `cards` the player has marked to replace
       pile: order.slice(s.handSize),
@@ -636,15 +588,12 @@ const Engine = (() => {
   }
 
   // When a level's boss hand comes up, the boss adds random cards to your deck
-  // (see bossCardCount), each locked by chance (see lockChance). One that
-  // matches a card you already have becomes a copy of it, like Duplicate.
+  // (see bossCardCount). One that matches a card you already have becomes a
+  // copy of it, like Duplicate.
   function addBossCards(run, rand = Math.random) {
     const added = [];
-    const chance = lockChance(run);
     for (let i = bossCardCount(run); i > 0; i--) {
-      const extra = { boss: true };
-      if (chance >= 1 || (chance > 0 && rand() < chance)) extra.locked = true;
-      const card = makeCard(run, randomRank(rand), randomSuit(rand), extra);
+      const card = makeCard(run, randomRank(rand), randomSuit(rand), { boss: true });
       run.deck.push(card);
       added.push({ ...card });
     }
@@ -680,15 +629,19 @@ const Engine = (() => {
     const made = found[0];
     const matched = found.map((h) => ({ id: h.id, name: h.name, mult: multiple(run, h.id) }));
     const sum = matched.reduce((t, m) => t + m.mult, 0);
-    // Each 2x card anywhere in the hand doubles what it pays, except on Nothing.
-    const bonus = made === NOTHING ? 1 : 2 ** cards.filter((c) => c.bonus).length;
+    // Each 2x card anywhere in the hand doubles what it pays, and so does
+    // Double payout, except on Nothing.
+    const bonus = made === NOTHING ? 1 : 2 ** cards.filter((c) => c.bonus).length * (r.double ? 2 : 1);
     const mult = sum * bonus;
-    // Boss hands: pay at least the target to win and move on; anything less ends the run.
-    const target = r.gate ? bossTarget(run.level) : null;
-    const outcome = r.gate ? (mult >= target ? 'beat' : 'lose') : null;
-    const paid = mult <= PAYOUT_FLOOR ? 0 : r.bet + r.bet * mult;
+    const paid = mult * PAYOUT_UNIT;
     run.bankroll += paid;
     run.handsPlayed++;
+    // Interest: 10% of the bankroll after every hand, before the boss checks it.
+    const interest = s.interest && run.bankroll > 0 ? Math.floor(run.bankroll * INTEREST_RATE) : 0;
+    run.bankroll += interest;
+    // After the boss hand the bankroll must reach the threshold; anything less ends the run.
+    const target = r.gate ? bossTarget(run) : null;
+    const outcome = r.gate ? (run.bankroll >= target ? 'beat' : 'lose') : null;
 
     const result = {
       level: run.level,
@@ -702,9 +655,10 @@ const Engine = (() => {
       handName: made.name,
       matches: matched,
       bonus,
-      bet: r.bet,
+      double: r.double,
       mult,
-      net: paid - r.bet,
+      paid,
+      bankroll: run.bankroll,
       target,
       outcome,
       passed: outcome === 'beat',
@@ -721,25 +675,16 @@ const Engine = (() => {
     } else if (outcome === 'lose') {
       run.phase = 'lost';
       run.lostTo = target;
-    } else if (result.passed) {
-      if (run.level === LEVELS) run.phase = 'won';
-      else {
-        run.level++;
-        run.hand = 1;
-      }
+    } else if (run.level === LEVELS) {
+      run.phase = 'won';
+    } else {
+      // Beat the boss: the next level starts with the bankroll as it is.
+      run.level++;
+      run.hand = 1;
     }
-    // Interest: 10% of the bankroll after every hand, unless the run just ended in a loss.
-    if (s.interest && run.phase !== 'lost' && run.bankroll > 0) {
-      result.interest = Math.floor(run.bankroll * INTEREST_RATE);
-      run.bankroll += result.interest;
-    }
-    checkLost(run);
+    if (interest) result.interest = interest;
     checkAchievements(run);
     return result;
-  }
-
-  function checkLost(run) {
-    if (run.phase === 'bet' && run.bankroll <= 0) run.phase = 'lost';
   }
 
   // -------------------------------------------------------------------------
@@ -749,6 +694,7 @@ const Engine = (() => {
   // [setting, value]). `test` looks at the run as it is now, including its
   // last hand, and runs after every draw and purchase.
 
+  const BIG_DUPLICATE = 1000; // Pay $1,000 to duplicate a card
   const lastPaid = (run, id) => !!run.last?.matches?.some((m) => m.id === id);
   const bossBeatWith = (run, id) => !!run.last?.passed && lastPaid(run, id);
   const won = (run) => run.phase === 'won';
@@ -770,19 +716,19 @@ const Engine = (() => {
     { id: 'beat-easy', name: 'Beat Easy mode', unlock: ['extraDraw', true], test: (run) => won(run) && settingsOf(run).difficulty === 'easy' },
     { id: 'beat-hard', name: 'Beat Hard mode', unlock: ['noDraw', true], test: (run) => won(run) && settingsOf(run).difficulty === 'hard' },
     { id: 'final-straight', name: 'Beat the final boss with a straight', unlock: ['skipStraights', true], test: (run) => wonWith(run, 'straight') },
-    { id: 'billion', name: 'Reach $1 trillion in your bankroll', unlock: ['interest', true], test: (run) => run.bankroll >= 1e12 }, // id kept from the old $1 billion goal so saved profiles keep it
-    { id: 'big-duplicate', name: 'Pay $100 million to duplicate a card', unlock: ['freeDuplicate', true], test: (run) => !!run.stats?.bigDuplicate },
-    { id: 'straight-20', name: 'Increase the payout for a straight to 20x', unlock: ['rankUp', true], test: (run) => total(run, 'straight') >= 20 },
-    { id: 'straight-1280', name: 'Increase the payout for a straight to 1280x', unlock: ['rankDown', true], test: (run) => total(run, 'straight') >= 1280 },
+    { id: 'billion', name: 'Have $100,000 in your bankroll', unlock: ['interest', true], test: (run) => run.bankroll >= 100000 }, // ids kept from older goals so saved profiles keep them
+    { id: 'big-duplicate', name: 'Pay $1,000 to duplicate a card', unlock: ['freeDuplicate', true], test: (run) => !!run.stats?.bigDuplicate },
+    { id: 'straight-20', name: 'Increase the payout for a straight to $500', unlock: ['rankUp', true], test: (run) => total(run, 'straight') * PAYOUT_UNIT >= 500 },
+    { id: 'straight-1280', name: 'Increase the payout for a straight to $1,000', unlock: ['rankDown', true], test: (run) => total(run, 'straight') * PAYOUT_UNIT >= 1000 },
     { id: 'big-deck', name: 'Have 100 or more cards in your deck', unlock: ['split', true], test: (run) => run.deck.length >= 100 },
     { id: 'win-no-pair-upgrade', name: 'Beat the final boss without increasing the payout for a pair', unlock: ['bonus', true], test: (run) => won(run) && !run.upgrades?.pair },
-    { id: 'big-bet', name: 'Make over 100,000x on a bet', unlock: ['doubleBet', true], test: (run) => (run.last?.mult || 0) > 100000 },
+    { id: 'big-bet', name: 'Win $15,000 or more on one hand', unlock: ['doubleBet', true], test: (run) => (run.last?.paid || 0) >= 15000 },
     { id: 'lose-boss', name: 'Lose to a boss', unlock: ['difficulty', 'easy'], test: (run) => run.phase === 'lost' && !!run.lostTo },
     { id: 'beat-normal', name: 'Beat Normal mode', unlock: ['difficulty', 'hard'], test: (run) => won(run) && settingsOf(run).difficulty === 'normal' },
     { id: 'finish-run', name: 'Finish a run (win or lose)', unlock: ['deckInfo', true], test: (run) => run.phase === 'won' || run.phase === 'lost' },
     { id: 'straight-flush', name: 'Make a straight flush', unlock: ['deckOdds', true], test: (run) => lastPaid(run, 'straight-flush') },
     { id: 'flush-five', name: 'Make a flush five', unlock: ['drawOdds', true], test: (run) => lastPaid(run, 'five-kind') && lastPaid(run, 'flush') }, // five of a kind in one suit
-    { id: 'hand-5000', name: 'Get a hand type to 5000x', unlock: ['payoutInfo', true], test: (run) => HANDS.some((h) => total(run, h.id) >= 5000) },
+    { id: 'hand-5000', name: 'Get a hand type to pay $10,000', unlock: ['payoutInfo', true], test: (run) => HANDS.some((h) => total(run, h.id) * PAYOUT_UNIT >= 10000) },
   ];
 
   // Adds any achievements the run has just earned to run.achieved and
@@ -814,8 +760,10 @@ const Engine = (() => {
   }
 
   return {
+    RUN_VERSION,
     LEVELS,
     HANDS_PER_LEVEL,
+    PAYOUT_UNIT,
     HAND_SIZE,
     MAX_HAND_SIZE,
     SCORED_CARDS,
@@ -849,24 +797,17 @@ const Engine = (() => {
     total,
     isGateHand,
     BOSS_TARGETS,
+    HARD_BOSS_TARGETS,
     bossTarget,
     bossCardCount,
-    lockChance,
-    inflation,
     dealOdds,
     drawOdds,
-    BASE_BETS,
-    handBet,
-    nextBet,
-    canDoubleBet,
-    setDoubleBet,
     price,
     prices,
     payoutPrice,
     priceOf,
     hasAction,
     shopBlock,
-    strands,
     buy,
     newRun,
     maxDiscards,

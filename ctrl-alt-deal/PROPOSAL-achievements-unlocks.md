@@ -23,19 +23,19 @@ Each achievement unlocks exactly one option.
 | Beat Easy mode | Extra draw |
 | Beat Hard mode | No draw |
 | Beat the final boss with a straight | Straights may skip a rank |
-| Reach $1 trillion in your bankroll | Interest |
-| Pay $100 million to duplicate a card | Free Duplicate |
-| Increase the payout for a straight to 20x | Increase rank |
-| Increase the payout for a straight to 1280x | Decrease rank |
+| Have $100,000 in your bankroll | Interest |
+| Pay $1,000 to duplicate a card | Free Duplicate |
+| Increase the payout for a straight to $500 | Increase rank |
+| Increase the payout for a straight to $1,000 | Decrease rank |
 | Have 100 or more cards in your deck | Split card |
 | Beat the final boss without increasing the payout for a pair | Add 2x to card |
-| Make over 100,000x on a bet | Double bet |
+| Win $15,000 or more on one hand | Double payout |
 | Lose to a boss | Easy mode |
 | Beat Normal mode | Hard mode |
 | Finish a run (win or lose) | Deck properties |
 | Make a straight flush | Deck odds |
 | Make a flush five | Draw odds |
-| Get a hand type to 5000x | Payout increase |
+| Get a hand type to pay $10,000 | Payout increase |
 
 ### How each achievement is read
 
@@ -46,10 +46,11 @@ Each achievement unlocks exactly one option.
   - A duplicate of a boss card is not a boss card.
   - Changing a boss card (Change suit, Increase rank, Decrease rank) doesn't delete it; it stays a boss card.
   - Any time a boss card leaves the deck, it counts as deleted.
-- **"Payout for a straight"** is the Straight row's Total in the paytable. It's 10x, so one upgrade makes 20x and seven make 1280x.
-- **"Get a hand type to 5000x"** uses any row's Total, which includes the hands it contains.
-- **"Make over 100,000x on a bet"** uses the hand's whole multiplier, including 2x cards and every other tool that raises it.
-- **"Pay $100 million to duplicate a card"** means a single duplicate priced at $100M or more. With the base pricing ($2 × 1.5ⁿ), that's the 45th duplicate in a run on Easy; inflation on Normal and Hard brings it sooner.
+- **"Payout for a straight"** is the Straight row's Total in the paytable. It's $100, and each upgrade adds $100, so 4 upgrades make $500 and 9 make $1,000.
+- **"Get a hand type to pay $10,000"** uses any row's Total, which includes the hands it contains.
+- **"Win $15,000 or more on one hand"** uses what the hand paid, including 2x cards and Double payout.
+- **"Pay $1,000 to duplicate a card"** means a single duplicate priced at $1,000 or more. With the base pricing ($2 × 1.5ⁿ), that's the 17th duplicate in a run ($1,314).
+- (Changed 2026-11-02 with fixed payouts: these were $1 trillion, $100 million, 20x, 1280x, 100,000x on a bet and 5000x. Their ids didn't change, so earned ones stay earned. Changed again 2026-11-03 when payout upgrades started adding the base instead of doubling: straight $200 → $500 and $12,800 → $1,000, hand type $50,000 → $10,000, one hand $100,000 → $15,000.)
 - **"Make a flush five"** means a five of a kind in one suit, which pays Five of a kind and Flush. Flush Five is no longer a hand of its own (removed 2026-10-29).
 - **"Beat X mode"** means winning a run on that difficulty.
 
@@ -84,13 +85,13 @@ Each unlock is earned by an achievement. A locked option shows in the run setup 
 - **Increase rank** / **Decrease rank**: move a card's rank one step. Ranks wrap, so A goes up to 2 and 2 goes down to A.
 - **Split card**: the card keeps its suit and becomes its two neighbouring ranks, wrapping at the ends. 2 becomes A and 3; A becomes K and 2.
 - **Add 2x to card**: the card doubles the hand's total if it's anywhere in the final hand, even when it isn't part of the scored hand. It does nothing on Nothing (high card). A card can carry only one 2x, but several 2x cards in one hand stack (2x × 2x = 4x). The doubled total counts toward the boss target.
-- **Double bet**: once per level, double the bet for one hand. Boss hands are allowed.
+- **Double payout** (was Double bet): every boss hand pays double. (Until 2026-11-03 it was a once-per-level toggle for any hand.)
 
 ### Difficulty
 
 - **Normal**: the default.
-- **Easy** (unlock): boss cards are never locked, and prices don't rise.
-- **Hard** (unlock): every boss card is locked, and prices rise 20% after every hand (Normal: half locked, 10%).
+- **Easy** (unlock): bosses don't add cards to your deck.
+- **Hard** (unlock): bosses add cards as on Normal, and every threshold is higher. (Locked boss cards were removed 2026-11-03.)
 
 (Changed 2026-10-30: Normal now locks each boss card with a 50% chance. Before, Easy added no boss cards and Hard added 2 × level; now every difficulty adds as many as the level. See Locked cards in DESIGN.md.)
 
@@ -99,7 +100,7 @@ Each unlock is earned by an achievement. A locked option shows in the run setup 
 - **Deck properties**: counts by rank and suit, copies, deck size.
 - **Deck odds**: the chance a fresh deal from the current deck contains each hand (a full house counts toward Pair too).
 - **Draw odds**: during a hand, the chance of drawing each rank and suit from what's left.
-- **Payout increase**: in the upgrade menu, how much more money the hand would pay at the current bet if you upgraded it.
+- **Payout increase**: in the upgrade menu, how much more money the hand would pay if you upgraded it.
 
 There are no cosmetic unlocks.
 
@@ -130,7 +131,7 @@ The player is told that a run won't count before it starts, while it's being pla
 
 - **Lifetime storage** (localStorage, separate from the run save): achievements earned, unlocks, the last setup choices, and any lifetime stats the achievements need.
 - **Game setup dialog** opened from the Account window: deck dropdown, hand-size dropdown, difficulty, the toggles grouped as above with locked ones greyed out, the Easy warning line, and the Start button.
-- **Engine**: `newRun(settings)`, starting-deck builders, boss card count by difficulty, best-5 scoring for larger hands, skip-rank straights, 2x cards, the new shop actions, interest, the draw count setting, Double bet, and the `countsForAchievements` check.
+- **Engine**: `newRun(settings)`, starting-deck builders, boss card count by difficulty, best-5 scoring for larger hands, skip-rank straights, 2x cards, the new shop actions, interest, the draw count setting, Double payout, and the `countsForAchievements` check.
 - **Achievements screen**: a new tab or file next to Account, listing each achievement, whether it's earned, and what it unlocks.
 - The first build should get its UX agreed before any code (dialog layout, achievement screen, unlock toast).
 
@@ -148,7 +149,7 @@ Scripts are in the session scratchpad, not the repo. Results come from a bot tha
 - An Easy run can earn only **Beat Easy mode**.
 - The minimum deck size equals the hand size. The Flush Five deck starts with as many copies as the hand size.
 - The Flush Five deck stays as it is for now, even if it makes some achievements easy. It can be tuned later.
-- "Beat the final boss with a pair" counts any paid pair, so it's reachable without upgrading Pair to 5000x.
+- "Beat the final boss with a pair" counts any paid pair, so it's reachable without upgrading Pair a lot.
 - No Hard-only achievements for now. They may come later if the game gets popular.
 
 ## Decided while building (2026-10-29)
