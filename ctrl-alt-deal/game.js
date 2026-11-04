@@ -423,7 +423,7 @@
     const s = E.settingsOf(run);
     const extras = TOGGLES.flatMap((g) => g.items).filter((t) => s[t.key]).map((t) => t.name);
     $('run-settings').textContent = [E.DECKS.find((d) => d.id === s.deck).name, E.DIFFICULTIES.find((d) => d.id === s.difficulty).name, `${s.handSize}-card hands`, ...extras].join(' · ');
-    $('run-achievements').innerHTML = E.countsForAchievements(s) ? 'On' : '<span class="ach-off">Off (Easy mode)</span> <span class="muted">· only Beat Easy mode can be earned</span>';
+    $('run-achievements').innerHTML = E.countsForAchievements(s) ? 'On' : '<span class="ach-off">Off (Easy mode)</span> <span class="muted">· only Beat Easy mode with 10-card hands can be earned</span>';
 
     renderBet();
     renderLast();
@@ -643,7 +643,7 @@
     });
     const earned = list.length ? `<p class="dlg-ach">New achievements this run:</p><ul class="dlg-ach-list">${list.join('')}</ul>` : '';
     if (!E.countsForAchievements(E.settingsOf(run))) {
-      return `<p class="dlg-ach ach-off">This run didn't count toward achievements (Easy mode), except Beat Easy mode.</p>${earned}`;
+      return `<p class="dlg-ach ach-off">This run didn't count toward achievements (Easy mode), except Beat Easy mode with 10-card hands.</p>${earned}`;
     }
     return earned || '<p class="dlg-ach muted">No new achievements this run.</p>';
   }
@@ -733,7 +733,7 @@
       });
       return `<fieldset class="setup-group"><legend>${g.group}</legend>${items.join('')}</fieldset>`;
     });
-    const warn = '<p class="setup-warn ach-off" id="setup-warn" hidden>Achievements are off on Easy mode, except Beat Easy mode.</p>';
+    const warn = '<p class="setup-warn ach-off" id="setup-warn" hidden>Achievements are off on Easy mode, except Beat Easy mode with 10-card hands.</p>';
     const intro = '<p class="setup-intro muted">Information options apply right away. Everything else applies when you start a new run; the current run keeps its settings.</p>';
     const body = `${intro}<div class="setup-selects">${decks}${sizes}${modes}</div>${warn}${groups.join('')}`;
 
@@ -789,7 +789,7 @@
       const now = fresh.includes(a.id) ? ' · earned this run' : '';
       return `<li class="${got ? 'got' : ''}"><span class="ach-check" aria-label="${got ? 'Earned' : 'Not earned'}">${got ? '✓' : ''}</span><span><b>${esc(a.name)}</b><span class="muted">Unlocks ${esc(unlockName(a.unlock))}${now}</span></span></li>`;
     });
-    const off = E.countsForAchievements(E.settingsOf(run)) ? '' : '<p class="ach-banner ach-off">This run is on Easy mode, so it can only earn Beat Easy mode.</p>';
+    const off = E.countsForAchievements(E.settingsOf(run)) ? '' : '<p class="ach-banner ach-off">This run is on Easy mode, so it can only earn Beat Easy mode with 10-card hands.</p>';
     ask({
       title: 'Achievements',
       body: `${off}<p class="ach-count">${profile.earned.length} of ${E.ACHIEVEMENTS.length} earned</p><ul class="ach-list">${rows.join('')}</ul>`,

@@ -179,9 +179,9 @@ The full list of options and achievements, and how each achievement is read, is 
 
 **Game setup.** A Game setup button in the Account window opens a dialog with dropdowns for starting deck, hand size (5–10) and difficulty, and checkboxes for game mechanics, shop tools and information displays. Locked options are greyed out: a dropdown shows "(locked)" and "N of M unlocked", and a locked checkbox names the achievement that unlocks it. Save keeps the setup in the profile, and every new run (New run, or New run in the won/lost dialog) starts with it straight away. The information displays also apply to the current run as soon as you save; every other setting stays as the run started. Anything still locked falls back to the default. Apart from the information displays, settings can't change once the run starts; they're saved on the run (`run.settings`), and runs saved before this feature load with the defaults.
 
-**Achievements count everywhere except Easy.** On Easy only *Beat Easy mode* can be earned. The player is told in four places:
-- **Setup dialog:** Easy reads "Easy (no achievements)". Picking it shows "Achievements are off on Easy mode, except Beat Easy mode." under Difficulty, and the button reads "Start run (no achievements)".
-- **Account window:** a Run row lists the run's settings, and an Achievements row reads "On", or "Off (Easy mode) · only Beat Easy mode can be earned".
+**Achievements count everywhere except Easy.** On Easy only *Beat Easy mode with 10-card hands* can be earned. The player is told in four places:
+- **Setup dialog:** Easy reads "Easy (no achievements)". Picking it shows "Achievements are off on Easy mode, except Beat Easy mode with 10-card hands." under Difficulty, and the button reads "Start run (no achievements)".
+- **Account window:** a Run row lists the run's settings, and an Achievements row reads "On", or "Off (Easy mode) · only Beat Easy mode with 10-card hands can be earned".
 - **End-of-run dialog:** lists the achievements first earned that run, and on Easy says the run didn't count.
 - **Achievements window** (button in the Account window): a banner on an Easy run.
 

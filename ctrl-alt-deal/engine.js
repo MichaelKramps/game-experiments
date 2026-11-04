@@ -133,7 +133,8 @@ const Engine = (() => {
     return Math.max(MIN_DECK_SIZE, handSize(run));
   }
 
-  // Only Easy mode stops a run from counting, and even then Beat Easy mode can be earned.
+  // Only Easy mode stops a run from counting, and even then Beat Easy mode with
+  // 10-card hands can be earned.
   function countsForAchievements(settings) {
     return cleanSettings(settings).difficulty !== 'easy';
   }
@@ -458,6 +459,8 @@ const Engine = (() => {
       const cost = payoutPrice(run, handId);
       run.bankroll -= cost;
       run.bought.payout = (run.bought.payout || 0) + 1;
+      run.stats = run.stats || {};
+      run.stats.firstUpgradeLevel = run.stats.firstUpgradeLevel || run.level;
       run.upgrades = { ...run.upgrades, [handId]: (run.upgrades?.[handId] || 0) + 1 };
       checkAchievements(run);
       return { cost, added: [] };
@@ -532,7 +535,7 @@ const Engine = (() => {
       last: null, // the most recent finished hand
       log: [],
       handsPlayed: 0,
-      stats: { bossDeleted: 0, bigDuplicate: false },
+      stats: { bossDeleted: 0, bigDuplicate: false, firstUpgradeLevel: 0, straightMoney: 0 },
       achieved: [], // achievement ids earned during this run
     };
     for (const [rank, suit] of startingCards(s.deck, s.handSize, rand)) run.deck.push(makeCard(run, rank, suit));
@@ -639,6 +642,12 @@ const Engine = (() => {
     const paid = mult * PAYOUT_UNIT;
     run.bankroll += paid;
     run.earned += paid;
+    // Make $10,000 from straights: the Straight line's share of each hand, 2x and Double payout included.
+    const straight = matched.find((m) => m.id === 'straight');
+    if (straight) {
+      run.stats = run.stats || {};
+      run.stats.straightMoney = (run.stats.straightMoney || 0) + straight.mult * bonus * PAYOUT_UNIT;
+    }
     run.handsPlayed++;
     // Interest: 10% of the bankroll after every hand, before the boss checks it.
     const interest = s.interest && run.bankroll > 0 ? Math.floor(run.bankroll * INTEREST_RATE) : 0;
@@ -700,36 +709,37 @@ const Engine = (() => {
   // [setting, value]). `test` looks at the run as it is now, including its
   // last hand, and runs after every draw and purchase.
 
-  const BIG_DUPLICATE = 1000; // Pay $1,000 to duplicate a card
+  const BIG_DUPLICATE = 15000; // Pay $15,000 to duplicate a card
+  const EASY_ACHIEVEMENT = 'easy-10-cards'; // the one achievement an Easy run can earn
   const lastPaid = (run, id) => !!run.last?.matches?.some((m) => m.id === id);
   const won = (run) => run.phase === 'won';
-  const madeOnLast = (run, id) => run.last?.level === LEVELS && lastPaid(run, id); // any hand on level 8, won or not
+  const beat = (run, difficulty) => won(run) && settingsOf(run).difficulty === difficulty;
 
   const ACHIEVEMENTS = [
     { id: 'numbers-only', name: 'Have a deck of only number cards', unlock: ['deck', 'numbers'], test: (run) => run.deck.every((c) => c.rank <= 10) },
     { id: 'face-only', name: 'Have a deck of only face cards', unlock: ['deck', 'face'], test: (run) => run.deck.every((c) => c.rank >= 11) },
-    { id: 'small-deck', name: 'Have a deck of 26 cards or fewer', unlock: ['deck', 'half'], test: (run) => run.deck.length <= 26 },
+    { id: 'small-deck', name: 'Have a deck with 26 cards or less', unlock: ['deck', 'half'], test: (run) => run.deck.length <= 26 },
     { id: 'boss-straight', name: 'Make a straight', unlock: ['deck', 'straight'], test: (run) => lastPaid(run, 'straight') },
     { id: 'win-odd-deck', name: 'Win with a non-standard deck', unlock: ['deck', 'random'], test: (run) => won(run) && settingsOf(run).deck !== 'standard' },
     { id: 'keep-boss-cards', name: 'Win without deleting any boss cards', unlock: ['deck', 'corrupted'], test: (run) => won(run) && !run.stats?.bossDeleted },
     { id: 'five-card-deck', name: 'Have a deck of only 5 cards', unlock: ['deck', 'flush-five'], test: (run) => run.deck.length === 5 },
-    { id: 'final-pair', name: 'Make a pair on level 8', unlock: ['handSize', 6], test: (run) => madeOnLast(run, 'pair') },
-    { id: 'final-flush', name: 'Make a flush on level 8', unlock: ['handSize', 7], test: (run) => madeOnLast(run, 'flush') },
-    { id: 'final-five-kind', name: 'Make a five of a kind on level 8', unlock: ['handSize', 8], test: (run) => madeOnLast(run, 'five-kind') },
-    { id: 'win-no-duplicate', name: 'Beat the final boss without duplicating a card', unlock: ['handSize', 9], test: (run) => won(run) && !run.bought.duplicate },
-    { id: 'win-no-delete', name: 'Beat the final boss without deleting a card', unlock: ['handSize', 10], test: (run) => won(run) && !run.bought.remove },
-    { id: 'beat-easy', name: 'Beat Easy mode', unlock: ['extraDraw', true], test: (run) => won(run) && settingsOf(run).difficulty === 'easy' },
-    { id: 'beat-hard', name: 'Beat Hard mode', unlock: ['noDraw', true], test: (run) => won(run) && settingsOf(run).difficulty === 'hard' },
-    { id: 'final-straight', name: 'Make a straight on level 8', unlock: ['skipStraights', true], test: (run) => madeOnLast(run, 'straight') },
-    { id: 'billion', name: 'Have $100,000 in your bankroll', unlock: ['interest', true], test: (run) => run.bankroll >= 100000 }, // ids kept from older goals so saved profiles keep them
-    { id: 'big-duplicate', name: 'Pay $1,000 to duplicate a card', unlock: ['freeDuplicate', true], test: (run) => !!run.stats?.bigDuplicate },
-    { id: 'straight-20', name: 'Increase the payout for a straight to $500', unlock: ['rankUp', true], test: (run) => total(run, 'straight') * PAYOUT_UNIT >= 500 },
-    { id: 'straight-1280', name: 'Increase the payout for a straight to $1,000', unlock: ['rankDown', true], test: (run) => total(run, 'straight') * PAYOUT_UNIT >= 1000 },
+    { id: 'normal-standard', name: 'Beat Normal mode with the standard deck', unlock: ['handSize', 6], test: (run) => beat(run, 'normal') && settingsOf(run).deck === 'standard' },
+    { id: 'normal-late-upgrade', name: 'Beat Normal mode without upgrading a hand until level 5', unlock: ['handSize', 7], test: (run) => beat(run, 'normal') && !(run.stats?.firstUpgradeLevel && run.stats.firstUpgradeLevel < 5) },
+    { id: 'normal-no-suit', name: 'Beat Normal mode without changing a card’s suit', unlock: ['handSize', 8], test: (run) => beat(run, 'normal') && !run.bought.suit },
+    { id: 'normal-no-duplicate', name: 'Beat Normal mode without duplicating a card', unlock: ['handSize', 9], test: (run) => beat(run, 'normal') && !run.bought.duplicate },
+    { id: 'normal-no-delete', name: 'Beat Normal mode without deleting a card', unlock: ['handSize', 10], test: (run) => beat(run, 'normal') && !run.bought.remove },
+    { id: 'hard-5-cards', name: 'Beat Hard mode with 5-card hands', unlock: ['extraDraw', true], test: (run) => beat(run, 'hard') && settingsOf(run).handSize === HAND_SIZE },
+    { id: EASY_ACHIEVEMENT, name: 'Beat Easy mode with 10-card hands', unlock: ['noDraw', true], test: (run) => beat(run, 'easy') && settingsOf(run).handSize === MAX_HAND_SIZE },
+    { id: 'final-boss-straight', name: 'Make a straight on the final boss', unlock: ['skipStraights', true], test: (run) => run.last?.level === LEVELS && run.last.gate && lastPaid(run, 'straight') }, // won or not
+    { id: 'billion', name: 'Reach $100,000 in your bankroll', unlock: ['interest', true], test: (run) => run.bankroll >= 100000 }, // id kept from an older goal so saved profiles keep it
+    { id: 'duplicate-15000', name: 'Pay $15,000 to duplicate a card', unlock: ['freeDuplicate', true], test: (run) => !!run.stats?.bigDuplicate },
+    { id: 'straight-1000', name: 'Increase the payout for a straight to $1,000', unlock: ['rankUp', true], test: (run) => total(run, 'straight') * PAYOUT_UNIT >= 1000 },
+    { id: 'straight-money', name: 'Make $10,000 from straights in one run', unlock: ['rankDown', true], test: (run) => (run.stats?.straightMoney || 0) >= 10000 },
     { id: 'big-deck', name: 'Have 100 or more cards in your deck', unlock: ['split', true], test: (run) => run.deck.length >= 100 },
-    { id: 'win-no-pair-upgrade', name: 'Beat the final boss without increasing the payout for a pair', unlock: ['bonus', true], test: (run) => won(run) && !run.upgrades?.pair },
-    { id: 'big-bet', name: 'Win $15,000 or more on one hand', unlock: ['doubleBet', true], test: (run) => (run.last?.paid || 0) >= 15000 },
+    { id: 'normal-no-pair-upgrade', name: 'Beat Normal mode without increasing the payout for a pair', unlock: ['bonus', true], test: (run) => beat(run, 'normal') && !run.upgrades?.pair },
+    { id: 'hand-20000', name: 'Make over $20,000 on one hand', unlock: ['doubleBet', true], test: (run) => (run.last?.paid || 0) > 20000 },
     { id: 'lose-boss', name: 'Lose to a boss', unlock: ['difficulty', 'easy'], test: (run) => run.phase === 'lost' && !!run.lostTo },
-    { id: 'beat-normal', name: 'Beat Normal mode', unlock: ['difficulty', 'hard'], test: (run) => won(run) && settingsOf(run).difficulty === 'normal' },
+    { id: 'beat-normal', name: 'Beat Normal mode', unlock: ['difficulty', 'hard'], test: (run) => beat(run, 'normal') },
     { id: 'finish-run', name: 'Finish a run (win or lose)', unlock: ['deckInfo', true], test: (run) => run.phase === 'won' || run.phase === 'lost' },
     { id: 'straight-flush', name: 'Make a straight flush', unlock: ['deckOdds', true], test: (run) => lastPaid(run, 'straight-flush') },
     { id: 'flush-five', name: 'Make a flush five', unlock: ['drawOdds', true], test: (run) => lastPaid(run, 'five-kind') && lastPaid(run, 'flush') }, // five of a kind in one suit
@@ -737,14 +747,14 @@ const Engine = (() => {
   ];
 
   // Adds any achievements the run has just earned to run.achieved and
-  // returns their ids. On Easy only Beat Easy mode can be earned.
+  // returns their ids. On Easy only Beat Easy mode with 10-card hands can be earned.
   function checkAchievements(run) {
     run.achieved = run.achieved || [];
     const counts = countsForAchievements(settingsOf(run));
     const fresh = [];
     for (const a of ACHIEVEMENTS) {
       if (run.achieved.includes(a.id)) continue;
-      if (!counts && a.id !== 'beat-easy') continue;
+      if (!counts && a.id !== EASY_ACHIEVEMENT) continue;
       if (a.test(run)) fresh.push(a.id);
     }
     run.achieved.push(...fresh);

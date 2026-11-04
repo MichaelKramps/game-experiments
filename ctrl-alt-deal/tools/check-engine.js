@@ -329,9 +329,42 @@ assert.deepEqual(ach(E.newRun({ deck: 'numbers' })), ['numbers-only']);
 assert.deepEqual(ach(E.newRun({ deck: 'half' })), ['small-deck']);
 assert.ok(['small-deck', 'five-card-deck'].every((id) => ach(E.newRun({ deck: 'flush-five' })).includes(id)));
 assert.deepEqual(ach(E.newRun({ deck: 'flush-five', difficulty: 'easy' })), []); // Easy earns nothing…
-const easyWin = E.newRun({ difficulty: 'easy' });
-easyWin.phase = 'won';
-assert.deepEqual(E.checkAchievements(easyWin), ['beat-easy']); // …except Beat Easy mode
+const won = (settings, edit = () => {}) => {
+  const g = E.newRun(settings);
+  edit(g);
+  g.phase = 'won';
+  E.checkAchievements(g);
+  return g.achieved;
+};
+assert.deepEqual(won({ difficulty: 'easy' }), []); // Easy earns nothing…
+assert.deepEqual(won({ difficulty: 'easy', handSize: 10 }), ['easy-10-cards']); // …except Beat Easy mode with 10-card hands
+assert.ok(won({ difficulty: 'hard' }).includes('hard-5-cards'));
+assert.ok(!won({ difficulty: 'hard', handSize: 6 }).includes('hard-5-cards'));
+// Beat Normal mode with/without …: Normal only
+const normalWin = won({});
+for (const id of ['normal-standard', 'normal-late-upgrade', 'normal-no-suit', 'normal-no-duplicate', 'normal-no-delete', 'normal-no-pair-upgrade', 'beat-normal', 'keep-boss-cards', 'finish-run']) assert.ok(normalWin.includes(id), id);
+assert.ok(!normalWin.includes('win-odd-deck'));
+const hardWin = won({ difficulty: 'hard' });
+for (const id of ['normal-standard', 'normal-no-delete', 'beat-normal']) assert.ok(!hardWin.includes(id), id);
+assert.ok(!won({ deck: 'half' }).includes('normal-standard'));
+assert.ok(won({ deck: 'half' }).includes('win-odd-deck'));
+assert.ok(!won({}, (g) => (g.bought.suit = 1)).includes('normal-no-suit'));
+assert.ok(!won({}, (g) => (g.bought.duplicate = 1)).includes('normal-no-duplicate'));
+assert.ok(!won({}, (g) => (g.bought.remove = 1)).includes('normal-no-delete'));
+assert.ok(!won({}, (g) => (g.upgrades = { pair: 1 })).includes('normal-no-pair-upgrade'));
+// Without upgrading a hand until level 5: the first payout upgrade's level is kept
+const upgradeAt = (level) => {
+  const g = E.newRun();
+  g.level = level;
+  g.bankroll = 1000;
+  E.buy(g, 'payout', 'flush');
+  g.level = 8;
+  E.buy(g, 'payout', 'flush');
+  return g.stats.firstUpgradeLevel;
+};
+assert.deepEqual([upgradeAt(4), upgradeAt(5)], [4, 5]);
+assert.ok(!won({}, (g) => (g.stats.firstUpgradeLevel = 4)).includes('normal-late-upgrade'));
+assert.ok(won({}, (g) => (g.stats.firstUpgradeLevel = 5)).includes('normal-late-upgrade'));
 const finalWin = (cards, settings = {}, upgrades = {}) => {
   const g = E.newRun(settings);
   g.level = 8;
@@ -346,11 +379,8 @@ const finalWin = (cards, settings = {}, upgrades = {}) => {
 // ($1M already earned clears the last boss whatever the hand)
 const fk = finalWin('A♠ A♥ A♦ A♣ A♠', {}, { 'five-kind': 8 }); // 110x × 9 + 40x = 1,030x = $10,300
 assert.equal(fk.phase, 'won');
-for (const id of ['final-pair', 'final-five-kind', 'win-no-duplicate', 'win-no-delete', 'beat-normal', 'finish-run', 'keep-boss-cards', 'hand-5000', 'win-no-pair-upgrade', 'five-card-deck', 'small-deck']) {
-  assert.ok(fk.achieved.includes(id), id); // five of a kind also pays a pair
-}
-assert.equal(fk.achieved.includes('final-flush'), false);
-// Made on level 8 counts on any hand, won or not; level 7 doesn't
+for (const id of ['beat-normal', 'finish-run', 'keep-boss-cards', 'hand-5000', 'five-card-deck', 'small-deck']) assert.ok(fk.achieved.includes(id), id);
+assert.equal(fk.achieved.includes('normal-late-upgrade'), true); // upgrades set directly, not bought
 const madeOn = (level, handNo, cards) => {
   const g = E.newRun();
   g.level = level;
@@ -360,31 +390,40 @@ const madeOn = (level, handNo, cards) => {
   E.draw(g, rand);
   return g;
 };
-assert.ok(madeOn(8, 1, '2♥ 5♥ 7♥ 9♥ J♥').achieved.includes('final-flush')); // first hand of level 8
-const lostFlush = madeOn(8, 5, '2♥ 5♥ 7♥ 9♥ J♥'); // $50 against $16,000
-assert.equal(lostFlush.phase, 'lost');
-assert.ok(lostFlush.achieved.includes('final-flush'));
-assert.equal(madeOn(7, 1, '2♥ 5♥ 7♥ 9♥ J♥').achieved.includes('final-flush'), false);
-assert.ok(madeOn(1, 1, '5♣ 6♦ 7♠ 8♥ 9♣').achieved.includes('boss-straight')); // Make a straight: any hand, not just a boss
-const sf = finalWin('9♥ 10♥ J♥ Q♥ K♥', { difficulty: 'hard' }, { straight: 1500 }); // 10x × 1,501 × $10 = $150,100 on one hand
-for (const id of ['final-straight', 'final-flush', 'boss-straight', 'straight-flush', 'beat-hard', 'straight-20', 'straight-1280', 'big-bet']) assert.ok(sf.achieved.includes(id), id);
-// Just short: straight $400 and $900, a $9,200 hand type, $14,990 on one hand
+assert.ok(madeOn(1, 1, '5♣ 6♦ 7♠ 8♥ 9♣').achieved.includes('boss-straight')); // Make a straight: any hand
+// Make a straight on the final boss: level 8's boss hand, won or not
+const lostStraight = madeOn(8, 5, '5♣ 6♦ 7♠ 8♥ 9♣'); // $40 against $16,000
+assert.equal(lostStraight.phase, 'lost');
+assert.ok(lostStraight.achieved.includes('final-boss-straight'));
+assert.ok(!madeOn(8, 4, '5♣ 6♦ 7♠ 8♥ 9♣').achieved.includes('final-boss-straight'));
+assert.ok(!madeOn(7, 5, '5♣ 6♦ 7♠ 8♥ 9♣').achieved.includes('final-boss-straight'));
+const sf = finalWin('9♥ 10♥ J♥ Q♥ K♥', { difficulty: 'hard' }, { straight: 1500 }); // straight line 10x × 1,501 × $10 = $150,100
+for (const id of ['final-boss-straight', 'boss-straight', 'straight-flush', 'hard-5-cards', 'straight-1000', 'straight-money', 'hand-20000']) assert.ok(sf.achieved.includes(id), id);
+// Make $10,000 from straights: only the Straight line counts, across the run
+const sm = madeOn(1, 1, '9♥ 10♥ J♥ Q♥ K♥');
+const smLine = sm.last.matches.find((m) => m.id === 'straight').mult * 10;
+assert.equal(sm.stats.straightMoney, smLine);
+assert.ok(smLine < sm.last.paid);
+sm.stats.straightMoney = 9999;
+E.checkAchievements(sm);
+assert.equal(sm.achieved.includes('straight-money'), false);
+sm.stats.straightMoney = 10000;
+E.checkAchievements(sm);
+assert.equal(sm.achieved.includes('straight-money'), true);
+// Just short: straight $900, a $9,200 hand type, $20,000 on one hand
 const near = E.newRun();
-near.upgrades = { straight: 3, 'five-kind': 7 }; // five of a kind 110x × 8 + 40x = 920x
+near.upgrades = { straight: 8, 'five-kind': 7 }; // five of a kind 110x × 8 + 40x = 920x
 E.checkAchievements(near);
-assert.equal(['straight-20', 'straight-1280', 'hand-5000'].some((id) => near.achieved.includes(id)), false);
-near.upgrades.straight = 4;
-E.checkAchievements(near);
-assert.deepEqual(['straight-20', 'straight-1280'].map((id) => near.achieved.includes(id)), [true, false]);
+assert.equal(['straight-1000', 'hand-5000'].some((id) => near.achieved.includes(id)), false);
 near.upgrades.straight = 9;
 E.checkAchievements(near);
-assert.equal(near.achieved.includes('straight-1280'), true); // $1,000
-near.last = { paid: 14990, matches: [] };
+assert.equal(near.achieved.includes('straight-1000'), true); // $1,000
+near.last = { paid: 20000, matches: [] };
 E.checkAchievements(near);
-assert.equal(near.achieved.includes('big-bet'), false);
-near.last = { paid: 15000, matches: [] };
+assert.equal(near.achieved.includes('hand-20000'), false); // over $20,000, not equal
+near.last = { paid: 20010, matches: [] };
 E.checkAchievements(near);
-assert.equal(near.achieved.includes('big-bet'), true);
+assert.equal(near.achieved.includes('hand-20000'), true);
 const lost = E.newRun();
 lost.hand = 5;
 lost.bankroll = 0; // and Nothing pays $0, short of $20
@@ -394,9 +433,11 @@ E.draw(lost, rand);
 assert.deepEqual(lost.achieved.filter((id) => ['lose-boss', 'finish-run'].includes(id)), ['lose-boss', 'finish-run']);
 const bd = E.newRun();
 bd.bankroll = 99000;
-bd.bought.duplicate = 16; // the 17th duplicate costs $1,314 (the 16th $876)
+bd.bought.duplicate = 22; // the 23rd duplicate costs $14,964
 E.buy(bd, 'duplicate', bd.deck[0].id);
-assert.ok(bd.achieved.includes('big-duplicate'));
+assert.ok(!bd.achieved.includes('duplicate-15000'));
+E.buy(bd, 'duplicate', bd.deck[0].id); // the 24th costs $22,446
+assert.ok(bd.achieved.includes('duplicate-15000'));
 assert.ok(!bd.achieved.includes('billion')); // under $100,000 isn't enough
 bd.bankroll = 100000;
 E.checkAchievements(bd);
@@ -410,7 +451,7 @@ assert.equal(E.isUnlocked([], 'deck', 'standard'), true);
 assert.equal(E.isUnlocked([], 'deck', 'numbers'), false);
 assert.equal(E.isUnlocked(['numbers-only'], 'deck', 'numbers'), true);
 assert.equal(E.isUnlocked([], 'handSize', 5), true);
-assert.equal(E.isUnlocked(['final-pair'], 'handSize', 6), true);
+assert.equal(E.isUnlocked(['normal-standard'], 'handSize', 6), true);
 // every option besides the defaults has exactly one achievement
 const unlocks = E.ACHIEVEMENTS.map((a) => a.unlock.join('='));
 assert.equal(new Set(unlocks).size, E.ACHIEVEMENTS.length);

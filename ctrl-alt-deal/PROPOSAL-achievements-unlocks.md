@@ -10,26 +10,26 @@ Each achievement unlocks exactly one option.
 |---|---|
 | Have a deck of only number cards (2–10) | Numbers deck |
 | Have a deck of only face cards (J–A) | Face deck |
-| Have a deck of 26 cards or fewer | Half deck |
+| Have a deck with 26 cards or less | Half deck |
 | Make a straight | Straight deck |
 | Win with a non-standard deck | Random deck |
 | Win without deleting any boss cards | Corrupted deck |
 | Have a deck of only 5 cards | Flush Five deck |
-| Make a pair on level 8 | 6-card hands |
-| Make a flush on level 8 | 7-card hands |
-| Make a five of a kind on level 8 | 8-card hands |
-| Beat the final boss without duplicating a card | 9-card hands |
-| Beat the final boss without deleting a card | 10-card hands |
-| Beat Easy mode | Extra draw |
-| Beat Hard mode | No draw |
-| Make a straight on level 8 | Straights may skip a rank |
-| Have $100,000 in your bankroll | Interest |
-| Pay $1,000 to duplicate a card | Free Duplicate |
-| Increase the payout for a straight to $500 | Increase rank |
-| Increase the payout for a straight to $1,000 | Decrease rank |
+| Beat Normal mode with the standard deck | 6-card hands |
+| Beat Normal mode without upgrading a hand until level 5 | 7-card hands |
+| Beat Normal mode without changing a card's suit | 8-card hands |
+| Beat Normal mode without duplicating a card | 9-card hands |
+| Beat Normal mode without deleting a card | 10-card hands |
+| Beat Hard mode with 5-card hands | Extra draw |
+| Beat Easy mode with 10-card hands | No draw |
+| Make a straight on the final boss | Straights may skip a rank |
+| Reach $100,000 in your bankroll | Interest |
+| Pay $15,000 to duplicate a card | Free Duplicate |
+| Increase the payout for a straight to $1,000 | Increase rank |
+| Make $10,000 from straights in one run | Decrease rank |
 | Have 100 or more cards in your deck | Split card |
-| Beat the final boss without increasing the payout for a pair | Add 2x to card |
-| Win $15,000 or more on one hand | Double payout |
+| Beat Normal mode without increasing the payout for a pair | Add 2x to card |
+| Make over $20,000 on one hand | Double payout |
 | Lose to a boss | Easy mode |
 | Beat Normal mode | Hard mode |
 | Finish a run (win or lose) | Deck properties |
@@ -37,23 +37,28 @@ Each achievement unlocks exactly one option.
 | Make a flush five | Draw odds |
 | Get a hand type to pay $10,000 | Payout increase |
 
+(List revised 2026-11-03. Achievements whose meaning changed got new ids, so anything earned under an old meaning has to be earned again. Kept ids: the seven deck ones, Interest's, Big deck, Lose to a boss, Beat Normal mode and the four information ones.)
+
 ### How each achievement is read
 
-- **"Make a straight"** means a straight is one of the hands you were paid for, on any hand. A straight flush counts, and earns the flush ones too. (Changed 2026-11-03 from "Beat any boss with a straight", which needed the straight on a boss hand that cleared the boss. Its id, `boss-straight`, didn't change.)
-- **"Make X on level 8"** means X is one of the hands you were paid for on any of level 8's five hands, whether or not you go on to win. Every hand that includes X counts, so a five of a kind also earns "Make a pair on level 8". (Changed 2026-11-03: these were "Beat the final boss with X" and needed the winning hand. Their ids didn't change.)
+- **"Make X"** means X is one of the hands you were paid for. Every hand that includes X counts, so a straight flush also makes a straight and a flush.
+- **"Make a straight on the final boss"** means a paid straight on level 8's boss hand (its 5th), whether or not you beat the boss.
+- **"Beat Normal mode …"** needs a won run on Normal. A Hard or Easy win doesn't count.
+- **"Without upgrading a hand until level 5"** means your first Increase Hand Payout is bought on level 5 or later, or never.
+- **"Without duplicating a card"** counts Free Duplicate as duplicating. **"Without deleting a card"** means Delete; Split card isn't deleting.
+- **"Beat Easy mode with 10-card hands"** is the only achievement an Easy run can earn.
 - **"Have a deck of …"** only needs to be true for a moment. It's checked after every deck change and after boss cards are added.
 - **Number cards** are 2–10 and **face cards** are J, Q, K and A, the same split as the Numbers and Face decks.
 - **Boss cards** are the cards a boss added.
   - A duplicate of a boss card is not a boss card.
   - Changing a boss card (Change suit, Increase rank, Decrease rank) doesn't delete it; it stays a boss card.
   - Any time a boss card leaves the deck, it counts as deleted.
-- **"Payout for a straight"** is the Straight row's Total in the paytable. It's $100, and each upgrade adds $100, so 4 upgrades make $500 and 9 make $1,000.
+- **"Payout for a straight"** is the Straight row's Total in the paytable. It's $100, and each upgrade adds $100, so 9 upgrades make $1,000.
+- **"Make $10,000 from straights in one run"** adds up the Straight line of every hand in the run, with 2x cards and Double payout applied. The other lines of a hand that also has a straight (a straight flush's Flush and Straight flush lines) don't count.
 - **"Get a hand type to pay $10,000"** uses any row's Total, which includes the hands it contains.
-- **"Win $15,000 or more on one hand"** uses what the hand paid, including 2x cards and Double payout.
-- **"Pay $1,000 to duplicate a card"** means a single duplicate priced at $1,000 or more. With the base pricing ($2 × 1.5ⁿ), that's the 17th duplicate in a run ($1,314).
-- (Changed 2026-11-02 with fixed payouts: these were $1 trillion, $100 million, 20x, 1280x, 100,000x on a bet and 5000x. Their ids didn't change, so earned ones stay earned. Changed again 2026-11-03 when payout upgrades started adding the base instead of doubling: straight $200 → $500 and $12,800 → $1,000, hand type $50,000 → $10,000, one hand $100,000 → $15,000.)
+- **"Make over $20,000 on one hand"** uses what the hand paid, including 2x cards and Double payout, and needs more than $20,000.
+- **"Pay $15,000 to duplicate a card"** means a single duplicate priced at $15,000 or more. With the base pricing ($2 × 1.5ⁿ), that's the 24th duplicate in a run ($22,446; the 23rd is $14,964).
 - **"Make a flush five"** means a five of a kind in one suit, which pays Five of a kind and Flush. Flush Five is no longer a hand of its own (removed 2026-10-29).
-- **"Beat X mode"** means winning a run on that difficulty.
 
 ## Unlocks
 
@@ -109,7 +114,7 @@ There are no cosmetic unlocks.
 
 Only **Easy mode** stops a run from counting. Every other setting is allowed for achievements: any starting deck, any hand size, Extra draw, No draw, skip-rank straights, Interest, Free Duplicate, every shop tool and every information display.
 
-The one exception is **Beat Easy mode**, the only achievement an Easy run can earn.
+The one exception is **Beat Easy mode with 10-card hands**, the only achievement an Easy run can earn.
 
 ### Settings lock at run start
 
@@ -122,7 +127,7 @@ The one exception is **Beat Easy mode**, the only achievement an Easy run can ea
 The player is told that a run won't count before it starts, while it's being played, and when it ends.
 
 1. **In the Game setup dialog.** The Easy option reads "Easy (no achievements)". When Easy is picked, a warning line shows under Difficulty:
-   > Achievements are off on Easy mode, except Beat Easy mode.
+   > Achievements are off on Easy mode, except Beat Easy mode with 10-card hands.
 2. **In the Account window, during the run.** A **Run** row lists the run's settings, for example "Face deck · Hard · Split card". On Easy, an **Achievements** row underneath says "Off (Easy mode)" in the warning colour. When the run counts, the row says "On".
 3. **At the end of the run.** The won/lost dialog adds a line: "This run didn't count toward achievements (Easy mode)." A run that does count lists any achievements earned in it instead.
 4. **On the achievements screen.** If the current run is on Easy, a banner at the top says achievements are off for it.
@@ -147,10 +152,10 @@ Scripts are in the session scratchpad, not the repo. Results come from a bot tha
 
 ## Decided (2026-10-29)
 
-- An Easy run can earn only **Beat Easy mode**.
+- An Easy run can earn only **Beat Easy mode** (since 2026-11-03, **Beat Easy mode with 10-card hands**).
 - The minimum deck size equals the hand size. The Flush Five deck starts with as many copies as the hand size.
 - The Flush Five deck stays as it is for now, even if it makes some achievements easy. It can be tuned later.
-- "Make a pair on level 8" (was "Beat the final boss with a pair") counts any paid pair, so it's reachable without upgrading Pair a lot.
+- "Make a pair on level 8" (was "Beat the final boss with a pair") counted any paid pair. Replaced 2026-11-03 by "Beat Normal mode with the standard deck".
 - No Hard-only achievements for now. They may come later if the game gets popular.
 
 ## Decided while building (2026-10-29)
