@@ -22,14 +22,13 @@
       <div class="window-title" id="account-title">Account</div>
     </div>
     <div class="acct">
+      <div class="acct-foot acct-top"><button class="kg-btn" type="button" id="new-run">New run</button><button class="kg-btn" type="button" id="game-setup">Game Settings</button></div>
       <section class="acct-sheet">
         <div class="acct-row"><span class="acct-label">Bankroll</span><b class="acct-bankroll" id="bankroll"></b></div>
-        <div class="acct-row"><span class="acct-label">Earned this level</span><b id="earned"></b></div>
+        <div class="acct-row"><span class="acct-label">$ needed</span><b id="earned"></b></div>
         <div class="acct-row"><span class="acct-label">Progress</span><span id="stage"></span></div>
-        <div class="acct-pips" id="pips" aria-hidden="true"></div>
         <div class="acct-row"><span class="acct-label">Boss</span><span id="boss"></span></div>
-        <div class="acct-row"><span class="acct-label">Run</span><span id="run-settings"></span></div>
-        <div class="acct-row"><span class="acct-label">Achievements</span><span id="run-achievements"></span></div>
+        <div class="acct-row" id="ach-row"><span class="acct-label">Achievements</span><span id="run-achievements"></span></div>
       </section>
 
       <section class="acct-group" id="note-box">
@@ -51,7 +50,7 @@
         <table class="paytable" id="paytable"></table>
       </section>
 
-      <div class="acct-foot"><button class="kg-btn" type="button" id="how-to">How to play</button><button class="kg-btn" type="button" id="game-setup">Game setup</button><button class="kg-btn" type="button" id="achievements">Achievements</button><button class="kg-btn" type="button" id="new-run">New run</button></div>
+      <div class="acct-foot"><button class="kg-btn" type="button" id="how-to">How to play</button><button class="kg-btn" type="button" id="achievements">Achievements</button></div>
     </div>
   </div>
 
@@ -62,9 +61,6 @@
     </div>
     <div class="files-toolbar">
       <button class="kg-btn kg-primary deal" type="button" id="deal">Deal</button>
-      <button class="tool-btn shop danger" id="tool-remove" type="button" title="Permanently delete the selected card (Shift+Del)"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 6h12M8 6V4h4v2M6 6l1 10h6l1-10"/></svg><span></span></button>
-      <button class="tool-btn shop" id="tool-duplicate" type="button" title="Duplicate the selected card (Ctrl+C, Ctrl+V)"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="7" y="7" width="9" height="10" rx="1.5"/><path d="M13 7V4.5A1.5 1.5 0 0 0 11.5 3h-6A1.5 1.5 0 0 0 4 4.5v8A1.5 1.5 0 0 0 5.5 14H7"/></svg><span></span></button>
-      <button class="tool-btn shop" id="tool-suit" type="button" title="Change the selected card's suit"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 7h10l-3-3M16 13H6l3 3"/></svg><span></span></button>
       <button class="tool-btn shop" id="tool-rankUp" type="button" title="Raise the selected card one rank (A wraps to 2)" hidden><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 5v10M5 10h10"/></svg><span></span></button>
       <button class="tool-btn shop" id="tool-rankDown" type="button" title="Lower the selected card one rank (2 wraps to A)" hidden><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 10h10"/></svg><span></span></button>
       <button class="tool-btn shop" id="tool-split" type="button" title="Split the selected card into its two neighbouring ranks" hidden><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3v5M10 8l-5 9M10 8l5 9"/></svg><span></span></button>

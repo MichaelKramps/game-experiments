@@ -10,7 +10,7 @@ Each achievement unlocks exactly one option.
 |---|---|
 | Have a deck of only number cards (2–10) | Numbers deck |
 | Have a deck of only face cards (J–A) | Face deck |
-| Have a deck with 26 cards or less | Half deck |
+| Have a deck with exactly 26 cards | Half deck |
 | Make a straight | Straight deck |
 | Win with a non-standard deck | Random deck |
 | Win without deleting any boss cards | Corrupted deck |

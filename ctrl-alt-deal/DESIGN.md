@@ -72,20 +72,20 @@ Duplicated cards mean a hand can hold identical cards, so some hands are possibl
 
 ## Paytable
 
-A hand pays every category it matches, added together. Each hand pays its base multiple × $10 (Pair $10, Flush $120), and each **Increase Hand Payout** adds the hand's base payout again, so Pair goes $10 → $20 → $30 and Four of a kind $350 → $700 → $1,050. Because Pair is part of every rank hand, upgrading Pair also raises Two pair, Three of a kind, Full house and so on. Nothing always pays $0 and can't be increased. (Changed 2026-10-27; earlier versions lowered payouts at every boss, then each upgrade added the hand's base again. Changed 2026-11-02 from multiples of a bet to dollars; Nothing used to lose the bet. Changed 2026-11-03 from doubling to adding the base.)
+A hand pays every category it matches, added together. Each hand pays its base multiple × $10 (Pair $10, Flush $120), and each **Increase Hand Payout** adds the hand's base payout again, so Pair goes $10 → $20 → $30 and Four of a kind $400 → $800 → $1,200. Because Pair is part of every rank hand, upgrading Pair also raises Two pair, Three of a kind, Full house and so on. Nothing always pays $0 and can't be increased. (Changed 2026-10-27; earlier versions lowered payouts at every boss, then each upgrade added the hand's base again. Changed 2026-11-02 from multiples of a bet to dollars; Nothing used to lose the bet. Changed 2026-11-03 from doubling to adding the base.)
 
-The bases (changed 2026-10-28) are set so each hand's **total** roughly follows how rarely a standard deck makes it, compressed for the rare hands so they don't run into the thousands. Odds are from a 400,000-hand simulation with a sensible hold strategy (keep pairs and better, else 4 to a flush, else 4 to an open straight, else redraw all).
+Each hand's **own** payout rises with how rarely it's made, so the paytable's Pays column is in poker order; totals come out higher for hands that contain smaller ones. (Changed 2026-11-06: every hand that contains smaller hands got the rarity value as its own payout, which is what its total used to be: Two pair $20 → $30, Three of a kind $40 → $50, Full house $80 → $150, Four of a kind $350 → $400, Straight flush $780 → $1,000, Five of a kind $1,100 → $1,500. Before, the bases were set from 2026-10-28 so each hand's total followed rarity, which left Full house's own payout below Straight and Flush.) Rare hands are compressed so they don't run into the thousands. Odds are from a 400,000-hand simulation with a sensible hold strategy (keep pairs and better, else 4 to a flush, else 4 to an open straight, else redraw all).
 
 | Hand | Own payout | Also pays | Total | Chance (standard deck) |
 |---|---|---|---|---|
-| Five of a kind | $1,100 | Four of a kind, Three of a kind, Pair | $1,500 | — |
-| Straight flush | $780 | Flush, Straight | $1,000 | 0.01% |
-| Four of a kind | $350 | Three of a kind, Pair | $400 | 0.24% |
-| Full house | $80 | Three of a kind, Two pair, Pair | $150 | 1.2% |
+| Five of a kind | $1,500 | Four of a kind, Three of a kind, Pair | $1,960 | — |
+| Straight flush | $1,000 | Flush, Straight | $1,220 | 0.01% |
+| Four of a kind | $400 | Three of a kind, Pair | $460 | 0.24% |
+| Full house | $150 | Three of a kind, Two pair, Pair | $240 | 1.2% |
 | Flush | $120 | — | $120 | 1.1% |
 | Straight | $100 | — | $100 | 1.1% |
-| Three of a kind | $40 | Pair | $50 | 7.4% |
-| Two pair | $20 | Pair | $30 | 13% |
+| Three of a kind | $50 | Pair | $60 | 7.4% |
+| Two pair | $30 | Pair | $40 | 13% |
 | Pair | $10 | — | $10 | 50% |
 | Nothing | $0 | — | $0 | 27% |
 
@@ -139,7 +139,7 @@ Open between every hand, with as many purchases per visit as you can afford.
 - **Remove:** take any one card out of your deck permanently. Not available at 5 cards, the minimum deck size.
 - **Duplicate:** add an exact copy (same rank and suit) of any card in your deck. Copies of copies are allowed. No maximum deck size.
 - **Change suit:** change any one card to a suit of your choice; its rank stays. (Added 2026-10-27.)
-- **Increase Hand Payout:** pick any hand type except Nothing and add its base payout to it (see Paytable). The paytable tags upgraded hands with the total factor (×2, ×3, …). Needs no card. The button has no price on it; it opens a list of hands showing each one's payout before and after and its own price (e.g. "Full house: $160 → $240   $3"). Hands you can't afford are greyed out. (Added 2026-10-27; per-hand prices 2026-10-28; briefly replaced by boss credits 2026-11-02.)
+- **Increase Hand Payout:** pick any hand type except Nothing and add its base payout to it (see Paytable). The paytable tags upgraded hands with the total factor (×2, ×3, …). Needs no card. The button has no price on it; it opens a list of hands showing each one's payout before and after and its own price (e.g. "Full house: $300 → $450   $3"). Hands you can't afford are greyed out. (Added 2026-10-27; per-hand prices 2026-10-28; briefly replaced by boss credits 2026-11-02.)
 
 **Pricing.** Every action starts at $2. Each Remove, Duplicate or Change suit purchase raises that action's next price by 50%: `price(n) = ceil(2 × 1.5^(n − 1))`, where n counts this purchase.
 
@@ -164,12 +164,12 @@ Two windows on the site shell (`KG.makeWindow`), in all three OS looks and both 
 - Card files are named with words, like `eight-hearts.card` or `ace-clubs.card`. A duplicate gets the OS look's usual copy name. The file icon shows only the rank and suit letter (`8H`, `AC`, `10S`); no suit symbols appear anywhere in the game. Labels use a four-color deck: spades black, hearts red, diamonds blue, clubs green.
 - **Replace:** click cards in Hand to select the ones you want to replace (click again to unselect). Unselected cards are held. There is no Delete step. (Changed 2026-10-27; the first version discarded with Delete or drag-to-Trash.)
 - **Draw:** a toolbar button styled as Refresh replaces the selected cards. After that the hand is final. Once the hand is paid out (and before the first deal) the same button reads "Edit deck" and opens the Deck folder; it's greyed out only after the run ends.
-- **Remove:** right-click a card in Deck → "Delete permanently — $X".
-- **Duplicate:** right-click a card in Deck → "Duplicate — $X" (or copy and paste it).
-- **Change suit:** select a card in Deck, press "Change suit $X" and pick one of the other three suits (also in the right-click menu). The file is renamed, e.g. `king-clubs.card` → `king-hearts.card`; if that card already exists it becomes a copy (`king-hearts - Copy.card`).
+- **Remove:** select a card in Deck → "Delete permanently — $X" in its menu.
+- **Duplicate:** select a card in Deck → "Duplicate — $X" in its menu (or copy and paste it).
+- **Change suit:** select a card in Deck and pick one of the other three suits in its menu, each priced, e.g. "Change to Hearts (K♥) — $2". The file is renamed, e.g. `king-clubs.card` → `king-hearts.card`; if that card already exists it becomes a copy (`king-hearts - Copy.card`).
 - Status bar: the deck's card count and the Delete, Duplicate and Change suit prices.
 
-**Account window (game state).** Styled as a Properties panel: bankroll; earned this level against the threshold ("$0 / $20"); level and hand ("Level 3 of 8 · Hand 5 of 5 · Boss"); a row of five boxes for this level's hands, filled as you play, where the fifth is gold and shows how many cards the boss adds ("+3") instead of "5"; this level's threshold ("Earn $250 this level by hand 5"); a note box that appears only when there's something to say (during a hand, on boss hands, at the end of a run); the paytable, with each hand's own payout and its total in dollars, every hand the last hand matched marked, and totals that would cover what's still needed in green. The result line lists every match and the sum, e.g. "Full house · Full house $80 + Three of a kind $40 + Two pair $20 + Pair $10 = $150 · +$150", and after the boss what the level earned against the threshold ("Beat the boss: earned $310 of $250 needed"). (A recent-hands log, a "N more hands, then the boss" note and a paytable footnote were removed 2026-10-27.)
+**Account window (game state).** Styled as a Properties panel: bankroll; earned this level against the threshold ("$0 / $20"); level and hand ("Level 3 of 8 · Hand 5 of 5 · Boss"); a row of five boxes for this level's hands, filled as you play, where the fifth is gold and shows how many cards the boss adds ("+3") instead of "5"; this level's threshold ("Earn $250 this level by hand 5"); a note box that appears only when there's something to say (during a hand, on boss hands, at the end of a run); the paytable, with each hand's own payout and its total in dollars, every hand the last hand matched marked, and totals that would cover what's still needed in green. The result line lists every match and the sum, e.g. "Full house · Full house $150 + Three of a kind $50 + Two pair $30 + Pair $10 = $240 · +$240", and after the boss what the level earned against the threshold ("Beat the boss: earned $310 of $250 needed"). (A recent-hands log, a "N more hands, then the boss" note and a paytable footnote were removed 2026-10-27.)
 
 **Phones** (≤ 760px): each window is full-screen, so the two windows are two screens, with the Account screen first. Selecting is a tap; Remove and Duplicate come from a long-press menu.
 
@@ -177,7 +177,7 @@ Two windows on the site shell (`KG.makeWindow`), in all three OS looks and both 
 
 The full list of options and achievements, and how each achievement is read, is in `PROPOSAL-achievements-unlocks.md`. This section covers how they work in the game.
 
-**Game setup.** A Game setup button in the Account window opens a dialog with dropdowns for starting deck, hand size (5–10) and difficulty, and checkboxes for game mechanics, shop tools and information displays. Locked options are greyed out: a dropdown shows "(locked)" and "N of M unlocked", and a locked checkbox names the achievement that unlocks it. Save keeps the setup in the profile, and every new run (New run, or New run in the won/lost dialog) starts with it straight away. The information displays also apply to the current run as soon as you save; every other setting stays as the run started. Anything still locked falls back to the default. Apart from the information displays, settings can't change once the run starts; they're saved on the run (`run.settings`), and runs saved before this feature load with the defaults.
+**Game setup.** A Game setup button in the Account window opens a dialog with dropdowns for starting deck, hand size (5–10) and difficulty, and checkboxes for game mechanics, shop tools and information displays. Locked options are greyed out: a dropdown shows "(locked)" and "N of M unlocked", and a locked checkbox names the achievement that unlocks it. Save keeps the setup in the profile, and every new run (New run, or New run in the won/lost dialog) starts with it. If more than one deck is unlocked, starting a new run first asks which deck to use (the saved one is preselected), and that choice is saved to the setup. (Deck prompt added 2026-11-06; the button was renamed Game Settings the same day.) The information displays also apply to the current run as soon as you save; every other setting stays as the run started. Anything still locked falls back to the default. Apart from the information displays, settings can't change once the run starts; they're saved on the run (`run.settings`), and runs saved before this feature load with the defaults.
 
 **Achievements count everywhere except Easy.** On Easy only *Beat Easy mode with 10-card hands* can be earned. The player is told in four places:
 - **Setup dialog:** Easy reads "Easy (no achievements)". Picking it shows "Achievements are off on Easy mode, except Beat Easy mode with 10-card hands." under Difficulty, and the button reads "Start run (no achievements)".
@@ -217,7 +217,7 @@ Achievements are checked after every draw and purchase. A newly earned one pops 
 | SHOP_BASE_PRICE | $2 each for Remove, Duplicate, Change suit |
 | SHOP_PRICE_GROWTH | ×1.5 per purchase, separate for each action |
 | PAYOUT_GROWTH | ×1.5 to a hand's upgrade price when it's upgraded (other hands unchanged) |
-| Base payouts | Pair 1x, Two pair 2x, Three of a kind 4x, Straight 10x, Flush 12x, Full house 8x, Four of a kind 35x, Straight flush 78x, Five of a kind 110x (each paid alongside the hands it contains) |
+| Base payouts | Pair 1x, Two pair 3x, Three of a kind 5x, Straight 10x, Flush 12x, Full house 15x, Four of a kind 40x, Straight flush 100x, Five of a kind 150x (each paid alongside the hands it contains) |
 
 ## Assumptions to confirm
 
@@ -245,7 +245,8 @@ Decisions made while building, beyond the definition above:
 - **Folders:** just Deck and Hand, switched from the sidebar. There is no parent "Cards" folder, up arrow or path.
 - **One Deck folder:** the definition's per-suit subfolders were dropped on 2026-10-27; every card sits directly in Deck.
 - **Hand selection:** in Hand a click toggles whether a card will be replaced; the Draw button shows the count ("Draw 2"), and reads "Keep hand" when nothing is selected. The marks are saved with the run. In Deck a click selects one card (click again to unselect).
-- **Shop buttons:** in Deck the toolbar shows, left to right, "Delete card $X", "Duplicate card $X" and "Change suit $X" and "Increase Hand Payout" (the card actions always show the current price; Increase Hand Payout shows prices per hand in its list; phones shorten them to Delete, Copy, Suit, Payout) in place of Draw. They light up only when a card is selected and you can afford the action. The right-click / long-press menu still works too.
+- **Card menu:** selecting a card in Deck opens its shop menu just under it: Duplicate, Change to each other suit, any optional tools chosen for the run, and Delete permanently, each with its price. Items you can't use are greyed out, with the reason under them. Clicking the card again, clicking elsewhere or Escape closes it; right-click / long-press opens the same menu. (Changed 2026-11-06: Delete card, Duplicate card and Change suit used to be toolbar buttons.)
+- **Shop buttons:** in Deck the toolbar shows "Increase Hand Payout" (prices per hand in its list; "Payout" on phones), plus Rank up, Rank down, Split and Add 2x when chosen for the run, in place of Draw.
 - **Help banner:** the how-to text at the top of the Cards window (the shop hint, and the replace instructions during a hand) has an × that hides it until the page is reloaded. Hand results and run over still show. Not saved, so a fresh visit shows the help again.
 - **Money format:** amounts under $1M show in full ($163,840); from $1M up they're shortened to three significant digits with M, B, T or Q ($1.23M, $48.3B), rounded down so the bankroll never looks bigger than it is.
 - **Hand order:** Hand and the Account window's last hand are shown strongest first (aces left, 2s right), not in deal order.

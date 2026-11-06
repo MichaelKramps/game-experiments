@@ -41,19 +41,19 @@ const Engine = (() => {
   const RANK_WORDS = { 2: 'two', 3: 'three', 4: 'four', 5: 'five', 6: 'six', 7: 'seven', 8: 'eight', 9: 'nine', 10: 'ten', 11: 'jack', 12: 'queen', 13: 'king', 14: 'ace' };
   const RANKS = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
 
-  // Best first. `base` is the hand's own starting payout multiple. A hand pays
-  // every hand it matches, so a full house also pays three of a kind, two pair
-  // and pair. `includes` lists the smaller hands it always contains; the bases
-  // are set so each hand's total roughly follows how rarely it's made.
+  // Best first. `base` is the hand's own starting payout multiple, and the bases
+  // rise with how rarely each hand is made. A hand pays every hand it matches,
+  // so a full house also pays three of a kind, two pair and pair. `includes`
+  // lists the smaller hands it always contains.
   const HANDS = [
-    { id: 'five-kind', name: 'Five of a kind', base: 110, includes: ['four-kind', 'three-kind', 'pair'] },
-    { id: 'straight-flush', name: 'Straight flush', base: 78, includes: ['flush', 'straight'] },
-    { id: 'four-kind', name: 'Four of a kind', base: 35, includes: ['three-kind', 'pair'] },
-    { id: 'full-house', name: 'Full house', base: 8, includes: ['three-kind', 'two-pair', 'pair'] },
+    { id: 'five-kind', name: 'Five of a kind', base: 150, includes: ['four-kind', 'three-kind', 'pair'] },
+    { id: 'straight-flush', name: 'Straight flush', base: 100, includes: ['flush', 'straight'] },
+    { id: 'four-kind', name: 'Four of a kind', base: 40, includes: ['three-kind', 'pair'] },
+    { id: 'full-house', name: 'Full house', base: 15, includes: ['three-kind', 'two-pair', 'pair'] },
     { id: 'flush', name: 'Flush', base: 12, includes: [] },
     { id: 'straight', name: 'Straight', base: 10, includes: [] },
-    { id: 'three-kind', name: 'Three of a kind', base: 4, includes: ['pair'] },
-    { id: 'two-pair', name: 'Two pair', base: 2, includes: ['pair'] },
+    { id: 'three-kind', name: 'Three of a kind', base: 5, includes: ['pair'] },
+    { id: 'two-pair', name: 'Two pair', base: 3, includes: ['pair'] },
     { id: 'pair', name: 'Pair', base: 1, includes: [] },
   ];
   const NOTHING = { id: 'nothing', name: 'Nothing', base: 0 };
@@ -102,6 +102,8 @@ const Engine = (() => {
     split: false,
     bonus: false,
     doubleBet: false, // Double payout: boss hands pay double (the key is from when it doubled the bet)
+    // display
+    noColor: false,
     // information displays
     deckInfo: false,
     deckOdds: false,
@@ -718,7 +720,7 @@ const Engine = (() => {
   const ACHIEVEMENTS = [
     { id: 'numbers-only', name: 'Have a deck of only number cards', unlock: ['deck', 'numbers'], test: (run) => run.deck.every((c) => c.rank <= 10) },
     { id: 'face-only', name: 'Have a deck of only face cards', unlock: ['deck', 'face'], test: (run) => run.deck.every((c) => c.rank >= 11) },
-    { id: 'small-deck', name: 'Have a deck with 26 cards or less', unlock: ['deck', 'half'], test: (run) => run.deck.length <= 26 },
+    { id: 'small-deck', name: 'Have a deck with exactly 26 cards', unlock: ['deck', 'half'], test: (run) => run.deck.length === 26 },
     { id: 'boss-straight', name: 'Make a straight', unlock: ['deck', 'straight'], test: (run) => lastPaid(run, 'straight') },
     { id: 'win-odd-deck', name: 'Win with a non-standard deck', unlock: ['deck', 'random'], test: (run) => won(run) && settingsOf(run).deck !== 'standard' },
     { id: 'keep-boss-cards', name: 'Win without deleting any boss cards', unlock: ['deck', 'corrupted'], test: (run) => won(run) && !run.stats?.bossDeleted },

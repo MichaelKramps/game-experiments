@@ -39,7 +39,7 @@ for (const [s, id] of [['K♣ K♦ K♠ 2♥ 2♣', 'full-house'], ['K♣ K♦ K
   assert.deepEqual(new Set(E.matches(hand(s)).map((h) => h.id)), new Set([id, ...E.HANDS.find((h) => h.id === id).includes]), s);
 }
 const base = E.newRun();
-assert.equal(E.total(base, 'full-house'), 8 + 4 + 2 + 1);
+assert.equal(E.total(base, 'full-house'), 15 + 5 + 3 + 1);
 assert.equal(E.total(base, 'pair'), 1);
 assert.equal(E.total(base, 'nothing'), 0); // Nothing pays $0
 
@@ -50,9 +50,9 @@ assert.equal(E.multiple(up, 'pair'), 1);
 assert.equal(E.multiple(up, 'nothing'), 0);
 E.buy(up, 'payout', 'full-house');
 E.buy(up, 'payout', 'full-house');
-assert.equal(E.multiple(up, 'full-house'), 24); // 8 + 8 + 8
+assert.equal(E.multiple(up, 'full-house'), 45); // 15 + 15 + 15
 E.buy(up, 'payout', 'four-kind');
-assert.equal(E.multiple(up, 'four-kind'), 70); // $350 → $700
+assert.equal(E.multiple(up, 'four-kind'), 80); // $400 → $800
 // Each hand has its own price: $2, ×1.5 each time it's upgraded; other hands don't change it
 assert.equal(up.bankroll, 100 - 2 - 3 - 2);
 assert.equal(E.payoutPrice(up, 'full-house'), 5); // 2 × 1.5² = 4.5, rounded up
@@ -114,15 +114,15 @@ const bossRun = (cards, level = 1, upgrades = {}, earned = 0, bankroll = 0) => {
   E.deal(g, rand);
   return [g, E.draw(g, rand)];
 };
-let [g, gr] = bossRun('7♣ 7♦ 2♠ 2♥ 3♣', 1, {}, 10, 15); // two pair 2x + pair 1x = $30, earned $10 + $30 = $40 ≥ $20
-assert.deepEqual([gr.mult, gr.paid, gr.outcome, gr.earned, gr.bankroll], [3, 30, 'beat', 40, 45]);
-assert.deepEqual([g.level, g.hand, g.bankroll, g.earned, g.phase], [2, 1, 45, 0, 'bet']); // the bankroll carries into level 2, earned starts again
+let [g, gr] = bossRun('7♣ 7♦ 2♠ 2♥ 3♣', 1, {}, 10, 15); // two pair 3x + pair 1x = $40, earned $10 + $40 = $50 ≥ $20
+assert.deepEqual([gr.mult, gr.paid, gr.outcome, gr.earned, gr.bankroll], [4, 40, 'beat', 50, 55]);
+assert.deepEqual([g.level, g.hand, g.bankroll, g.earned, g.phase], [2, 1, 55, 0, 'bet']); // the bankroll carries into level 2, earned starts again
 [g, gr] = bossRun('2♣ 4♦ 6♠ 8♥ 10♣', 1, {}, 19, 10 ** 6); // Nothing: earned $19 < $20, however big the bankroll
 assert.deepEqual([gr.outcome, g.phase, g.lostTo], ['lose', 'lost', 20]);
 [g, gr] = bossRun('2♣ 4♦ 6♠ 8♥ 10♣', 1, {}, 100); // Nothing pays $0, but the level already earned enough
 assert.deepEqual([gr.paid, gr.outcome], [0, 'beat']);
-[g, gr] = bossRun('7♣ 7♦ 7♠ 2♥ 2♣', 4, { pair: 2 }); // full house 8 + trips 4 + two pair 2 + pair 1×3 = 17x = $170 < $750
-assert.deepEqual([gr.mult, gr.paid, gr.outcome], [17, 170, 'lose']);
+[g, gr] = bossRun('7♣ 7♦ 7♠ 2♥ 2♣', 4, { pair: 2 }); // full house 15 + trips 5 + two pair 3 + pair 1×3 = 26x = $260 < $750
+assert.deepEqual([gr.mult, gr.paid, gr.outcome], [26, 260, 'lose']);
 [g, gr] = bossRun('2♣ 7♣ 9♣ J♣ K♣', 8, { flush: 133 }); // 12x × 134 = $16,080 ≥ $16,000
 assert.deepEqual([g.phase, g.level, g.bankroll], ['won', 8, 16080]);
 
@@ -308,8 +308,8 @@ const bonusHand = (s, bonuses) => {
   E.deal(g, rand);
   return E.draw(g, rand);
 };
-assert.equal(bonusHand('3♦ 7♣ 7♦ 2♠ 2♥', 1).mult, 6); // two pair 3x, 3♦ isn't in a pair but still counts
-assert.equal(bonusHand('3♦ 7♣ 7♦ 2♠ 2♥', 2).mult, 12);
+assert.equal(bonusHand('3♦ 7♣ 7♦ 2♠ 2♥', 1).mult, 8); // two pair 4x, 3♦ isn't in a pair but still counts
+assert.equal(bonusHand('3♦ 7♣ 7♦ 2♠ 2♥', 2).mult, 16);
 assert.equal(bonusHand('2♣ 4♦ 6♠ 8♥ 10♣', 2).mult, 0);
 
 // Double payout: boss hands pay double, other hands don't
@@ -321,13 +321,15 @@ const dbHand = (hand5, settings) => {
   E.deal(g, rand);
   return E.draw(g, rand);
 };
-assert.deepEqual([dbHand(true, { doubleBet: true }).paid, dbHand(false, { doubleBet: true }).paid, dbHand(true, {}).paid], [60, 30, 30]); // two pair $30
+assert.deepEqual([dbHand(true, { doubleBet: true }).paid, dbHand(false, { doubleBet: true }).paid, dbHand(true, {}).paid], [80, 40, 40]); // two pair $40
 
 // Achievements
 const ach = (run) => run.achieved;
 assert.deepEqual(ach(E.newRun({ deck: 'numbers' })), ['numbers-only']);
 assert.deepEqual(ach(E.newRun({ deck: 'half' })), ['small-deck']);
-assert.ok(['small-deck', 'five-card-deck'].every((id) => ach(E.newRun({ deck: 'flush-five' })).includes(id)));
+const ffAch = ach(E.newRun({ deck: 'flush-five' }));
+assert.ok(ffAch.includes('five-card-deck') && !ffAch.includes('small-deck')); // 5 cards isn't exactly 26
+assert.deepEqual(ach(E.newRun({ deck: 'straight' })), []); // nor is 13
 assert.deepEqual(ach(E.newRun({ deck: 'flush-five', difficulty: 'easy' })), []); // Easy earns nothing…
 const won = (settings, edit = () => {}) => {
   const g = E.newRun(settings);
@@ -379,7 +381,8 @@ const finalWin = (cards, settings = {}, upgrades = {}) => {
 // ($1M already earned clears the last boss whatever the hand)
 const fk = finalWin('A♠ A♥ A♦ A♣ A♠', {}, { 'five-kind': 8 }); // 110x × 9 + 40x = 1,030x = $10,300
 assert.equal(fk.phase, 'won');
-for (const id of ['beat-normal', 'finish-run', 'keep-boss-cards', 'hand-5000', 'five-card-deck', 'small-deck']) assert.ok(fk.achieved.includes(id), id);
+for (const id of ['beat-normal', 'finish-run', 'keep-boss-cards', 'hand-5000', 'five-card-deck']) assert.ok(fk.achieved.includes(id), id);
+assert.ok(!fk.achieved.includes('small-deck')); // a 5-card deck isn't exactly 26
 assert.equal(fk.achieved.includes('normal-late-upgrade'), true); // upgrades set directly, not bought
 const madeOn = (level, handNo, cards) => {
   const g = E.newRun();
@@ -410,9 +413,9 @@ assert.equal(sm.achieved.includes('straight-money'), false);
 sm.stats.straightMoney = 10000;
 E.checkAchievements(sm);
 assert.equal(sm.achieved.includes('straight-money'), true);
-// Just short: straight $900, a $9,200 hand type, $20,000 on one hand
+// Just short: straight $900, a $9,460 hand type, $20,000 on one hand
 const near = E.newRun();
-near.upgrades = { straight: 8, 'five-kind': 7 }; // five of a kind 110x × 8 + 40x = 920x
+near.upgrades = { straight: 8, 'five-kind': 5 }; // five of a kind 150x × 6 + 46x = 946x
 E.checkAchievements(near);
 assert.equal(['straight-1000', 'hand-5000'].some((id) => near.achieved.includes(id)), false);
 near.upgrades.straight = 9;

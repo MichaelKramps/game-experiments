@@ -2,8 +2,8 @@
 //   Account — bankroll, what the boss needs, progress, the paytable.
 //   Cards   — a file browser where every card is a file: Deck and Hand.
 //             Deal sits at the left of its toolbar. Select cards in Hand,
-//             then Draw (Refresh) replaces them. Between hands the Deck
-//             toolbar and right-click menu are the shop.
+//             then Draw (Refresh) replaces them. Between hands, selecting a
+//             card in Deck opens its shop menu; the toolbar has the rest.
 // New run opens a setup dialog (starting deck, hand size, difficulty and the
 // unlockable toggles); achievements unlock those options for later runs.
 // Rules live in engine.js. The run is saved to localStorage after every move,
@@ -64,6 +64,10 @@
         { key: 'payoutInfo', name: 'Payout increase', desc: 'How much more each payout upgrade pays.' },
       ],
     },
+    {
+      group: 'Display',
+      items: [{ key: 'noColor', name: 'No color', desc: 'All text is black (white in dark mode).' }],
+    },
   ];
   const TOGGLE_BY_KEY = Object.fromEntries(TOGGLES.flatMap((g) => g.items).map((t) => [t.key, t]));
 
@@ -81,6 +85,9 @@
   let run = load();
   let folder = run.phase === 'hold' ? 'hand' : 'deck';
   let selected = new Set();
+  // Whether the Deck folder has been opened since the last hand paid out: until
+  // it has, Edit deck is green and Deal is plain.
+  let deckVisited = folder === 'deck';
   let clipboard = null; // card id copied with Ctrl+C
   let screen = 'account'; // phones show one window at a time
   let modalOpen = false;
@@ -223,6 +230,7 @@
   function open(id) {
     if (id === folder) return;
     folder = id;
+    if (id === 'deck') deckVisited = true;
     selected.clear();
     fresh.clear();
     render();
@@ -271,8 +279,10 @@
     $('status').textContent = `${run.deck.length} cards in deck · ${tools.join(' · ')}${sel}`;
   }
 
-  // The shop's card actions, in toolbar order.
+  // The shop's card actions. Delete, Duplicate and Change suit are only in the
+  // card menu; the optional tools are also toolbar buttons.
   const CARD_ACTIONS = ['remove', 'duplicate', 'suit', 'rankUp', 'rankDown', 'split', 'bonus'];
+  const TOOLBAR_CARD_ACTIONS = ['rankUp', 'rankDown', 'split', 'bonus'];
   const STATUS_NAMES = { remove: 'Delete', duplicate: 'Duplicate', suit: 'Change suit', rankUp: 'Rank up', rankDown: 'Rank down', split: 'Split', bonus: 'Add 2x' };
   const price = (n) => (n === 0 ? 'Free' : money(n));
 
@@ -313,7 +323,7 @@
       tone = run.last.outcome === 'lose' || !run.last.paid ? 'bad' : 'good';
     } else if (run.phase === 'bet') {
       help = true;
-      html = 'Shop is open: select a card in Deck, then pick a card action from the toolbar. Increase Hand Payout needs no card.';
+      html = 'Shop is open: select a card in Deck to delete, duplicate or change it. Increase Hand Payout is in the toolbar.';
     } else {
       html = run.phase === 'won' ? 'Run won.' : 'Run over.';
     }
@@ -365,6 +375,7 @@
     draw.hidden = folder === 'deck' && !hold;
     draw.disabled = !hold && !edit;
     draw.title = edit ? 'Open the Deck folder' : 'Draw (F5)';
+    draw.classList.toggle('go', edit && !!run.last && !deckVisited); // green once a hand has paid out, until Deck is opened
     draw.querySelector('svg').innerHTML = edit ? EDIT_ICON : DRAW_ICON;
     draw.querySelector('span').textContent = edit ? 'Edit deck' : n ? `Draw ${n}` : hold ? 'Keep hand' : 'Draw';
 
@@ -375,9 +386,6 @@
     const card = folder === 'deck' && selected.size === 1 ? [...selected][0] : null;
     const phone = KG.os() === 'phone';
     const labels = {
-      duplicate: phone ? 'Copy' : 'Duplicate card',
-      suit: phone ? 'Suit' : 'Change suit',
-      remove: phone ? 'Delete' : 'Delete card',
       rankUp: phone ? 'Rank+' : 'Rank up',
       rankDown: phone ? 'Rank−' : 'Rank down',
       split: phone ? 'Split' : 'Split card',
@@ -385,7 +393,7 @@
       payout: phone ? 'Payout' : 'Increase Hand Payout',
     };
     const hasBonus = card && E.cardById(run, card)?.bonus;
-    for (const action of [...CARD_ACTIONS, 'payout']) {
+    for (const action of [...TOOLBAR_CARD_ACTIONS, 'payout']) {
       const btn = $(`tool-${action}`);
       const needsCard = action !== 'payout';
       const block = E.shopBlock(run, action, needsCard ? card ?? undefined : undefined) || (action === 'bonus' && hasBonus ? 'That card already has 2x.' : null);
@@ -407,23 +415,13 @@
     $('earned').textContent = `${money(run.earned)} / ${money(target)}`;
     const gate = E.isGateHand(run.hand);
     $('stage').innerHTML = `Level ${run.level} of ${E.LEVELS} · Hand ${run.hand} of ${E.HANDS_PER_LEVEL}${gate ? ' · <b class="gate-tag">Boss</b>' : ''}`;
-    $('boss').innerHTML = `Earn <b>${money(target)}</b> this level by hand ${E.HANDS_PER_LEVEL}${gate ? ' <span class="gate-tag">this hand</span>' : ''}`;
-    // One box per hand in this level; the last is the boss, labeled with how many cards it adds.
     const adds = E.bossCardCount(run);
-    const over = run.phase === 'won' || (run.phase === 'lost' && run.lostTo);
-    $('pips').innerHTML = Array.from({ length: E.HANDS_PER_LEVEL }, (_, i) => {
-      const h = i + 1;
-      const boss = E.isGateHand(h);
-      const state = h < run.hand || over ? 'done' : h === run.hand ? 'now' : '';
-      const title = boss ? `Boss: adds ${adds} card${adds === 1 ? '' : 's'} to your deck` : `Hand ${h}`;
-      return `<span class="pip ${state}${boss ? ' boss' : ''}" title="${title}">${boss ? `+${adds}` : h}</span>`;
-    }).join('');
+    $('boss').textContent = adds ? `Adds ${adds} random card${adds === 1 ? '' : 's'}` : 'Adds no cards';
 
-    // The run's settings, and whether it can earn achievements (only Easy stops it).
+    // Only shown when the run can't earn achievements (only Easy stops it).
     const s = E.settingsOf(run);
-    const extras = TOGGLES.flatMap((g) => g.items).filter((t) => s[t.key]).map((t) => t.name);
-    $('run-settings').textContent = [E.DECKS.find((d) => d.id === s.deck).name, E.DIFFICULTIES.find((d) => d.id === s.difficulty).name, `${s.handSize}-card hands`, ...extras].join(' · ');
-    $('run-achievements').innerHTML = E.countsForAchievements(s) ? 'On' : '<span class="ach-off">Off (Easy mode)</span> <span class="muted">· only Beat Easy mode with 10-card hands can be earned</span>';
+    $('ach-row').hidden = E.countsForAchievements(s);
+    $('run-achievements').innerHTML = '<span class="ach-off">Off (Easy mode)</span> <span class="muted">· only Beat Easy mode with 10-card hands can be earned</span>';
 
     renderBet();
     renderLast();
@@ -469,6 +467,8 @@
     // Gone while a hand is in play; it keeps its space so the toolbar doesn't shift.
     $('deal').style.visibility = run.phase === 'hold' ? 'hidden' : '';
     $('deal').classList.toggle('boss', gate);
+    // After a hand pays out, Edit deck is the suggested next step, so Deal goes plain (still enabled).
+    $('deal').classList.toggle('after-hand', playing && !!run.last && !deckVisited);
     $('deal').textContent = gate ? 'Boss deal' : 'Deal';
 
     let note = '';
@@ -524,6 +524,7 @@
   }
 
   function render() {
+    document.body.classList.toggle('no-color', E.settingsOf(run).noColor);
     renderAccount();
     renderCards();
     renderScreens();
@@ -574,6 +575,7 @@
       return;
     }
     folder = 'hand';
+    deckVisited = false;
     selected.clear();
     render();
     if (run.phase === 'won') endDialog(true);
@@ -613,11 +615,33 @@
         if (!ok) return;
       }
     }
-    startRun();
+    await startRun();
   }
 
-  // Starts a run with the saved game setup, replacing the current run.
-  function startRun() {
+  // With more than one deck unlocked, asks which to start with (the saved one
+  // is picked). Returns the deck id, or null if cancelled.
+  async function chooseDeck() {
+    const current = setupSettings().deck;
+    const decks = E.DECKS.filter((d) => E.isUnlocked(profile.earned, 'deck', d.id));
+    if (decks.length <= 1) return current;
+    const items = decks.map(
+      (d) => `<label class="setup-toggle"><input type="radio" name="cad-deck" value="${d.id}"${d.id === current ? ' checked' : ''}><span><b>${esc(d.name)}</b><span class="muted">${esc(d.desc)}</span></span></label>`,
+    );
+    return ask({
+      title: 'Choose a deck',
+      body: `<fieldset class="setup-group"><legend>Starting deck</legend>${items.join('')}</fieldset>`,
+      ok: 'Start run',
+      cls: 'cad-setup',
+      collect: (wrap) => wrap.querySelector('input[name="cad-deck"]:checked')?.value || current,
+    });
+  }
+
+  // Starts a run with the saved game setup and the chosen deck, replacing the
+  // current run. The deck choice is saved to the setup for next time.
+  async function startRun() {
+    const deck = await chooseDeck();
+    if (!deck) return;
+    profile.setup = { ...setupSettings(), deck };
     run = E.newRun(setupSettings());
     folder = 'deck';
     selected.clear();
@@ -631,7 +655,7 @@
       ? `You beat all ${E.LEVELS} bosses and finished with <b>${money(run.bankroll)}</b> in ${run.handsPlayed} hands.`
       : `You earned ${money(run.last.earned)} on level ${run.level}, short of its boss's <b>${money(run.lostTo)}</b>.`;
     const ok = await ask({ title: won ? 'Run won' : 'Run over', body: summary + runAchievementsNote(), ok: 'New run', cancel: 'Close' });
-    if (ok) startRun();
+    if (ok) await startRun();
   }
 
   // For the end-of-run dialog: what this run earned, or why it couldn't.
@@ -734,7 +758,7 @@
       return `<fieldset class="setup-group"><legend>${g.group}</legend>${items.join('')}</fieldset>`;
     });
     const warn = '<p class="setup-warn ach-off" id="setup-warn" hidden>Achievements are off on Easy mode, except Beat Easy mode with 10-card hands.</p>';
-    const intro = '<p class="setup-intro muted">Information options apply right away. Everything else applies when you start a new run; the current run keeps its settings.</p>';
+    const intro = '<p class="setup-intro muted">Information and Display options apply right away. Everything else applies when you start a new run; the current run keeps its settings.</p>';
     const body = `${intro}<div class="setup-selects">${decks}${sizes}${modes}</div>${warn}${groups.join('')}`;
 
     // Hints under the dropdowns, the Easy warning and the Start label follow the choices.
@@ -748,7 +772,7 @@
       wrap.querySelector('#setup-warn').hidden = !easy;
     };
     const settings = await ask({
-      title: 'Game setup',
+      title: 'Game Settings',
       body,
       ok: 'Save',
       cls: 'cad-setup',
@@ -773,7 +797,7 @@
     if (!settings) return;
     profile.setup = settings;
     // Information displays only show things, so the current run picks them up straight away.
-    const info = TOGGLES.find((g) => g.group === 'Information').items;
+    const info = TOGGLES.filter((g) => g.group === 'Information' || g.group === 'Display').flatMap((g) => g.items);
     run.settings = { ...run.settings, ...Object.fromEntries(info.map((t) => [t.key, settings[t.key]])) };
     render();
   }
@@ -877,7 +901,7 @@
     const card = E.cardById(run, cardId);
     const block = E.shopBlock(run, 'suit', cardId);
     return E.SUITS.filter((s) => s !== card.suit).map((s) => ({
-      label: `${prefix}${E.SUIT_NAMES[s]} (${E.rankLabel(card.rank)}${s})`,
+      label: `${prefix}${E.SUIT_NAMES[s]} (${E.rankLabel(card.rank)}${s}) — ${price(E.prices(run).suit)}`,
       disabled: !!block,
       run: () => purchase('suit', cardId, s),
     }));
@@ -906,11 +930,18 @@
       if (run.phase === 'hold') toggleReplace(id);
       return;
     } else {
-      // Deck selects one card at a time; a second click unselects it.
+      // Deck selects one card at a time and opens its shop menu under it;
+      // a second click unselects it and closes the menu.
       selected = selected.has(id) ? new Set() : new Set([id]);
     }
     renderCards();
-    view.querySelector(`[data-card="${id}"]`)?.focus();
+    const el = view.querySelector(`[data-card="${id}"]`);
+    el?.focus();
+    if (selected.has(id) && el) {
+      e.stopPropagation(); // the document click handler would close the menu at once
+      const r = el.getBoundingClientRect();
+      menuFor(id, r.left, r.bottom + 4);
+    } else hideMenu();
   });
 
   view.addEventListener('keydown', (e) => {
@@ -965,15 +996,9 @@
   });
 
   $('tool-draw').addEventListener('click', () => (run.phase === 'bet' ? open('deck') : drawHand()));
-  for (const action of ['duplicate', 'remove', 'rankUp', 'rankDown', 'split', 'bonus']) {
+  for (const action of TOOLBAR_CARD_ACTIONS) {
     $(`tool-${action}`).addEventListener('click', () => selected.size === 1 && purchase(action, [...selected][0]));
   }
-  $('tool-suit').addEventListener('click', (e) => {
-    if (selected.size !== 1) return;
-    e.stopPropagation(); // the document click handler would close the menu at once
-    const r = $('tool-suit').getBoundingClientRect();
-    showMenu(r.left, r.bottom + 4, suitItems([...selected][0], 'To '));
-  });
   $('tool-payout').addEventListener('click', (e) => {
     e.stopPropagation();
     const r = $('tool-payout').getBoundingClientRect();
@@ -1059,19 +1084,11 @@
   const HOW_TO = `
     <h1>How to play Ctrl+Alt+Deal</h1>
     <ol>
-      <li>Beat all ${E.LEVELS} bosses. Each level is ${E.HANDS_PER_LEVEL} hands, and the 5th is the boss hand.</li>
-      <li>Each hand is a round of 5 card draw and you get paid for every poker hand you make
-        <ul><li>if you get two pair, you get paid for two pair and one pair</li>
-          <li>there's no bet: a hand that makes nothing just pays nothing</li></ul>
-      </li>
-      <li>Start with ${money(E.STARTING_BANKROLL)} and a normal 52 card deck, and spend your money between hands to change your deck and make more powerful hands</li>
-      <li>By the end of the boss hand, that level's hands need to have earned the boss's amount, otherwise you lose
-        <ul><li>only money won this level counts: your bankroll doesn't, and spending doesn't take away from it</li>
-          <li>On Normal and Hard, each boss puts random cards into your deck: 1 for the first boss, 2 for the second, and so on</li>
-          <li>Hard bosses need more money</li></ul>
-      </li>
-      <li>Spend money in the shop on Increase Hand Payout: each one adds the hand's starting payout again (a pair goes $10 → $20 → $30)</li>
-      <li>Beat a boss and your whole bankroll carries into the next level, but earned this level starts again at $0</li>
+      <li>Finish all ${E.LEVELS} levels by making enough money in each level. Each level is ${E.HANDS_PER_LEVEL} hands of 5 card draw poker.</li>
+      <li>You earn money by making poker hands. You get paid for every hand you make, which can be multiple different hands (like pair and three of a kind).</li>
+      <li>Spend money to change your deck and make it easier to get higher paying hands.</li>
+      <li>Spend money to increase how much you make when you get a hand.</li>
+      <li>The last hand in each level is a “Boss” hand. The boss will add random cards to your deck, making it harder to make your poker hands.</li>
     </ol>`;
 
   function showHowTo() {
