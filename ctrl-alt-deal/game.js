@@ -91,6 +91,7 @@
   let clipboard = null; // card id copied with Ctrl+C
   let screen = 'account'; // phones show one window at a time
   let modalOpen = false;
+  let payoutMenuOpen = false;
   let fresh = new Set(); // ids drawn in the last draw, highlighted once
   let helpHidden = false; // the banner's how-to text, dismissed until the page reloads
 
@@ -826,8 +827,11 @@
   // -------------------------------------------------------------------------
   // Context menu (right-click, or long-press on touch)
 
-  function showMenu(x, y, items, hint) {
+  // An item with `keepOpen` leaves the menu up; its `run` redraws the menu.
+  // `focusAt` is the item to focus, falling back to the first enabled one.
+  function showMenu(x, y, items, hint, focusAt = 0) {
     const menu = $('ctx');
+    payoutMenuOpen = false;
     menu.innerHTML =
       items
         .map((it, i) =>
@@ -840,17 +844,20 @@
     menu.onclick = (e) => {
       const b = e.target.closest('button[data-i]');
       if (!b || b.disabled) return;
-      hideMenu();
-      items[b.dataset.i].run();
+      const item = items[b.dataset.i];
+      if (item.keepOpen) e.stopPropagation(); // redrawing detaches the button, so the document handler would see a click outside
+      else hideMenu();
+      item.run();
     };
     const r = menu.getBoundingClientRect();
     menu.style.left = `${Math.max(4, Math.min(x, innerWidth - r.width - 4))}px`;
     menu.style.top = `${Math.max(4, Math.min(y, innerHeight - r.height - 4))}px`;
-    menu.querySelector('button:not([disabled])')?.focus();
+    (menu.querySelector(`button[data-i="${focusAt}"]:not([disabled])`) || menu.querySelector('button:not([disabled])'))?.focus();
   }
 
   function hideMenu() {
     $('ctx').hidden = true;
+    payoutMenuOpen = false;
   }
 
   const mod = /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘' : 'Ctrl+';
@@ -1001,18 +1008,32 @@
   }
   $('tool-payout').addEventListener('click', (e) => {
     e.stopPropagation();
+    if (payoutMenuOpen) hideMenu();
+    else showPayoutMenu();
+  });
+
+  // Stays open after a purchase so you can buy several upgrades in a row, and
+  // redraws with the new payouts and prices. A click outside it closes it.
+  function showPayoutMenu(focusAt) {
     const r = $('tool-payout').getBoundingClientRect();
     showMenu(
       Math.min(r.left, innerWidth),
       r.bottom + 4,
-      E.HANDS.map((h) => ({
+      E.HANDS.map((h, i) => ({
         label: `${h.name}: ${pays(E.multiple(run, h.id))} → ${pays(E.multiple(run, h.id) + h.base)}${payoutGain(h.id)}`, // its own payout; totals that include it rise too
         key: money(E.payoutPrice(run, h.id)),
         disabled: !!E.shopBlock(run, 'payout', h.id),
-        run: () => purchase('payout', h.id),
+        keepOpen: true,
+        run: () => {
+          purchase('payout', h.id);
+          showPayoutMenu(i);
+        },
       })),
+      undefined,
+      focusAt,
     );
-  });
+    payoutMenuOpen = true;
+  }
 
   // Payout increase: the extra money the upgrade pays when you make the hand.
   // Each upgrade adds the hand's base payout, and the same goes for every
