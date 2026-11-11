@@ -28,35 +28,17 @@
   </div>
 
   <script>
-    // The Games folder: one subfolder per category, each game a file inside.
-    // The open folder lives in the URL hash so Back works and links can point
-    // straight at a category (games.html#word-games).
-    const FOLDERS = [
-      {
-        id: 'word-games',
-        name: 'Word Games',
-        games: [
-          { name: 'Letter Groups', href: 'letter-groups/', kind: 'Word puzzle', desc: 'Cover every letter in as few words as you can.' },
-          { name: "Jamie's Journal", href: 'jamies-journal/', kind: 'Word deduction', desc: "Find the key to decrypt each entry of Jamie's journal." },
-        ],
-      },
-      {
-        id: 'deckbuilding',
-        name: 'Deckbuilding Games',
-        games: [
-          { name: 'Ctrl+Alt+Deal', href: 'ctrl-alt-deal/', kind: 'Deckbuilder', desc: 'Video poker where you shape the deck. Your bankroll is your score and your shop budget.' },
-          { name: "Jo's Discovery", href: 'jos-discovery/', kind: 'Deckbuilder', desc: "Write a script and break into Evergreen's restricted records." },
-        ],
-      },
-      {
-        id: 'evergreen',
-        name: 'World of Evergreen',
-        games: [
-          { name: "Jamie's Journal", href: 'jamies-journal/', kind: 'Word deduction', desc: "Find the key to decrypt each entry of Jamie's journal." },
-          { name: "Jo's Discovery", href: 'jos-discovery/', kind: 'Deckbuilder', desc: "Write a script and break into Evergreen's restricted records." },
-        ],
-      },
+    // The Games folder: subfolders for game series, each game a file inside,
+    // plus games that sit directly in Games (GAMES). The open folder lives in
+    // the URL hash so Back works and links can point straight at a folder
+    // (games.html#evergreen).
+    const GAMES = [
+      { name: 'Ctrl+Alt+Deal', href: 'ctrl-alt-deal/', kind: 'Deckbuilder', desc: 'edit your deck of cards to make stronger hands and earn more money' },
+      { name: 'diff guess key', href: 'jamies-journal/', kind: 'Word deduction', desc: 'guess the 5 letter key before your tolerance runs out' },
     ];
+    // None for now; the World of Evergreen folder (Jamie's Journal, Jo's
+    // Discovery) was taken off the list 2026-11-10.
+    const FOLDERS = [];
 
     const FOLDER_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 7a2 2 0 0 1 2-2h5l2 2h9a2 2 0 0 1 2 2v1H2z" class="i-folder-back"/><rect x="2" y="9" width="20" height="11" rx="2" class="i-folder"/></svg>';
     const GAME_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="3" class="i-term"/><path d="m6 9 3 3-3 3M11 15h6" class="i-term-mark"/></svg>';
@@ -88,7 +70,7 @@
 
       $('side').innerHTML =
         '<h2>Games</h2>' +
-        [{ id: '', name: 'All games' }, ...FOLDERS]
+        [{ id: '', name: 'Free games' }, ...FOLDERS]
           .map((f) => {
             const on = (folder?.id || '') === f.id ? ' aria-current="true"' : '';
             return `<a href="#${f.id}"${on}>${FOLDER_ICON}<span>${esc(f.name)}</span></a>`;
@@ -97,9 +79,12 @@
 
       const rows = folder
         ? folder.games.map((g) => row({ ...g, icon: GAME_ICON }))
-        : FOLDERS.map((f) =>
-            row({ href: `#${f.id}`, icon: FOLDER_ICON, name: f.name, kind: 'Folder', desc: `${f.games.length} ${f.games.length === 1 ? 'game' : 'games'}` }),
-          );
+        : [
+            ...FOLDERS.map((f) =>
+              row({ href: `#${f.id}`, icon: FOLDER_ICON, name: f.name, kind: 'Folder', desc: `${f.games.length} ${f.games.length === 1 ? 'game' : 'games'}` }),
+            ),
+            ...GAMES.map((g) => row({ ...g, icon: GAME_ICON })),
+          ];
       $('list').innerHTML = `<div class="files-head"><span>Name</span><span>Type</span><span>Description</span></div>${rows.join('')}`;
       const count = rows.length;
       $('status').textContent = `${count} ${count === 1 ? 'item' : 'items'}`;

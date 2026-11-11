@@ -76,31 +76,6 @@
 .bad { color: var(--bad); }
 .gap { height: 1em; }
 
-/* entry list */
-.entry-list { list-style: none; }
-
-.entry-row {
-  display: grid;
-  grid-template-columns: 2ch 3ch 1fr auto;
-  gap: 1ch;
-  padding: 0 4px;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.entry-row .title { overflow: hidden; text-overflow: ellipsis; }
-.entry-row .state { color: var(--dim); }
-.entry-row.unlocked .state { color: var(--fg); }
-.entry-row.locked .title { color: var(--dim); }
-
-.entry-row.selected {
-  background: var(--fg);
-  color: var(--bg);
-}
-
-.entry-row.selected .title,
-.entry-row.selected .state { color: var(--bg); }
-
 /* decrypt screen: guesses on the left, letter scratchpad on the right */
 .decrypt-layout {
   display: flex;
@@ -188,24 +163,6 @@
   border-color: #b3261e;
   color: #fff;
 }
-
-/* reading */
-.entry-body p {
-  max-width: 76ch;
-  margin-bottom: 0.9em;
-  white-space: pre-wrap;
-}
-
-.cursor {
-  display: inline-block;
-  width: 0.6em;
-  height: 1.1em;
-  vertical-align: -0.2em;
-  background: var(--fg);
-  animation: blink 1s steps(1) infinite;
-}
-
-@keyframes blink { 50% { opacity: 0; } }
 
 /* Phones: the shell makes the window fill the screen. */
 [data-os='phone'] #term { min-width: 0; min-height: 0; }

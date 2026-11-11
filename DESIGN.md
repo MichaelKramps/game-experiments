@@ -29,10 +29,11 @@ Every site page **and** every listed game shows the same desktop icons:
 ## Pages
 
 - **Home (`index.html`)**: solid desktop color, the icons, and a small "Welcome" window explaining the site.
-- **Games (`games.html`)**: one file-explorer window with a folder per category and each game as a file inside.
-  - **Word Games**: Letter Groups (`letter-groups/`)
-  - **Deckbuilding Games**: Ctrl+Alt+Deal (`ctrl-alt-deal/`), Jo's Discovery (`jos-discovery/`)
-  - **World of Evergreen**: Jamie's Journal (`jamies-journal/`), Jo's Discovery (`jos-discovery/`)
+- **Games (`games.html`)**: one file-explorer window. Games sit directly in it as files, and a game series gets a folder with its games inside.
+  - Ctrl+Alt+Deal (`ctrl-alt-deal/`)
+  - diff guess key (`jamies-journal/`): listed under this name, with the same name in the browser tab. Since 2026-11-11 it's a plain word-guessing game with no journal (it was Kramps' Journal before that); the folder keeps its old name.
+  - No folders for now (the code still supports them).
+  - (Changed 2026-11-10: the Word Games, Deckbuilding Games and World of Evergreen folders were removed. Letter Groups and Jo's Discovery are now unlisted, and Jamie's Journal was renamed Kramps' Journal on the list.)
 - **About (`about.html`)**: a desktop with a notepad window open holding the about text. Keep the current text minus the full-games/Google-login part (not built yet).
 - **`free-games.html`, `full-games.html`**: deleted, and 301-redirected to `/games` via `_redirects` (Cloudflare static assets).
 - **`experiments.html`**: unlinked, keeps its current look. It and the games it links to will probably be removed eventually.
