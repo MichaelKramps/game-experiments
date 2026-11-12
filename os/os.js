@@ -4,9 +4,10 @@
 //
 //   <html data-os="value|quality|power|phone" data-theme="light|dark">
 //
-// Settings (OS + theme) live in localStorage and apply site-wide. On phones and
-// tablets (any touchscreen-first device) and in narrow windows, the OS is
-// always "phone" — a generic layout — and only the theme applies.
+// Settings (OS + theme) live in localStorage and apply site-wide. Below 1080px
+// wide (every phone either way up, most tablets in portrait, narrow desktop
+// windows) the OS is always "phone" — a generic layout — and only the theme
+// applies.
 //
 // Once the DOM is ready the shell adds the desktop icons (Games, About,
 // New Games, Settings), the OS's bar (taskbar / menu bar / top bar), a launcher
@@ -30,10 +31,9 @@
   const OSES = { value: 'Value', quality: 'Quality', power: 'Power' };
   const THEMES = { light: 'Light', dark: 'Dark' };
   const DEFAULTS = { os: 'value', theme: 'light' };
-  // The phone layout: narrow windows, plus any device whose main input is a
-  // touchscreen (phones and tablets, either way up). Touchscreen laptops report
-  // their trackpad/mouse as the main input, so they keep the desktop look.
-  const PHONE = window.matchMedia('(max-width: 760px), (pointer: coarse) and (hover: none)');
+  // The phone layout: anything under 1080px wide. Phones in landscape top out
+  // around 1000px, so they all get it.
+  const PHONE = window.matchMedia('(max-width: 1079.98px)');
   const ICON_COLUMN = 104;
   const BARS = {
     value: { top: 0, bottom: 48 },
