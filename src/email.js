@@ -7,11 +7,7 @@ export async function sendWelcome(env, site, email, unsubToken) {
   const oneClick = `${site}/api/unsubscribe?token=${encodeURIComponent(unsubToken)}`;
 
   const text = [
-    'Thanks for signing up!',
-    '',
-    "You'll get an email when a new Kramps game comes out, plus the occasional update on games still in development.",
-    '',
-    `Play the games: ${site}/`,
+    `You'll now get an email when kramps.games (${site}/) releases a new game, or has a major announcement about an upcoming game.`,
     '',
     '— Kramps',
     '',
@@ -19,9 +15,7 @@ export async function sendWelcome(env, site, email, unsubToken) {
   ].join('\n');
 
   const html = `<!doctype html><html><body style="font-family:system-ui,sans-serif;font-size:15px;line-height:1.5;color:#1b1b1b">
-<p>Thanks for signing up!</p>
-<p>You'll get an email when a new Kramps game comes out, plus the occasional update on games still in development.</p>
-<p><a href="${site}/">Play the games</a></p>
+<p>You'll now get an email when <a href="${site}/">kramps.games</a> releases a new game, or has a major announcement about an upcoming game.</p>
 <p>— Kramps</p>
 <p style="margin-top:32px;font-size:12px;color:#616161">Don't want these emails? <a href="${unsubPage}" style="color:#616161">Unsubscribe</a>.</p>
 </body></html>`;
@@ -29,7 +23,7 @@ export async function sendWelcome(env, site, email, unsubToken) {
   const message = {
     from: env.MAIL_FROM,
     to: [email],
-    subject: "You're on the Kramps Games list",
+    subject: "You're on the kramps.games email list",
     text,
     html,
     headers: {
