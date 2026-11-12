@@ -7,7 +7,7 @@ Status: first version built (2026-10-23). Expect iteration on the look and layou
 ## Implementation
 
 - `os/os.js` + `os/os.css`: the shared shell. Every site page and listed game loads both (os.js in `<head>`, before stylesheets). It stamps `<html data-os data-theme>`, adds the desktop icons, the OS bar, a launcher menu and the Settings window, and exposes `window.KG` for games (`os`, `pick`, `prompt`, `path`, `workArea`, `makeWindow`, `onChange`). The comments at the top of each file document the API and color tokens.
-- `os/site.css`: contents of the site's own windows (Welcome, Files, Notes).
+- `os/site.css`: contents of the site's own windows (Files, Notes).
 - Games keep only content styles and build on the shell's `--w-*` / `--t-*` color tokens. Window chrome comes from the shell.
 - Phone = viewport ≤ 760px. On a phone the OS is always `phone`, and in-game text uses the Power (unix) style.
 
@@ -17,9 +17,9 @@ Every site page **and** every listed game shows the same desktop icons:
 
 | Icon | Behavior |
 |---|---|
-| **Home** | Link to `index.html` |
-| **Games** | Link to the Games page |
+| **Games** | Link to `index.html`, the home page (the games list) |
 | **About** | Link to `about.html` |
+| **New Games** | Not a link. Opens the email signup modal (see Email list) |
 | **Settings** | Not a link. Opens a settings modal |
 
 - Icons sit in a column on the desktop (right side on Quality). Windows are kept out of that column so the icons stay reachable.
@@ -28,16 +28,16 @@ Every site page **and** every listed game shows the same desktop icons:
 
 ## Pages
 
-- **Home (`index.html`)**: solid desktop color, the icons, and a small "Welcome" window explaining the site.
-- **Games (`games.html`)**: one file-explorer window. Games sit directly in it as files, and a game series gets a folder with its games inside.
+- **Home page (`index.html`)**: the games list. One file-explorer window. Games sit directly in it as files, and a game series gets a folder with its games inside.
   - Ctrl+Alt+Deal (`ctrl-alt-deal/`)
   - diff guess key (`jamies-journal/`): listed under this name, with the same name in the browser tab. Since 2026-11-11 it's a plain word-guessing game with no journal (it was Kramps' Journal before that); the folder keeps its old name.
   - No folders for now (the code still supports them).
   - (Changed 2026-11-10: the Word Games, Deckbuilding Games and World of Evergreen folders were removed. Letter Groups and Jo's Discovery are now unlisted, and Jamie's Journal was renamed Kramps' Journal on the list.)
+- (Changed 2026-11-12: the Games page became the home page. The old home page's "Welcome" window and the Home desktop icon were removed; the Games icon now links to `/`. `games.html` was deleted and 301-redirected to `/`. A game, one folder down, highlights Games.)
 - **About (`about.html`)**: a desktop with a notepad window open holding the about text. Keep the current text minus the full-games/Google-login part (not built yet).
-- **`free-games.html`, `full-games.html`**: deleted, and 301-redirected to `/games` via `_redirects` (Cloudflare static assets).
+- **`games.html`, `free-games.html`, `full-games.html`**: deleted, and 301-redirected to `/` via `_redirects` (Cloudflare static assets).
 - **`experiments.html`**: unlinked, keeps its current look. It and the games it links to will probably be removed eventually.
-- **Unlisted games** (everything not under Games, including Evergreen, which is in progress): still reachable by direct URL, not linked anywhere new.
+- **Unlisted games** (everything not on the home page's list, including Evergreen, which is in progress): still reachable by direct URL, not linked anywhere new.
 
 ## Settings
 
@@ -65,7 +65,16 @@ All modern-era. The desktop is a solid color for now.
 | Dark terminal | classic blue shell | dark gray | aubergine |
 | In-game shell | `PS C:\Users\jo>`, `dir`, `type`, backslash paths | zsh `jo@host ~ %` | bash `jo@host:~$` |
 
-- **Phone:** a generic layout for every OS: windows fill the screen, and Home/Games/About/Settings sit in a bottom tab bar. The Settings window shows only the theme option.
+- **Phone:** a generic layout for every OS: windows fill the screen, and Games/About/Settings sit in a bottom tab bar. The Settings window shows only the theme option.
+
+## Email list
+
+Built 2026-11-12 (Phase 1 of `WEBSITE_INFRA_PLAN.md`).
+
+- The **New Games** icon (envelope) opens a modal built into `os/os.js`: "Get an email when a new game is released, plus occasional updates on games still in the works." Games can open it with `KG.openSignup()`, e.g. from an end screen (none do yet).
+- The email is checked in the browser and again on the server. A Cloudflare Turnstile check runs invisibly unless it needs the visitor to click. After signing up, the modal shows "You're on the list!" on later visits (localStorage flag).
+- Signups go to `POST /api/subscribe` in the site's Worker (`src/`), which saves them to the D1 `subscribers` table with the page they signed up from (`source`) and sends a welcome email through Resend.
+- `unsubscribe.html` (linked from every email, not from the site) unsubscribes after one click on a button.
 
 ## Analytics
 

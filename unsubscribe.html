@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Unsubscribe · Kramps Games</title>
+  <script src="os/os.js"></script>
+  <link rel="stylesheet" href="os/os.css">
+  <link rel="stylesheet" href="os/site.css">
+</head>
+<body>
+  <div class="window" id="notes" data-app="Notes">
+    <div class="titlebar">
+      <div class="lights"><span class="close"></span><span class="min"></span><span class="max"></span></div>
+      <div class="window-title">Unsubscribe.txt — Notes</div>
+    </div>
+    <div class="notes-menu"><span>File</span><span>Edit</span><span>Format</span><span>View</span><span>Help</span></div>
+    <div class="notes-page">
+      <h1>Unsubscribe</h1>
+      <div id="ask">
+        <p>Unsubscribe from Kramps Games emails? You’ll stop getting emails about new and upcoming games.</p>
+        <p><button class="kg-btn kg-primary" id="confirm" type="button">Unsubscribe</button></p>
+      </div>
+      <p id="done" hidden>You’ve been unsubscribed. You won’t get any more emails from Kramps Games.</p>
+      <p id="missing" hidden>This unsubscribe link is incomplete. Try clicking the link in the email again.</p>
+      <p id="failed" hidden>Something went wrong. Please try again in a moment.</p>
+    </div>
+    <div class="notes-status"><span>Ln 1, Col 1</span><span>100%</span><span>UTF-8</span></div>
+  </div>
+  <script>
+    KG.makeWindow(document.getElementById('notes'), {
+      minW: 340,
+      minH: 240,
+      rect: (a) => {
+        const w = Math.min(560, a.w - 60);
+        const h = Math.min(320, a.h - 60);
+        return { x: a.x + (a.w - w) / 2, y: a.y + (a.h - h) / 2.6, w, h };
+      },
+    });
+
+    // Unsubscribing takes a click: email scanners open links on their own,
+    // and that alone shouldn't unsubscribe anyone.
+    const token = new URLSearchParams(location.search).get('token');
+    const show = (id) => {
+      for (const el of document.querySelectorAll('#ask, #done, #missing, #failed')) el.hidden = el.id !== id;
+    };
+    if (!token) show('missing');
+    document.getElementById('confirm').addEventListener('click', async (e) => {
+      e.target.disabled = true;
+      try {
+        const res = await fetch('api/unsubscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token }),
+        });
+        if (!res.ok) throw new Error(res.status);
+        try {
+          localStorage.removeItem('kramps-signed-up');
+        } catch {
+          // storage unavailable
+        }
+        show('done');
+      } catch {
+        document.getElementById('failed').hidden = false; // keep the button to retry
+        e.target.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

@@ -5,10 +5,35 @@
   "observability": {
     "enabled": true
   },
+  // Static files are served first; only requests that match no file (/api/*)
+  // run the Worker. Server code is kept out of the public files by .assetsignore.
+  "main": "src/worker.js",
   "assets": {
-    "directory": "."
+    "directory": ".",
+    "binding": "ASSETS"
   },
   "compatibility_flags": [
     "nodejs_compat"
-  ]
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "game-experiments",
+      // From `npx wrangler d1 create game-experiments`.
+      "database_id": "10e14f29-e027-40a8-a7b1-6cfde7445439",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "ratelimits": [
+    {
+      "name": "SUBSCRIBE_LIMITER",
+      "namespace_id": "1001",
+      "simple": { "limit": 5, "period": 60 }
+    }
+  ],
+  "vars": {
+    // Sender for the welcome email. Must be on a domain verified in Resend.
+    "MAIL_FROM": "Kramps Games <kramps@kramps.games>"
+  }
+  // Secrets (wrangler secret put …): TURNSTILE_SECRET_KEY, RESEND_API_KEY
 }

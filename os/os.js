@@ -7,9 +7,9 @@
 // Settings (OS + theme) live in localStorage and apply site-wide. On phones
 // the OS is always "phone" — a generic layout — and only the theme applies.
 //
-// Once the DOM is ready the shell adds the desktop icons (Home, Games, About,
-// Settings), the OS's bar (taskbar / menu bar / top bar), a launcher menu and
-// the Settings window. Pages describe their open windows with
+// Once the DOM is ready the shell adds the desktop icons (Games, About,
+// New Games, Settings), the OS's bar (taskbar / menu bar / top bar), a launcher
+// menu, the Settings window and the New Games (email signup) window. Pages describe their open windows with
 // <div class="window" data-app="Terminal|Files|Notes"> so the bars can list them.
 //
 // Games use window.KG:
@@ -20,6 +20,7 @@
 //   KG.makeWindow(el, opts)  drag/resize/maximize within the work area
 //   KG.prompt(user, host, dir)  a shell prompt in the current OS's style
 //   KG.path(p)         a path written with the current OS's separators
+//   KG.openSignup()    open the New Games email signup window
 //
 // It also loads Google Analytics, so every page that includes it is tracked.
 
@@ -310,9 +311,9 @@
   // Shell UI
 
   const ICONS = {
-    home: `<svg viewBox="0 0 48 48" aria-hidden="true"><rect x="5" y="8" width="38" height="26" rx="3" class="i-frame"/><rect x="8" y="11" width="32" height="20" rx="1.5" class="i-screen"/><path d="M20 34h8l1 5H19z" class="i-stand"/><rect x="14" y="39" width="20" height="3" rx="1.5" class="i-stand"/></svg>`,
     games: `<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M4 12a3 3 0 0 1 3-3h11l4 4h19a3 3 0 0 1 3 3v4H4z" class="i-folder-back"/><rect x="4" y="16" width="40" height="25" rx="3" class="i-folder"/><path d="M17 26h6m-3-3v6" class="i-folder-mark"/><circle cx="29" cy="25" r="1.6" class="i-folder-dot"/><circle cx="32" cy="29" r="1.6" class="i-folder-dot"/></svg>`,
     about: `<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M11 4.5h18l9.5 9.5v28a2 2 0 0 1-2 2H11a2 2 0 0 1-2-2V6.5a2 2 0 0 1 2-2z" class="i-paper"/><path d="M29 4.5V12a2 2 0 0 0 2 2h7.5" class="i-fold"/><path d="M15 21h18M15 26h18M15 31h18M15 36h11" class="i-lines"/></svg>`,
+    newgames: `<svg viewBox="0 0 48 48" aria-hidden="true"><rect x="4" y="11" width="40" height="28" rx="3" class="i-paper"/><path d="M5.5 13 24 27 42.5 13" class="i-flap"/><circle cx="39" cy="12" r="6.5" class="i-badge"/><path d="M39 9v3.5" class="i-badge-mark"/><circle cx="39" cy="15" r="0.6" class="i-badge-mark"/></svg>`,
     settings: `<svg viewBox="0 0 48 48" aria-hidden="true"><g class="i-gear">${[0, 45, 90, 135, 180, 225, 270, 315]
       .map((a) => `<rect x="20.5" y="5" width="7" height="10" rx="1.5" transform="rotate(${a} 24 24)"/>`)
       .join('')}<circle cx="24" cy="24" r="13"/></g><circle cx="24" cy="24" r="5.5" class="i-hub"/></svg>`,
@@ -329,14 +330,13 @@
     Files: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 7a2 2 0 0 1 2-2h5l2 2h9a2 2 0 0 1 2 2v1H2z" class="i-folder-back"/><rect x="2" y="9" width="20" height="11" rx="2" class="i-folder"/></svg>`,
     Notes: `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="2.5" width="16" height="19" rx="2.5" class="i-paper"/><path d="M8 8h8M8 12h8M8 16h5" class="i-lines"/></svg>`,
     Account: `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2.5" class="i-paper"/><path d="M7 8h10M7 12h10M7 16h6" class="i-lines"/><path d="M12 8v8" class="i-lines"/></svg>`,
-    Welcome: `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="3" class="i-welcome"/><path d="M12 9v.01M12 12v4" class="i-welcome-mark"/></svg>`,
   };
 
   const NAV = [
-    { id: 'home', label: 'Home', href: 'index.html' },
-    { id: 'games', label: 'Games', href: 'games.html' },
+    { id: 'games', label: 'Games', href: 'index.html' },
     { id: 'about', label: 'About', href: 'about.html' },
-    { id: 'settings', label: 'Settings' },
+    { id: 'newgames', label: 'New Games', opens: 'signup' },
+    { id: 'settings', label: 'Settings', opens: 'settings' },
   ];
 
   const els = {};
@@ -352,14 +352,14 @@
     const file = location.pathname.split('/').pop() || 'index.html';
     const here = new URL('.', location.href).href;
     if (here !== siteRoot.href) return 'games'; // a game, one folder down
-    return { 'index.html': 'home', index: 'home', 'games.html': 'games', games: 'games', 'about.html': 'about', about: 'about' }[file];
+    return { 'index.html': 'games', index: 'games', 'about.html': 'about', about: 'about' }[file];
   }
 
   function navItem(item, cls) {
     const inner = `<span class="kg-icon-art">${ICONS[item.id]}</span><span class="kg-icon-label">${item.label}</span>`;
     const node = item.href
       ? h('a', { class: cls, href: new URL(item.href, siteRoot).href }, inner)
-      : h('button', { class: cls, type: 'button', 'data-kg-open': 'settings' }, inner);
+      : h('button', { class: cls, type: 'button', 'data-kg-open': item.opens }, inner);
     if (item.id === currentPage()) node.setAttribute('aria-current', 'page');
     return node;
   }
@@ -452,9 +452,152 @@
       if (e.target.name === 'kg-theme') set({ theme: e.target.value });
     });
     modal.addEventListener('click', (e) => {
-      if (e.target === modal || e.target.closest('[data-kg-close]')) closeSettings();
+      if (e.target === modal || e.target.closest('[data-kg-close]')) closeModals();
     });
     return modal;
+  }
+
+  // ---- New Games: email signup ----------------------------------------------
+
+  // Keep in sync with EMAIL_RE in src/http.js.
+  const EMAIL_RE = /^[^\s@]+@[^\s@.]+(\.[^\s@.]+)+$/;
+  const SIGNED_UP_KEY = 'kramps-signed-up';
+  const LOCAL = location.protocol === 'file:' || /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
+  // Site key from Cloudflare → Turnstile; it's public. Locally, Turnstile's
+  // always-pass test key is used instead.
+  const TURNSTILE_KEY = LOCAL ? '1x00000000000000000000AA' : '0x4AAAAAAF-cf_OfgdTptEGv';
+
+  function signedUp() {
+    try {
+      return localStorage.getItem(SIGNED_UP_KEY) === '1';
+    } catch {
+      return false;
+    }
+  }
+
+  function buildSignup() {
+    const modal = h(
+      'div',
+      { class: 'kg-modal', hidden: '' },
+      `<div class="window kg-dialog" data-app="New Games" role="dialog" aria-modal="true" aria-labelledby="kg-signup-title">
+        <div class="titlebar">
+          <div class="lights"><span class="close" data-kg-close title="Close"></span><span class="min"></span><span class="max"></span></div>
+          <div class="window-title" id="kg-signup-title">New Games</div>
+        </div>
+        <form class="kg-signup" novalidate>
+          <div class="kg-settings-body">
+            <p class="kg-signup-lead">Get an email when a new game is released, plus occasional updates on games still in the works.</p>
+            <label class="kg-signup-label" for="kg-signup-email">Email address</label>
+            <input class="kg-input" id="kg-signup-email" name="email" type="email" autocomplete="email" maxlength="254" required placeholder="you@example.com">
+            <p class="kg-signup-error" role="alert" hidden></p>
+            <input class="kg-hp" name="website" type="text" tabindex="-1" autocomplete="off" aria-hidden="true">
+            <div class="kg-turnstile"></div>
+            <p class="kg-hint">Emails about new and upcoming Kramps games only. Unsubscribe anytime.</p>
+          </div>
+          <div class="kg-settings-foot">
+            <button class="kg-btn" type="button" data-kg-close>Cancel</button>
+            <button class="kg-btn kg-primary" type="submit">Subscribe</button>
+          </div>
+        </form>
+        <div class="kg-signup-done" hidden>
+          <div class="kg-settings-body">
+            <p class="kg-signup-lead"><b>You're on the list!</b></p>
+            <p class="kg-hint">Check your inbox for a confirmation email.</p>
+          </div>
+          <div class="kg-settings-foot"><button class="kg-btn kg-primary" type="button" data-kg-close>Done</button></div>
+        </div>
+      </div>`,
+    );
+    const form = modal.querySelector('form');
+    const input = form.elements.email;
+    const error = modal.querySelector('.kg-signup-error');
+    const submit = form.querySelector('[type=submit]');
+
+    const showError = (msg) => {
+      error.textContent = msg;
+      error.hidden = !msg;
+      input.setAttribute('aria-invalid', msg ? 'true' : 'false');
+    };
+    input.addEventListener('input', () => showError(''));
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = input.value.trim();
+      if (!input.checkValidity() || !EMAIL_RE.test(email)) {
+        showError('Please enter a valid email address, like you@example.com.');
+        input.focus();
+        return;
+      }
+      const token = window.turnstile?.getResponse(turnstileId);
+      if (!token) {
+        showError('One moment, still checking that you’re not a bot. Try again in a few seconds.');
+        return;
+      }
+      const ref = new URLSearchParams(location.search).get('ref');
+      const source = location.pathname + (ref ? `?ref=${ref}` : '');
+      submit.disabled = true;
+      submit.textContent = 'Subscribing…';
+      try {
+        const res = await fetch(new URL('api/subscribe', siteRoot), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, source, token, website: form.elements.website.value }),
+        });
+        if (res.ok) {
+          try {
+            localStorage.setItem(SIGNED_UP_KEY, '1');
+          } catch {
+            // storage unavailable — the window just won't remember
+          }
+          showDone();
+          return;
+        }
+        const out = await res.json().catch(() => ({}));
+        showError(
+          {
+            invalid_email: 'Please enter a valid email address, like you@example.com.',
+            rate_limited: 'Too many tries. Please wait a minute and try again.',
+            verification_failed: 'We couldn’t verify you’re not a bot. Please try again.',
+          }[out.error] || 'Something went wrong. Please try again later.',
+        );
+      } catch {
+        showError('Couldn’t reach the server. Check your connection and try again.');
+      } finally {
+        submit.disabled = false;
+        submit.textContent = 'Subscribe';
+        if (window.turnstile && turnstileId != null) window.turnstile.reset(turnstileId);
+      }
+    });
+    return modal;
+  }
+
+  function showDone() {
+    els.signup.querySelector('form').hidden = true;
+    els.signup.querySelector('.kg-signup-done').hidden = false;
+  }
+
+  // Turnstile (Cloudflare's bot check) is loaded the first time the window opens.
+  let turnstileId = null;
+  let turnstileLoading = false;
+  function loadTurnstile() {
+    const box = els.signup.querySelector('.kg-turnstile');
+    const render = () => {
+      if (turnstileId != null) return;
+      turnstileId = window.turnstile.render(box, {
+        sitekey: TURNSTILE_KEY,
+        theme: settings.theme,
+        size: 'flexible',
+        appearance: 'interaction-only',
+      });
+    };
+    if (window.turnstile) return render();
+    if (turnstileLoading) return;
+    turnstileLoading = true;
+    window.kgTurnstileReady = render;
+    const tag = document.createElement('script');
+    tag.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?onload=kgTurnstileReady&render=explicit';
+    tag.async = true;
+    document.head.append(tag);
   }
 
   function syncSettings() {
@@ -464,18 +607,36 @@
   }
 
   let lastFocus = null;
-  function openSettings() {
+  function openModal(name) {
     closeMenu();
+    closeModals();
     lastFocus = document.activeElement;
-    syncSettings();
-    els.settings.hidden = false;
-    els.settings.querySelector('input:checked:not([disabled])')?.focus();
+    els[name].hidden = false;
+    if (name === 'settings') {
+      syncSettings();
+      els.settings.querySelector('input:checked:not([disabled])')?.focus();
+    } else {
+      if (signedUp()) {
+        showDone();
+        els.signup.querySelector('.kg-signup-done .kg-primary').focus();
+      } else {
+        loadTurnstile();
+        els.signup.querySelector('input[type=email]').focus();
+      }
+    }
   }
 
-  function closeSettings() {
-    if (els.settings.hidden) return;
-    els.settings.hidden = true;
+  const MODALS = ['settings', 'signup'];
+  function openModalName() {
+    return MODALS.find((m) => els[m] && !els[m].hidden);
+  }
+
+  function closeModals() {
+    const open = openModalName();
+    if (!open) return false;
+    els[open].hidden = true;
     lastFocus?.focus?.();
+    return true;
   }
 
   function toggleMenu() {
@@ -509,7 +670,11 @@
     document.body.append(els.menu);
     if (!els.settings) {
       els.settings = buildSettings();
-      document.body.append(els.settings);
+      els.signup = buildSignup();
+      els.signup.addEventListener('click', (e) => {
+        if (e.target === els.signup || e.target.closest('[data-kg-close]')) closeModals();
+      });
+      document.body.append(els.settings, els.signup);
     }
     els.settings.querySelector('.kg-os-field').hidden = os() === 'phone';
     syncSettings();
@@ -521,7 +686,8 @@
     setInterval(tick, 15000);
     document.addEventListener('click', (e) => {
       const opener = e.target.closest('[data-kg-open]');
-      if (opener?.dataset.kgOpen === 'settings') return openSettings();
+      if (opener?.dataset.kgOpen === 'settings') return openModal('settings');
+      if (opener?.dataset.kgOpen === 'signup') return openModal('signup');
       if (opener?.dataset.kgOpen === 'menu') return toggleMenu();
       if (!e.target.closest('.kg-menu')) closeMenu();
     });
@@ -529,16 +695,18 @@
       'keydown',
       (e) => {
         if (e.key !== 'Escape') return;
-        if (!els.settings.hidden) {
+        if (openModalName()) {
           e.stopImmediatePropagation();
-          closeSettings();
+          closeModals();
         } else closeMenu();
       },
       true,
     );
-    // Games listen for keys on the document; keep them out of the Settings window.
-    for (const type of ['keydown', 'keypress']) {
-      els.settings.addEventListener(type, (e) => e.key !== 'Escape' && e.stopPropagation());
+    // Games listen for keys on the document; keep them out of the shell's windows.
+    for (const modal of [els.settings, els.signup]) {
+      for (const type of ['keydown', 'keypress', 'keyup']) {
+        modal.addEventListener(type, (e) => e.key !== 'Escape' && e.stopPropagation());
+      }
     }
   }
 
@@ -554,7 +722,8 @@
     makeWindow,
     settings: () => ({ ...settings }),
     set,
-    openSettings,
+    openSettings: () => openModal('settings'),
+    openSignup: () => openModal('signup'),
     onChange: (fn) => listeners.push(fn),
   };
 })();

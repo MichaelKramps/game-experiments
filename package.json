@@ -1,0 +1,14 @@
+{
+  "name": "game-experiments",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:migrate:local": "wrangler d1 migrations apply game-experiments --local",
+    "db:migrate:remote": "wrangler d1 migrations apply game-experiments --remote"
+  },
+  "devDependencies": {
+    "wrangler": "^4.161.0"
+  }
+}

@@ -466,22 +466,20 @@ body.dragging, body.dragging * { user-select: none; }
 /* ---------------------------------------------------------------------------
    Icon art (shared by desktop icons, menus and bars) */
 
-.i-frame { fill: #3b4552; }
-.i-screen { fill: #7cc4f5; }
-.i-stand { fill: #8792a0; }
 .i-folder { fill: var(--folder); }
-.i-folder-back { fill: var(--folder-back); }
 .i-folder-mark { stroke: rgba(0, 0, 0, 0.38); stroke-width: 2.4; stroke-linecap: round; fill: none; }
 .i-folder-dot { fill: rgba(0, 0, 0, 0.38); }
+.i-folder-back { fill: var(--folder-back); }
 .i-paper { fill: #ffffff; stroke: #9aa3ad; stroke-width: 1; }
 .i-fold { fill: #e3e7ec; stroke: #9aa3ad; stroke-width: 1; }
 .i-lines { stroke: #8a95a1; stroke-width: 2; stroke-linecap: round; fill: none; }
+.i-flap { stroke: #9aa3ad; stroke-width: 1.6; stroke-linejoin: round; fill: none; }
+.i-badge { fill: #e5533d; }
+.i-badge-mark { stroke: #ffffff; stroke-width: 2; stroke-linecap: round; fill: #ffffff; }
 .i-gear { fill: #7c8794; }
 .i-hub { fill: #d9dee4; }
 .i-term { fill: #2b2f36; }
 .i-term-mark { stroke: #ffffff; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; fill: none; }
-.i-welcome { fill: var(--w-accent); }
-.i-welcome-mark { stroke: var(--w-accent-fg); stroke-width: 2.2; stroke-linecap: round; fill: none; }
 
 /* ---------------------------------------------------------------------------
    Desktop icons: a column on the left (right on Quality), a tab bar on phones */
@@ -755,3 +753,28 @@ body.dragging, body.dragging * { user-select: none; }
 [data-os='quality'] .kg-btn { border-radius: 6px; }
 [data-os='phone'] .kg-btn { width: 100%; padding: 10px; border-radius: 10px; font-size: 15px; }
 [data-os='phone'] .kg-settings-foot { padding: 6px 20px 18px; }
+
+/* ---------------------------------------------------------------------------
+   New Games window (email signup) */
+
+.kg-signup-lead { margin-bottom: 14px; line-height: 1.45; }
+.kg-signup-label { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 600; }
+.kg-input {
+  width: 100%;
+  padding: 7px 10px;
+  background: var(--w-bg);
+  border: 1px solid var(--w-btn-border);
+  border-radius: 5px;
+  color: var(--w-fg);
+  font: inherit;
+}
+.kg-input:focus { border-color: var(--w-accent); outline: 1px solid var(--w-accent); }
+.kg-input[aria-invalid='true'] { border-color: var(--w-danger); outline-color: var(--w-danger); }
+[data-os='power'] .kg-input, [data-os='quality'] .kg-input { border-radius: 6px; }
+[data-os='phone'] .kg-input { padding: 10px 12px; border-radius: 10px; font-size: 16px; /* no zoom on focus */ }
+.kg-signup-error { margin-top: 6px; color: var(--w-danger); font-size: 13px; }
+.kg-turnstile:not(:empty) { margin-top: 12px; }
+.kg-hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+.kg-signup .kg-settings-foot, .kg-signup-done .kg-settings-foot { gap: 8px; }
+.kg-btn:disabled { opacity: 0.6; cursor: default; }
+[data-os='phone'] .kg-signup .kg-settings-foot { flex-direction: column-reverse; }

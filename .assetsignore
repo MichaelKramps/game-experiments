@@ -6,3 +6,11 @@
 .gitignore
 .assetsignore
 wrangler.jsonc
+src
+migrations
+node_modules
+package.json
+package-lock.json
+.dev.vars*
+.wrangler
+WEBSITE_INFRA_PLAN.md

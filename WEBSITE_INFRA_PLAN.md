@@ -18,6 +18,28 @@ A key mechanical detail: the repo currently has **no `"main"` field** in `wrangl
 
 ## Phase 1: Email Capture
 
+**Status: built 2026-11-12.** What changed from the original plan below:
+- The form is a **New Games** desktop icon + modal in the site shell (`os/os.js`), on every page and listed game, instead of `shared/signup-form.js` and a `mailing-list.html` page. Games can open it with `KG.openSignup()`.
+- Rate limiting uses Cloudflare's rate-limit binding (`SUBSCRIBE_LIMITER`, 5/min per IP) instead of a KV counter.
+- Unsubscribe tokens are random per row (`crypto.randomUUID()`), not HMAC, so no extra secret is needed.
+- A **welcome email** is sent through Resend on signup (moved up from Phase 3). It carries `List-Unsubscribe` one-click headers.
+- The signup copy covers releases *and* updates on games still in development.
+- Files: `src/worker.js`, `src/routes/subscribe.js`, `src/routes/unsubscribe.js`, `src/email.js`, `src/http.js`, `migrations/0001_create_subscribers.sql`, `unsubscribe.html`, `.dev.vars.example`. `.assetsignore` keeps `src/`, `migrations/`, `node_modules/` and `package*.json` out of the public files.
+- Local dev: `npm install`, `cp .dev.vars.example .dev.vars`, `npm run db:migrate:local`, `npm run dev`.
+- Export the list: `npx wrangler d1 execute game-experiments --remote --command "select email, source, created_at from subscribers where unsubscribed_at is null"`.
+
+**Launch checklist** (Phase 1 goes live once 1–5 are done; 6 can come later):
+1. [x] Create the D1 database (`npx wrangler d1 create game-experiments`); its ID is in `wrangler.jsonc`.
+2. [x] Create the live table: `npm run db:migrate:remote`.
+3. [x] Turnstile: widget created, site key in `os/os.js`, secret saved with `npx wrangler secret put TURNSTILE_SECRET_KEY`.
+4. [x] Resend: verify `kramps.games` (add its DNS records in Cloudflare, plus a `_dmarc` TXT `v=DMARC1; p=none;` if none exists), then `npx wrangler secret put RESEND_API_KEY`. The sender is `Kramps Games <kramps@kramps.games>` (`MAIL_FROM` in `wrangler.jsonc`).
+5. [ ] Push to `main`, sign up on the live site with a real inbox, and check: the welcome email arrives outside spam, Gmail's *Show original* shows SPF/DKIM/DMARC PASS, the unsubscribe link and button work, and Gmail shows its own Unsubscribe link. `npx wrangler tail` shows Worker errors live.
+6. [ ] Set up an inbox for `kramps@kramps.games`. Until then, replies to the welcome email bounce (unsubscribing still works). Options:
+   - **Cloudflare Email Routing** (free): kramps.games → Email → Email Routing, enable it, and forward `kramps@kramps.games` to a personal inbox. This receives mail only; replying *as* kramps@kramps.games would need extra setup.
+   - **A hosted mailbox** (Google Workspace, Fastmail, Proton, …) if you want to send and receive as that address.
+
+   Either one adds MX records on `kramps.games` itself, which doesn't conflict with Resend's records on `send.kramps.games`. No code change is needed. Afterward, send a test email to `kramps@kramps.games` and reply to a welcome email to confirm it arrives.
+
 **Decision: Cloudflare Worker + D1 (custom), not a managed ESP, to start.**
 
 - Add `"main": "src/worker.js"` to `wrangler.jsonc`, plus a D1 binding.
