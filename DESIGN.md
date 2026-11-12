@@ -9,7 +9,8 @@ Status: first version built (2026-10-23). Expect iteration on the look and layou
 - `os/os.js` + `os/os.css`: the shared shell. Every site page and listed game loads both (os.js in `<head>`, before stylesheets). It stamps `<html data-os data-theme>`, adds the desktop icons, the OS bar, a launcher menu and the Settings window, and exposes `window.KG` for games (`os`, `pick`, `prompt`, `path`, `workArea`, `makeWindow`, `onChange`). The comments at the top of each file document the API and color tokens.
 - `os/site.css`: contents of the site's own windows (Files, Notes).
 - Games keep only content styles and build on the shell's `--w-*` / `--t-*` color tokens. Window chrome comes from the shell.
-- Phone = viewport ≤ 760px. On a phone the OS is always `phone`, and in-game text uses the Power (unix) style.
+- Phone layout = any phone or tablet (a touchscreen is the main input: `(pointer: coarse) and (hover: none)`), either way up, plus any window ≤ 760px wide. Touchscreen laptops keep the desktop look. In the phone layout the OS is always `phone`, and in-game text uses the Power (unix) style.
+- The phone tab bar's height is the `--tabbar-h` CSS variable (64px; 44px on short landscape screens, ≤ 500px tall). Games should use it, not a fixed 64px.
 
 ## Navigation
 
@@ -65,7 +66,7 @@ All modern-era. The desktop is a solid color for now.
 | Dark terminal | classic blue shell | dark gray | aubergine |
 | In-game shell | `PS C:\Users\jo>`, `dir`, `type`, backslash paths | zsh `jo@host ~ %` | bash `jo@host:~$` |
 
-- **Phone:** a generic layout for every OS: windows fill the screen, and Games/About/Settings sit in a bottom tab bar. The Settings window shows only the theme option.
+- **Phone** (phones and tablets): a generic layout for every OS: windows fill the screen, and Games/About/New Games/Settings sit in a bottom tab bar (slimmer in landscape on phones). The Settings window shows only the theme option.
 
 ## Email list
 

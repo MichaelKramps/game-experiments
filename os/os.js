@@ -4,8 +4,9 @@
 //
 //   <html data-os="value|quality|power|phone" data-theme="light|dark">
 //
-// Settings (OS + theme) live in localStorage and apply site-wide. On phones
-// the OS is always "phone" — a generic layout — and only the theme applies.
+// Settings (OS + theme) live in localStorage and apply site-wide. On phones and
+// tablets (any touchscreen-first device) and in narrow windows, the OS is
+// always "phone" — a generic layout — and only the theme applies.
 //
 // Once the DOM is ready the shell adds the desktop icons (Games, About,
 // New Games, Settings), the OS's bar (taskbar / menu bar / top bar), a launcher
@@ -29,13 +30,16 @@
   const OSES = { value: 'Value', quality: 'Quality', power: 'Power' };
   const THEMES = { light: 'Light', dark: 'Dark' };
   const DEFAULTS = { os: 'value', theme: 'light' };
-  const PHONE = window.matchMedia('(max-width: 760px)');
+  // The phone layout: narrow windows, plus any device whose main input is a
+  // touchscreen (phones and tablets, either way up). Touchscreen laptops report
+  // their trackpad/mouse as the main input, so they keep the desktop look.
+  const PHONE = window.matchMedia('(max-width: 760px), (pointer: coarse) and (hover: none)');
   const ICON_COLUMN = 104;
   const BARS = {
     value: { top: 0, bottom: 48 },
     quality: { top: 26, bottom: 0 },
     power: { top: 32, bottom: 0 },
-    phone: { top: 0, bottom: 64 },
+    phone: { top: 0, bottom: 64 }, // see tabBarHeight()
   };
 
   const root = document.documentElement;
@@ -130,9 +134,15 @@
     return map[os()] ?? map.power;
   }
 
+  // The phone tab bar is slimmer on short (landscape) screens; os.css owns the
+  // number as --tabbar-h.
+  function tabBarHeight() {
+    return parseFloat(getComputedStyle(root).getPropertyValue('--tabbar-h')) || BARS.phone.bottom;
+  }
+
   function workArea() {
     const o = os();
-    const bar = BARS[o];
+    const bar = o === 'phone' ? { top: 0, bottom: tabBarHeight() } : BARS[o];
     let x = 0;
     let w = window.innerWidth;
     if (o !== 'phone') {

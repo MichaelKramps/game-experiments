@@ -495,7 +495,7 @@ body.no-color .paytable .ups { color: var(--w-fg); }
 [data-os='phone'] .screen-tabs button[aria-selected='true'] { background: var(--w-select); color: var(--w-fg); }
 
 [data-os='phone'] .window.account,
-[data-os='phone'] .window.cards { inset: 48px 0 64px 0; }
+[data-os='phone'] .window.cards { inset: 48px 0 var(--tabbar-h, 64px) 0; }
 [data-os='phone'] .window.account .titlebar,
 [data-os='phone'] .window.cards .titlebar { display: none; }
 [data-os='phone'] .window:not(.on-screen):not(.kg-dialog) { display: none; }
