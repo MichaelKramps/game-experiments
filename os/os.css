@@ -778,3 +778,9 @@ body.dragging, body.dragging * { user-select: none; }
 .kg-signup .kg-settings-foot, .kg-signup-done .kg-settings-foot { gap: 8px; }
 .kg-btn:disabled { opacity: 0.6; cursor: default; }
 [data-os='phone'] .kg-signup .kg-settings-foot { flex-direction: column-reverse; }
+
+/* The New Games window can be dragged and resized (KG.makeWindow sets its
+   rect); its contents stretch to fill and scroll when it's made small. */
+html:not([data-os='phone']) .kg-dialog.kg-movable { position: absolute; max-height: none; }
+.kg-movable > form:not([hidden]), .kg-movable > .kg-signup-done:not([hidden]) { display: flex; flex: 1; flex-direction: column; min-height: 0; }
+.kg-movable .kg-settings-body { flex: 1; min-height: 0; }

@@ -479,7 +479,7 @@
     const modal = h(
       'div',
       { class: 'kg-modal', hidden: '' },
-      `<div class="window kg-dialog" data-app="New Games" role="dialog" aria-modal="true" aria-labelledby="kg-signup-title">
+      `<div class="window kg-dialog kg-movable" data-app="New Games" role="dialog" aria-modal="true" aria-labelledby="kg-signup-title">
         <div class="titlebar">
           <div class="lights"><span class="close" data-kg-close title="Close"></span><span class="min"></span><span class="max"></span></div>
           <div class="window-title" id="kg-signup-title">New Games</div>
@@ -671,10 +671,24 @@
     if (!els.settings) {
       els.settings = buildSettings();
       els.signup = buildSignup();
+      // Close on a click on the backdrop, but not when a drag or resize that
+      // started on the window ends over the backdrop.
+      let downOnBackdrop = false;
+      els.signup.addEventListener('pointerdown', (e) => (downOnBackdrop = e.target === els.signup));
       els.signup.addEventListener('click', (e) => {
-        if (e.target === els.signup || e.target.closest('[data-kg-close]')) closeModals();
+        if ((e.target === els.signup && downOnBackdrop) || e.target.closest('[data-kg-close]')) closeModals();
       });
       document.body.append(els.settings, els.signup);
+      // Draggable and resizable like any other window (phones leave it to CSS).
+      makeWindow(els.signup.querySelector('.kg-dialog'), {
+        minW: 340,
+        minH: 300,
+        rect: (a) => {
+          const w = Math.min(460, a.w - 40);
+          const h = Math.min(320, a.h - 40);
+          return { x: a.x + (a.w - w) / 2, y: a.y + (a.h - h) / 2.6, w, h };
+        },
+      });
     }
     els.settings.querySelector('.kg-os-field').hidden = os() === 'phone';
     syncSettings();

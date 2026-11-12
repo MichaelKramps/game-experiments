@@ -69,11 +69,12 @@ All modern-era. The desktop is a solid color for now.
 
 ## Email list
 
-Built 2026-11-12 (Phase 1 of `WEBSITE_INFRA_PLAN.md`).
+Live since 2026-11-12. This section covers the visitor-facing side. **How it works, how to query the list, and the plan for sending emails to it are all in `WEBSITE_INFRA_PLAN.md` → Phase 1.**
 
 - The **New Games** icon (envelope) opens a modal built into `os/os.js`: "Get an email when a new game is released, plus occasional updates on games still in the works." Games can open it with `KG.openSignup()`, e.g. from an end screen (none do yet).
+- The New Games window and the unsubscribe page's window are draggable and resizable like other windows (`KG.makeWindow`; minimum 340×300 for the signup so its text always fits). On phones they keep the fixed phone layout.
 - The email is checked in the browser and again on the server. A Cloudflare Turnstile check runs invisibly unless it needs the visitor to click. After signing up, the modal shows "You're on the list!" on later visits (localStorage flag).
-- Signups go to `POST /api/subscribe` in the site's Worker (`src/`), which saves them to the D1 `subscribers` table with the page they signed up from (`source`) and sends a welcome email through Resend.
+- Signups go to `POST /api/subscribe` in the site's Worker (`src/`), which saves them to the D1 `subscribers` table with the page they signed up from (`source`) and sends a welcome email through Resend (subject "You're on the kramps.games email list"; text in `src/email.js`). The modal's wording and the email's wording differ on purpose; Kramps chose to keep the modal as is.
 - `unsubscribe.html` (linked from every email, not from the site) unsubscribes after one click on a button.
 
 ## Analytics
