@@ -29,8 +29,8 @@ Every site page **and** every listed game shows the same desktop icons:
 ## Pages
 
 - **Home page (`index.html`)**: the games list. One file-explorer window. Games sit directly in it as files, and a game series gets a folder with its games inside.
+  - diff guess key (`diff-guess-key/`): listed under this name, with the same name in the browser tab. Since 2026-11-11 it's a plain word-guessing game with no journal (it was Kramps' Journal before that). The folder was `jamies-journal/` until 2026-11-12; the old URL 301-redirects to `/diff-guess-key/`.
   - Ctrl+Alt+Deal (`ctrl-alt-deal/`)
-  - diff guess key (`jamies-journal/`): listed under this name, with the same name in the browser tab. Since 2026-11-11 it's a plain word-guessing game with no journal (it was Kramps' Journal before that); the folder keeps its old name.
   - No folders for now (the code still supports them).
   - (Changed 2026-11-10: the Word Games, Deckbuilding Games and World of Evergreen folders were removed. Letter Groups and Jo's Discovery are now unlisted, and Jamie's Journal was renamed Kramps' Journal on the list.)
 - (Changed 2026-11-12: the Games page became the home page. The old home page's "Welcome" window and the Home desktop icon were removed; the Games icon now links to `/`. `games.html` was deleted and 301-redirected to `/`. A game, one folder down, highlights Games.)

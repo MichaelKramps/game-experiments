@@ -4,3 +4,5 @@
 /free-games / 301
 /full-games.html / 301
 /full-games / 301
+/jamies-journal /diff-guess-key/ 301
+/jamies-journal/* /diff-guess-key/:splat 301

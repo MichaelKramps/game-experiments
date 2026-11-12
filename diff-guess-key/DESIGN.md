@@ -3,8 +3,9 @@
 A word-guessing game in a fake terminal. Guess a 5-letter key before your
 tolerance runs out. The name reads as the command you'd run to compare your
 guess against the key; the terminal prompt is `kramps@dgk ~ % diff guess key`
-(the rules screen runs `diff --help`). The folder (`jamies-journal/`) and the
-localStorage keys keep the old name so the URL and saved progress don't change.
+(the rules screen runs `diff --help`). The folder is `diff-guess-key/` (it was
+`jamies-journal/` until 2026-11-12; `_redirects` sends the old URL here). The
+localStorage keys keep the old `jamies-journal-*` names so saved progress survives.
 Named on 2026-11-11, after a brief stint as "Kramps' Journal".
 
 **History.** This started as Jamie's Journal, set in the Evergreen universe:
