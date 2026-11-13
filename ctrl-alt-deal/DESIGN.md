@@ -171,7 +171,7 @@ Two windows on the site shell (`KG.makeWindow`), in all three OS looks and both 
 
 **Account window (game state).** Styled as a Properties panel: bankroll; earned this level against the threshold ("$0 / $20"); level and hand ("Level 3 of 8 · Hand 5 of 5 · Boss"); a row of five boxes for this level's hands, filled as you play, where the fifth is gold and shows how many cards the boss adds ("+3") instead of "5"; this level's threshold ("Earn $250 this level by hand 5"); a note box that appears only when there's something to say (during a hand, on boss hands, at the end of a run); the paytable, with each hand's own payout and its total in dollars, every hand the last hand matched marked, and totals that would cover what's still needed in green. The result line lists every match and the sum, e.g. "Full house · Full house $150 + Three of a kind $50 + Two pair $30 + Pair $10 = $240 · +$240", and after the boss what the level earned against the threshold ("Beat the boss: earned $310 of $250 needed"). (A recent-hands log, a "N more hands, then the boss" note and a paytable footnote were removed 2026-10-27.)
 
-**Phones** (≤ 760px): each window is full-screen, so the two windows are two screens, with the Account screen first. Selecting is a tap; Remove and Duplicate come from a long-press menu.
+**Phones** (≤ 760px): each window is full-screen, so the two windows are two screens, with the Cards screen (the deck/hand explorer) first. Selecting is a tap; Remove and Duplicate come from a long-press menu.
 
 ## Run setup, unlocks and achievements (added 2026-10-29)
 

@@ -89,7 +89,7 @@
   // it has, Edit deck is green and Deal is plain.
   let deckVisited = folder === 'deck';
   let clipboard = null; // card id copied with Ctrl+C
-  let screen = 'account'; // phones show one window at a time
+  let screen = 'cards'; // phones show one window at a time, Cards first
   let modalOpen = false;
   let payoutMenuOpen = false;
   let fresh = new Set(); // ids drawn in the last draw, highlighted once
@@ -647,7 +647,7 @@
     folder = 'deck';
     selected.clear();
     fresh.clear();
-    screen = 'account';
+    screen = 'cards';
     render();
   }
 
