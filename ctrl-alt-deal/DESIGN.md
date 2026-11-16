@@ -252,6 +252,6 @@ Decisions made while building, beyond the definition above:
 - **Hand order:** Hand and the Account window's last hand are shown strongest first (aces left, 2s right), not in deal order.
 - **After the draw** Hand keeps showing the final 5 cards (drawn ones animate in) with the result in a banner, until the next Deal.
 - **Keyboard:** Ctrl/⌘+A in Hand selects every card to replace. Delete/Backspace in Deck asks to permanently delete (Shift+Delete skips the question). Ctrl/⌘+C then Ctrl/⌘+V duplicates. F5 or Ctrl/⌘+R draws while a hand is in play.
-- **Phones:** the shell's bottom bar holds the site nav, so the game adds an Account / Cards tab strip along the top to switch screens. Deal is in the Cards toolbar, so a whole hand plays out on the Cards screen. The sidebar becomes a scrolling row of folders.
+- **Phones:** the shell's bottom bar holds the site nav, so the game adds a Cards / Account tab strip along the top to switch screens. Deal is in the Cards toolbar, so a whole hand plays out on the Cards screen. The sidebar becomes a scrolling row of folders.
 - **Bar icon:** `os/os.js` gained an `Account` icon for the taskbar.
 - **Win/loss** show a dialog with a New run button; New run in the Account window asks first if a run is in progress.
