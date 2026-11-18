@@ -810,3 +810,14 @@ html:not([data-os='phone']) .kg-dialog.kg-movable { position: absolute; max-heig
   [data-os='phone'] .kg-signup .kg-settings-foot { flex-direction: row; justify-content: flex-end; gap: 8px; padding: 6px 20px 12px; }
   [data-os='phone'] .kg-settings-foot .kg-btn { width: auto; padding: 7px 18px; }
 }
+
+/* Visually hidden, still read by search engines and screen readers. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

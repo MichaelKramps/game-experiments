@@ -3,12 +3,24 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Kramps Games</title>
+  <title>Kramps Games: Games That Look Like Work</title>
+  <meta name="description" content="Free browser games disguised as work: a terminal word game and a deckbuilder that look like everyday computer tasks. Turn based, no ads, no sign up.">
+  <link rel="canonical" href="https://kramps.games/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Kramps Games">
+  <meta property="og:title" content="Kramps Games: Games That Look Like Work">
+  <meta property="og:description" content="Free browser games disguised as work. Turn based, no ads, no sign up.">
+  <meta property="og:url" content="https://kramps.games/">
   <script src="os/os.js"></script>
   <link rel="stylesheet" href="os/os.css">
   <link rel="stylesheet" href="os/site.css">
 </head>
 <body>
+  <!-- Read by search engines and screen readers; the page's look is the Files window below. -->
+  <header class="sr-only">
+    <h1>Games that look like work</h1>
+    <p>Kramps Games are free browser games disguised as work. Each one looks like an everyday computer task, like a terminal or a file browser, so you can play at your desk without it looking like a game. They're turn based, so you can leave one alone at any moment, like a boss key that's always on. No ads and no sign up.</p>
+  </header>
   <div class="window" id="files" data-app="Files">
     <div class="titlebar">
       <div class="lights"><span class="close"></span><span class="min"></span><span class="max"></span></div>
@@ -16,13 +28,26 @@
     </div>
     <div class="files-toolbar">
       <button class="nav-btn" id="up" type="button" aria-label="Up one folder">&#8593;</button>
-      <div class="crumbs" id="crumbs"></div>
+      <div class="crumbs" id="crumbs"><span>Games</span></div>
     </div>
     <div class="files-body">
-      <nav class="files-side" id="side" aria-label="Folders"></nav>
+      <nav class="files-side" id="side" aria-label="Folders"><h2>Games</h2><a href="#" aria-current="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 7a2 2 0 0 1 2-2h5l2 2h9a2 2 0 0 1 2 2v1H2z" class="i-folder-back"/><rect x="2" y="9" width="20" height="11" rx="2" class="i-folder"/></svg><span>Free games</span></a></nav>
       <section class="files-main">
-        <div class="files-list" id="list"></div>
-        <div class="files-status" id="status"></div>
+        <!-- Same rows render() builds from GAMES; keep the two in sync. -->
+        <div class="files-list" id="list">
+          <div class="files-head"><span>Name</span><span>Type</span><span>Description</span></div>
+          <a class="file-row" href="diff-guess-key/">
+            <span class="file-name"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="3" class="i-term"/><path d="m6 9 3 3-3 3M11 15h6" class="i-term-mark"/></svg><span>diff guess key</span></span>
+            <span class="file-kind">Word deduction</span>
+            <span class="file-desc">guess the 5 letter key before your tolerance runs out</span>
+          </a>
+          <a class="file-row" href="ctrl-alt-deal/">
+            <span class="file-name"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="3" class="i-term"/><path d="m6 9 3 3-3 3M11 15h6" class="i-term-mark"/></svg><span>Ctrl+Alt+Deal</span></span>
+            <span class="file-kind">Deckbuilder</span>
+            <span class="file-desc">edit your deck of cards to make stronger hands and earn more money</span>
+          </a>
+        </div>
+        <div class="files-status" id="status">2 items</div>
       </section>
     </div>
   </div>

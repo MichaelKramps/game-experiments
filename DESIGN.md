@@ -83,3 +83,13 @@ Live since 2026-11-12. This section covers the visitor-facing side. **How it wor
 - Google Analytics (GA4, `G-Z9KTWQCDD0`) is loaded by `os/os.js`, so it covers every page that loads the shell: site pages and the listed games. The unlinked experiments aren't tracked. Skipped on localhost and `file:`.
 - Google Ads (`AW-18583243965`) is configured on the same gtag. A successful email signup sends the "Sign-up" conversion (value $1), but only when this browser hasn't signed up before, since `/api/subscribe` answers OK for addresses already on the list.
 - Still open: whether a cookie consent banner is needed.
+
+## SEO
+
+Plan, keywords and game build order are in `SEO_PLAN.md` (kept off the public site by `.assetsignore`).
+
+- Every listed page has a `<meta name="description">` and a `<link rel="canonical">` to its clean URL (`/`, `/about`, `/<game>/`).
+- Anything search engines should read (title, description, H1, page text, the home page's game rows) is in the HTML file, not added by JS. The home page's H1 and intro sit in a visually hidden `.sr-only` header (class in `os/os.css`; the listed games use the same pattern for their H1 and how-to-play text); its game rows are written into `#list` and `render()` redraws the same rows from `GAMES`, so keep the two in sync.
+- Listed games keep their short `<title>`, because the browser tab is part of the disguise.
+- `robots.txt` and `sitemap.xml` are at the root. Add each newly listed page to the sitemap; unlisted games stay out.
+- The Games/About icons link to `/` and `/about` on served sites (`index.html`/`about.html` 307-redirect there), and to the `.html` files under `file:`.

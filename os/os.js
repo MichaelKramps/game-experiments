@@ -348,8 +348,10 @@
   };
 
   const NAV = [
-    { id: 'games', label: 'Games', href: 'index.html' },
-    { id: 'about', label: 'About', href: 'about.html' },
+    // Served sites get the clean URLs (index.html and about.html 307-redirect
+    // there, which search engines treat as a wasted hop); file: needs real files.
+    { id: 'games', label: 'Games', href: location.protocol === 'file:' ? 'index.html' : './' },
+    { id: 'about', label: 'About', href: location.protocol === 'file:' ? 'about.html' : 'about' },
     { id: 'newgames', label: 'New Games', opens: 'signup' },
     { id: 'settings', label: 'Settings', opens: 'settings' },
   ];
