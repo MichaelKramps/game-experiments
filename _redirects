@@ -6,3 +6,5 @@
 /full-games / 301
 /jamies-journal /diff-guess-key/ 301
 /jamies-journal/* /diff-guess-key/:splat 301
+/spreadsheet-games /#classic 302
+/spreadsheet-games/ /#classic 302

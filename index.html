@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Kramps Games: Games That Look Like Work</title>
-  <meta name="description" content="Free browser games disguised as work: a terminal word game and a deckbuilder that look like everyday computer tasks. Turn based, no ads, no sign up.">
+  <meta name="description" content="Free browser games disguised as work: Minesweeper in a spreadsheet, a terminal word game and a poker deckbuilder that look like everyday computer tasks. No ads, no sign up.">
   <link rel="canonical" href="https://kramps.games/">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Kramps Games">
@@ -19,32 +19,42 @@
   <!-- Read by search engines and screen readers; the page's look is the Files window below. -->
   <header class="sr-only">
     <h1>Games that look like work</h1>
-    <p>Kramps Games are free browser games disguised as work. Each one looks like an everyday computer task, like a terminal or a file browser, so you can play at your desk without it looking like a game. They're turn based, so you can leave one alone at any moment, like a boss key that's always on. No ads and no sign up.</p>
+    <p>Kramps Games are free browser games disguised as work. Each one looks like an everyday computer task, like a spreadsheet, a terminal or a file browser, so you can play at your desk without it looking like a game. They're turn based, so you can leave one alone at any moment, like a boss key that's always on. No ads and no sign up.</p>
+    <!-- Every game's link, so they're in the HTML even though the Files window shows folders. -->
+    <h2>Kramps Games</h2>
+    <ul>
+      <li><a href="/diff-guess-key/">diff guess key</a>: a word deduction game that looks like a terminal. Guess the 5 letter key before your tolerance runs out.</li>
+      <li><a href="/ctrl-alt-deal/">Ctrl+Alt+Deal</a>: a video poker deckbuilder that looks like work. Edit your deck to make stronger hands.</li>
+    </ul>
+    <h2>Classic games that look like work</h2>
+    <ul>
+      <li><a href="/spreadsheet-games/minesweeper/">Spreadsheet Minesweeper</a>: Minesweeper in a spreadsheet that looks like Excel.</li>
+    </ul>
   </header>
   <div class="window" id="files" data-app="Files">
     <div class="titlebar">
       <div class="lights"><span class="close"></span><span class="min"></span><span class="max"></span></div>
-      <div class="window-title" id="files-title">Games</div>
+      <div class="window-title" id="files-title">Free Games</div>
     </div>
     <div class="files-toolbar">
       <button class="nav-btn" id="up" type="button" aria-label="Up one folder">&#8593;</button>
-      <div class="crumbs" id="crumbs"><span>Games</span></div>
+      <div class="crumbs" id="crumbs"><a href="#games">Games</a><span class="sep">›</span><span>Free Games</span></div>
     </div>
     <div class="files-body">
-      <nav class="files-side" id="side" aria-label="Folders"><h2>Games</h2><a href="#" aria-current="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 7a2 2 0 0 1 2-2h5l2 2h9a2 2 0 0 1 2 2v1H2z" class="i-folder-back"/><rect x="2" y="9" width="20" height="11" rx="2" class="i-folder"/></svg><span>Free games</span></a></nav>
+      <nav class="files-side" id="side" aria-label="Folders"><h2>Games</h2><a href="#" aria-current="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 7a2 2 0 0 1 2-2h5l2 2h9a2 2 0 0 1 2 2v1H2z" class="i-folder-back"/><rect x="2" y="9" width="20" height="11" rx="2" class="i-folder"/></svg><span>Free Games</span></a><a class="sub" href="#kramps"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 7a2 2 0 0 1 2-2h5l2 2h9a2 2 0 0 1 2 2v1H2z" class="i-folder-back"/><rect x="2" y="9" width="20" height="11" rx="2" class="i-folder"/></svg><span>Kramps Games</span></a><a class="sub" href="#classic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 7a2 2 0 0 1 2-2h5l2 2h9a2 2 0 0 1 2 2v1H2z" class="i-folder-back"/><rect x="2" y="9" width="20" height="11" rx="2" class="i-folder"/></svg><span>Classic Games</span></a></nav>
       <section class="files-main">
-        <!-- Same rows render() builds from GAMES; keep the two in sync. -->
+        <!-- Same rows render() builds for Free Games, the folder open by default; keep the two in sync. -->
         <div class="files-list" id="list">
           <div class="files-head"><span>Name</span><span>Type</span><span>Description</span></div>
-          <a class="file-row" href="diff-guess-key/">
-            <span class="file-name"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="3" class="i-term"/><path d="m6 9 3 3-3 3M11 15h6" class="i-term-mark"/></svg><span>diff guess key</span></span>
-            <span class="file-kind">Word deduction</span>
-            <span class="file-desc">guess the 5 letter key before your tolerance runs out</span>
+          <a class="file-row" href="#kramps">
+            <span class="file-name"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 7a2 2 0 0 1 2-2h5l2 2h9a2 2 0 0 1 2 2v1H2z" class="i-folder-back"/><rect x="2" y="9" width="20" height="11" rx="2" class="i-folder"/></svg><span>Kramps Games</span></span>
+            <span class="file-kind">Folder</span>
+            <span class="file-desc">2 games</span>
           </a>
-          <a class="file-row" href="ctrl-alt-deal/">
-            <span class="file-name"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="3" class="i-term"/><path d="m6 9 3 3-3 3M11 15h6" class="i-term-mark"/></svg><span>Ctrl+Alt+Deal</span></span>
-            <span class="file-kind">Deckbuilder</span>
-            <span class="file-desc">edit your deck of cards to make stronger hands and earn more money</span>
+          <a class="file-row" href="#classic">
+            <span class="file-name"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 7a2 2 0 0 1 2-2h5l2 2h9a2 2 0 0 1 2 2v1H2z" class="i-folder-back"/><rect x="2" y="9" width="20" height="11" rx="2" class="i-folder"/></svg><span>Classic Games</span></span>
+            <span class="file-kind">Folder</span>
+            <span class="file-desc">1 game</span>
           </a>
         </div>
         <div class="files-status" id="status">2 items</div>
@@ -53,26 +63,62 @@
   </div>
 
   <script>
-    // The home page is the Games folder: subfolders for game series, each game a file inside,
-    // plus games that sit directly in Games (GAMES). The open folder lives in
-    // the URL hash so Back works and links can point straight at a folder
-    // (index.html#evergreen).
-    const GAMES = [
-      { name: 'diff guess key', href: 'diff-guess-key/', kind: 'Word deduction', desc: 'guess the 5 letter key before your tolerance runs out' },
-      { name: 'Ctrl+Alt+Deal', href: 'ctrl-alt-deal/', kind: 'Deckbuilder', desc: 'edit your deck of cards to make stronger hands and earn more money' },
-    ];
-    // None for now; the World of Evergreen folder (Jamie's Journal, Jo's
-    // Discovery) was taken off the list 2026-11-10.
-    const FOLDERS = [];
+    // The home page is a file explorer over a folder tree: Games holds Free
+    // Games, which holds Kramps Games (originals) and Classic Games (classic
+    // games reskinned as work; spreadsheet ones live under /spreadsheet-games/,
+    // see SEO_PLAN.md). The open folder lives in the URL hash so Back works and
+    // links can point straight at a folder (/#classic). No hash opens Free
+    // Games; #games opens the top.
+    const KRAMPS = {
+      id: 'kramps',
+      name: 'Kramps Games',
+      games: [
+        { name: 'diff guess key', href: 'diff-guess-key/', kind: 'Word deduction', desc: 'guess the 5 letter key before your tolerance runs out' },
+        { name: 'Ctrl+Alt+Deal', href: 'ctrl-alt-deal/', kind: 'Deckbuilder', icon: 'file', desc: 'edit your deck of cards to make stronger hands and earn more money' },
+      ],
+    };
+    const CLASSIC = {
+      id: 'classic',
+      name: 'Classic Games',
+      games: [
+        { name: 'Minesweeper', href: 'spreadsheet-games/minesweeper/', kind: 'Logic puzzle', icon: 'sheet', desc: 'clear the sheet without revealing a mine' },
+      ],
+    };
+    const FREE = { id: '', name: 'Free Games', folders: [KRAMPS, CLASSIC] };
+    const ROOT = { id: 'games', name: 'Games', folders: [FREE] };
+
+    // Every folder with its path from the top: [ROOT, ..., folder].
+    const PATHS = [];
+    (function walk(f, path) {
+      PATHS.push([...path, f]);
+      for (const sub of f.folders || []) walk(sub, [...path, f]);
+    })(ROOT, []);
 
     const FOLDER_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 7a2 2 0 0 1 2-2h5l2 2h9a2 2 0 0 1 2 2v1H2z" class="i-folder-back"/><rect x="2" y="9" width="20" height="11" rx="2" class="i-folder"/></svg>';
     const GAME_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="3" class="i-term"/><path d="m6 9 3 3-3 3M11 15h6" class="i-term-mark"/></svg>';
+    const SHEET_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2.5" class="i-paper"/><path d="M3.5 5.5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2V8h-17z" class="i-sheet"/><path d="M4 13h16M4 17.5h16M9.5 8v12.5M15 8v12.5" class="i-lines"/></svg>';
+    // A game's icon shows the app it's played in: a terminal (the default),
+    // a spreadsheet, or a file for games played in a file explorer.
+    const FILE_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2.5h8.5l4.5 4.5v13a1.5 1.5 0 0 1-1.5 1.5h-11.5a1.5 1.5 0 0 1-1.5-1.5v-16a1.5 1.5 0 0 1 1.5-1.5z" class="i-paper"/><path d="M14.5 2.5V7h4.5" class="i-fold"/><path d="M8 12h8M8 15.5h8M8 19h5" class="i-lines"/></svg>';
+    const GAME_ICONS = { sheet: SHEET_ICON, file: FILE_ICON };
 
     const $ = (id) => document.getElementById(id);
     const esc = (s) => s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 
-    function current() {
-      return FOLDERS.find((f) => `#${f.id}` === location.hash) || null;
+    const hashOf = (f) => `#${f.id}`;
+
+    // The open folder's path; no hash (or an unknown one) is Free Games.
+    function currentPath() {
+      const id = location.hash.slice(1);
+      return PATHS.find((p) => p.at(-1).id === id) || PATHS.find((p) => p.at(-1) === FREE);
+    }
+
+    function count(f) {
+      const games = (f.games || []).length;
+      const folders = (f.folders || []).length;
+      if (games && !folders) return `${games} ${games === 1 ? 'game' : 'games'}`;
+      const items = games + folders;
+      return `${items} ${items === 1 ? 'item' : 'items'}`;
     }
 
     function row({ href, icon, name, kind, desc }) {
@@ -84,38 +130,40 @@
     }
 
     function render() {
-      const folder = current();
+      const path = currentPath();
+      const folder = path.at(-1);
       const sep = KG.pick({ value: '›', quality: '›', power: '/' });
 
-      $('files-title').textContent = folder ? folder.name : 'Games';
-      $('up').disabled = !folder;
-      $('crumbs').innerHTML = folder
-        ? `<a href="#">Games</a><span class="sep">${sep}</span><span>${esc(folder.name)}</span>`
-        : '<span>Games</span>';
+      $('files-title').textContent = folder.name;
+      $('up').disabled = path.length === 1;
+      $('crumbs').innerHTML = path
+        .map((f, k) => (k === path.length - 1 ? `<span>${esc(f.name)}</span>` : `<a href="${hashOf(f)}">${esc(f.name)}</a>`))
+        .join(`<span class="sep">${sep}</span>`);
 
+      // Sidebar: the folders under Games, nested ones indented.
       $('side').innerHTML =
         '<h2>Games</h2>' +
-        [{ id: '', name: 'Free games' }, ...FOLDERS]
-          .map((f) => {
-            const on = (folder?.id || '') === f.id ? ' aria-current="true"' : '';
-            return `<a href="#${f.id}"${on}>${FOLDER_ICON}<span>${esc(f.name)}</span></a>`;
+        PATHS.filter((p) => p.length > 1)
+          .map((p) => {
+            const f = p.at(-1);
+            const on = f === folder ? ' aria-current="true"' : '';
+            const sub = p.length > 2 ? ' class="sub"' : '';
+            return `<a${sub} href="${hashOf(f)}"${on}>${FOLDER_ICON}<span>${esc(f.name)}</span></a>`;
           })
           .join('');
 
-      const rows = folder
-        ? folder.games.map((g) => row({ ...g, icon: GAME_ICON }))
-        : [
-            ...FOLDERS.map((f) =>
-              row({ href: `#${f.id}`, icon: FOLDER_ICON, name: f.name, kind: 'Folder', desc: `${f.games.length} ${f.games.length === 1 ? 'game' : 'games'}` }),
-            ),
-            ...GAMES.map((g) => row({ ...g, icon: GAME_ICON })),
-          ];
+      const rows = [
+        ...(folder.folders || []).map((f) => row({ href: hashOf(f), icon: FOLDER_ICON, name: f.name, kind: 'Folder', desc: count(f) })),
+        ...(folder.games || []).map((g) => row({ ...g, icon: GAME_ICONS[g.icon] || GAME_ICON })),
+      ];
       $('list').innerHTML = `<div class="files-head"><span>Name</span><span>Type</span><span>Description</span></div>${rows.join('')}`;
-      const count = rows.length;
-      $('status').textContent = `${count} ${count === 1 ? 'item' : 'items'}`;
+      $('status').textContent = `${rows.length} ${rows.length === 1 ? 'item' : 'items'}`;
     }
 
-    $('up').addEventListener('click', () => (location.hash = ''));
+    $('up').addEventListener('click', () => {
+      const path = currentPath();
+      if (path.length > 1) location.hash = hashOf(path.at(-2));
+    });
     window.addEventListener('hashchange', render);
     KG.onChange(render);
     render();

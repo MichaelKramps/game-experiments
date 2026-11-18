@@ -345,6 +345,7 @@
     Files: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 7a2 2 0 0 1 2-2h5l2 2h9a2 2 0 0 1 2 2v1H2z" class="i-folder-back"/><rect x="2" y="9" width="20" height="11" rx="2" class="i-folder"/></svg>`,
     Notes: `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="2.5" width="16" height="19" rx="2.5" class="i-paper"/><path d="M8 8h8M8 12h8M8 16h5" class="i-lines"/></svg>`,
     Account: `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2.5" class="i-paper"/><path d="M7 8h10M7 12h10M7 16h6" class="i-lines"/><path d="M12 8v8" class="i-lines"/></svg>`,
+    Spreadsheet: `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2.5" class="i-paper"/><path d="M3.5 5.5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2V8h-17z" class="i-sheet"/><path d="M4 13h16M4 17.5h16M9.5 8v12.5M15 8v12.5" class="i-lines"/></svg>`,
   };
 
   const NAV = [

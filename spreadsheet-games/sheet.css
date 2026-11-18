@@ -1,0 +1,262 @@
+/* The spreadsheet disguise shared by the games in /spreadsheet-games/:
+   a Spreadsheet window with a menu row, a toolbar, a formula bar, a grid with
+   lettered columns and numbered rows, sheet tabs and a status bar. Loads after
+   os/os.css and os/site.css; builds on the shell's --w-* tokens.
+
+   --s-head       column/row header background
+   --s-head-on    header background for the selected cell's row and column
+   --s-grid       gridlines
+   --s-shade      a filled (shaded) cell
+   --s-accent     selection border and selected header text
+   --s-bad        error values (#REF!, #N/A)
+   --s-info       the message bar under the formula bar */
+
+:root {
+  --s-head: #f3f3f3;
+  --s-head-on: #d3e6dc;
+  --s-grid: #e1e1e1;
+  --s-shade: #e3e8ee;
+  --s-shade-hover: #d5dce5;
+  --s-accent: #1e7a4c;
+  --s-bad: #c42b1c;
+  --s-info: #fff4ce;
+  --s-info-fg: #3b3000;
+  --s-cell: 32px;
+  --s-row: 26px;
+}
+[data-theme='dark'] {
+  --s-head: #2f2f2f;
+  --s-head-on: #24483a;
+  --s-grid: #3b3b3b;
+  --s-shade: #3a4048;
+  --s-shade-hover: #46505b;
+  --s-accent: #5cc98b;
+  --s-bad: #ff8a80;
+  --s-info: #433519;
+  --s-info-fg: #fbe7b5;
+}
+
+.sheet-win { font-family: var(--ui); font-size: 13px; }
+
+/* Menu row (File, Home, ...). Only Help does anything. */
+.sheet-menu {
+  flex: none;
+  display: flex;
+  gap: 2px;
+  padding: 2px 6px;
+  border-bottom: 1px solid var(--w-line);
+  font-size: 12px;
+}
+.sheet-menu span,
+.sheet-menu button {
+  padding: 3px 8px;
+  border: none;
+  border-radius: 4px;
+  background: none;
+  color: inherit;
+  font: inherit;
+}
+.sheet-menu button { cursor: pointer; }
+.sheet-menu span:hover,
+.sheet-menu button:hover { background: var(--w-hover); }
+.sheet-menu .on { color: var(--s-accent); box-shadow: inset 0 -2px var(--s-accent); border-radius: 0; }
+
+/* Toolbar: the game's controls among a few formatting buttons for show. */
+.sheet-tools {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 38px;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--w-line);
+  overflow-x: auto;
+  white-space: nowrap;
+}
+.sheet-tools .sep { width: 1px; height: 20px; margin: 0 4px; background: var(--w-line); }
+.sheet-tools .deco {
+  display: grid;
+  place-items: center;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 4px;
+  color: var(--w-muted);
+  font-size: 13px;
+}
+.sheet-tools label { display: flex; align-items: center; gap: 6px; color: var(--w-muted); font-size: 12px; }
+.sheet-tools select {
+  height: 26px;
+  padding: 0 6px;
+  border: 1px solid var(--w-btn-border);
+  border-radius: 4px;
+  background: var(--w-btn);
+  color: var(--w-fg);
+  font: inherit;
+  font-size: 12px;
+}
+.sheet-tools .tool {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  height: 26px;
+  padding: 0 8px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: none;
+  color: var(--w-fg);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.sheet-tools .tool:hover { background: var(--w-hover); }
+.sheet-tools .tool[aria-pressed='true'] { border-color: var(--s-accent); background: var(--s-head-on); }
+.sheet-tools .tool svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Formula bar: name box, fx, contents */
+.sheet-formula {
+  flex: none;
+  display: flex;
+  align-items: stretch;
+  height: 28px;
+  border-bottom: 1px solid var(--w-line);
+  font-size: 12.5px;
+}
+.sheet-formula .name-box {
+  display: flex;
+  align-items: center;
+  width: 72px;
+  padding: 0 8px;
+  border-right: 1px solid var(--w-line);
+}
+.sheet-formula .fx {
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  border-right: 1px solid var(--w-line);
+  color: var(--w-muted);
+  font-style: italic;
+  font-family: Georgia, serif;
+}
+.sheet-formula .formula {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  padding: 0 8px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* Message bar (like the yellow notices spreadsheets show under the toolbar) */
+.sheet-info {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--w-line);
+  background: var(--s-info);
+  color: var(--s-info-fg);
+  font-size: 12.5px;
+}
+.sheet-info[hidden] { display: none; }
+.sheet-info b { font-weight: 600; }
+.sheet-info .kg-btn { padding: 3px 10px; font-size: 12px; }
+[data-os='phone'] .sheet-info .kg-btn { width: auto; padding: 6px 12px; }
+
+/* Grid */
+.sheet-wrap {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  outline: none;
+  background: var(--w-bg);
+  overscroll-behavior: contain;
+}
+.sheet-grid {
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+  font-variant-numeric: tabular-nums;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+.sheet-grid th,
+.sheet-grid td {
+  width: var(--s-cell);
+  min-width: var(--s-cell);
+  height: var(--s-row);
+  padding: 0;
+  border-right: 1px solid var(--s-grid);
+  border-bottom: 1px solid var(--s-grid);
+  text-align: center;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.sheet-grid th {
+  position: sticky;
+  z-index: 1;
+  background: var(--s-head);
+  color: var(--w-muted);
+  font-size: 11.5px;
+  font-weight: 400;
+}
+.sheet-grid thead th { top: 0; border-bottom-color: var(--w-border); }
+.sheet-grid tbody th { left: 0; width: 40px; min-width: 40px; border-right-color: var(--w-border); }
+.sheet-grid thead th:first-child { left: 0; z-index: 2; width: 40px; min-width: 40px; border-right-color: var(--w-border); }
+.sheet-grid th.on { background: var(--s-head-on); color: var(--s-accent); font-weight: 600; }
+
+/* Phone: no decorative chrome, bigger cells for fingers */
+[data-os='phone'] .sheet-menu .deco-menu,
+[data-os='phone'] .sheet-tools .deco,
+[data-os='phone'] .sheet-tools .sep.deco-sep { display: none; }
+[data-os='phone'] .sheet-win { --s-cell: 36px; --s-row: 36px; }
+
+/* Sheet tabs + status bar */
+.sheet-foot {
+  flex: none;
+  display: flex;
+  align-items: stretch;
+  height: 28px;
+  border-top: 1px solid var(--w-line);
+  background: var(--w-chrome);
+  font-size: 12px;
+}
+.sheet-tabs { display: flex; min-width: 0; overflow: hidden; }
+.sheet-tabs span {
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  border-right: 1px solid var(--w-line);
+  color: var(--w-muted);
+  white-space: nowrap;
+}
+.sheet-tabs .on { background: var(--w-bg); color: var(--s-accent); font-weight: 600; box-shadow: inset 0 -2px var(--s-accent); }
+.sheet-status {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 18px;
+  padding: 0 12px;
+  color: var(--w-muted);
+  white-space: nowrap;
+}
+.sheet-status .state { margin-right: auto; }
+[data-os='phone'] .sheet-tabs span:not(.on) { display: none; }
+
+/* Help: a Notes-style dialog */
+.sheet-help .kg-dialog { display: flex; flex-direction: column; width: min(480px, 100%); }
+.sheet-help .notes-page,
+[data-os='value'] .sheet-help .notes-page { flex: 0 1 auto; min-height: 0; padding: 16px 20px; font-size: 15px; }
+.sheet-help .notes-page h2 { margin: 14px 0 4px; font-size: 1em; }
+.sheet-help .notes-page h2:first-child { margin-top: 0; }
+.sheet-help .notes-page ul { margin: 0 0 6px; padding-left: 1.4em; }
+.sheet-help .notes-page li + li { margin-top: 6px; }
+.sheet-help .notes-status { align-items: center; }
+.sheet-help .notes-status .kg-btn { margin-left: auto; }
+[data-os='quality'] .sheet-help .notes-status,
+[data-os='phone'] .sheet-help .notes-status { display: flex; }

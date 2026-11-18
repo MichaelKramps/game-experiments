@@ -474,6 +474,7 @@ body.dragging, body.dragging * { user-select: none; }
 .i-paper { fill: #ffffff; stroke: #9aa3ad; stroke-width: 1; }
 .i-fold { fill: #e3e7ec; stroke: #9aa3ad; stroke-width: 1; }
 .i-lines { stroke: #8a95a1; stroke-width: 2; stroke-linecap: round; fill: none; }
+.i-sheet { fill: #2e8a57; }
 .i-flap { stroke: #9aa3ad; stroke-width: 1.6; stroke-linejoin: round; fill: none; }
 .i-badge { fill: #e5533d; }
 .i-badge-mark { stroke: #ffffff; stroke-width: 2; stroke-linecap: round; fill: #ffffff; }

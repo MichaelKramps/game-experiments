@@ -31,8 +31,10 @@ Every site page **and** every listed game shows the same desktop icons:
 
 - **Home page (`index.html`)**: the games list. One file-explorer window. Games sit directly in it as files, and a game series gets a folder with its games inside.
   - diff guess key (`diff-guess-key/`): listed under this name, with the same name in the browser tab. Since 2026-11-11 it's a plain word-guessing game with no journal (it was Kramps' Journal before that). The folder was `jamies-journal/` until 2026-11-12; the old URL 301-redirects to `/diff-guess-key/`.
-  - Ctrl+Alt+Deal (`ctrl-alt-deal/`)
-  - No folders for now (the code still supports them).
+  - Since 2026-11-18 the games are a folder tree: **Games** › **Free Games** › two folders. The page opens on **Free Games** (no hash); `#games` is the top level, which holds only Free Games for now. Up goes to the parent folder, the path shows parents as links, and the sidebar lists Free Games with its folders indented under it. Free Games holds:
+    - **Kramps Games** (`#kramps`): the originals, diff guess key and Ctrl+Alt+Deal (`ctrl-alt-deal/`).
+    - **Classic Games** (`#classic`): classic games reskinned as work. Spreadsheet ones live under `/spreadsheet-games/<game>/` (see `SEO_PLAN.md`). So far: Minesweeper (`spreadsheet-games/minesweeper/`, design in its `DESIGN.md`). `/spreadsheet-games/` 302-redirects to `/#classic` until it gets its own hub page.
+  - A game's icon in the list shows the app it's played in: a terminal by default, `icon: 'sheet'` for a spreadsheet (Minesweeper), `icon: 'file'` for a file explorer (Ctrl+Alt+Deal).
   - (Changed 2026-11-10: the Word Games, Deckbuilding Games and World of Evergreen folders were removed. Letter Groups and Jo's Discovery are now unlisted, and Jamie's Journal was renamed Kramps' Journal on the list.)
 - (Changed 2026-11-12: the Games page became the home page. The old home page's "Welcome" window and the Home desktop icon were removed; the Games icon now links to `/`. `games.html` was deleted and 301-redirected to `/`. A game, one folder down, highlights Games.)
 - **About (`about.html`)**: a desktop with a notepad window open holding the about text. Keep the current text minus the full-games/Google-login part (not built yet).
@@ -52,7 +54,7 @@ The modal holds the visitor's choices, saved in browser storage (`localStorage`)
 - Each OS look should read as the real OS at a glance, but **never use real trademarks**: no real OS or product names (Windows, macOS, Linux, PowerShell, Finder, Terminal.app…) and no real logos, in labels, window titles or game text.
 - The OS setting carries into the listed games: window chrome, terminal styling (Value's terminal looks like PowerShell, etc.), and in-game text such as prompts and commands may change to match.
 - The theme setting also carries into the games, including their content, not just the frame.
-- Built-in apps use generic names on every OS: **Terminal**, **Files**, **Notes**.
+- Built-in apps use generic names on every OS: **Terminal**, **Files**, **Notes**, **Spreadsheet**. The spreadsheet look (menu row, toolbar, formula bar, lettered grid, sheet tabs, status bar) is shared by the spreadsheet games in `spreadsheet-games/sheet.css`.
 
 ## Looks
 
@@ -90,6 +92,7 @@ Plan, keywords and game build order are in `SEO_PLAN.md` (kept off the public si
 
 - Every listed page has a `<meta name="description">` and a `<link rel="canonical">` to its clean URL (`/`, `/about`, `/<game>/`).
 - Anything search engines should read (title, description, H1, page text, the home page's game rows) is in the HTML file, not added by JS. The home page's H1 and intro sit in a visually hidden `.sr-only` header (class in `os/os.css`; the listed games use the same pattern for their H1 and how-to-play text); its game rows are written into `#list` and `render()` redraws the same rows from `GAMES`, so keep the two in sync.
-- Listed games keep their short `<title>`, because the browser tab is part of the disguise.
+- The original games keep their short `<title>`, because the browser tab is part of the disguise. Classic games use a keyword title (e.g. "Spreadsheet Minesweeper: Minesweeper That Looks Like Excel"); Kramps decided 2026-11-18 that showing it in the tab is OK for now.
+- The home page's hidden header also lists every game's link, since the Files window shows only folders until one is opened.
 - `robots.txt` and `sitemap.xml` are at the root. Add each newly listed page to the sitemap; unlisted games stay out.
 - The Games/About icons link to `/` and `/about` on served sites (`index.html`/`about.html` 307-redirect there), and to the `.html` files under `file:`.
