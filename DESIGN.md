@@ -81,4 +81,5 @@ Live since 2026-11-12. This section covers the visitor-facing side. **How it wor
 ## Analytics
 
 - Google Analytics (GA4, `G-Z9KTWQCDD0`) is loaded by `os/os.js`, so it covers every page that loads the shell: site pages and the listed games. The unlinked experiments aren't tracked. Skipped on localhost and `file:`.
+- Google Ads (`AW-18583243965`) is configured on the same gtag. A successful email signup sends the "Sign-up" conversion (value $1), but only when this browser hasn't signed up before, since `/api/subscribe` answers OK for addresses already on the list.
 - Still open: whether a cookie consent banner is needed.

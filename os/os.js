@@ -104,7 +104,12 @@
     };
     window.gtag('js', new Date());
     window.gtag('config', id);
+    window.gtag('config', ADS_ID);
   }
+
+  // Google Ads: the account's tag, and the conversion sent when someone joins the email list.
+  const ADS_ID = 'AW-18583243965';
+  const ADS_SIGNUP = 'AW-18583243965/1wiHCNSdhLsdEL2Zl51F';
 
   function changed() {
     stamp();
@@ -554,6 +559,9 @@
           body: JSON.stringify({ email, source, token, website: form.elements.website.value }),
         });
         if (res.ok) {
+          // The API answers OK for addresses already on the list too, so only
+          // count the first signup from this browser.
+          if (!signedUp()) window.gtag?.('event', 'conversion', { send_to: ADS_SIGNUP, value: 1.0, currency: 'USD' });
           try {
             localStorage.setItem(SIGNED_UP_KEY, '1');
           } catch {
