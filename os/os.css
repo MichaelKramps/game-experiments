@@ -475,6 +475,7 @@ body.dragging, body.dragging * { user-select: none; }
 .i-fold { fill: #e3e7ec; stroke: #9aa3ad; stroke-width: 1; }
 .i-lines { stroke: #8a95a1; stroke-width: 2; stroke-linecap: round; fill: none; }
 .i-sheet { fill: #2e8a57; }
+.i-board { fill: #2f6fd6; }
 .i-flap { stroke: #9aa3ad; stroke-width: 1.6; stroke-linejoin: round; fill: none; }
 .i-badge { fill: #e5533d; }
 .i-badge-mark { stroke: #ffffff; stroke-width: 2; stroke-linecap: round; fill: #ffffff; }
@@ -747,6 +748,22 @@ body.dragging, body.dragging * { user-select: none; }
 .kg-swatch[data-swatch='light'] { background: linear-gradient(135deg, #ffffff 50%, #e9ecef 50%); }
 .kg-swatch[data-swatch='dark'] { background: linear-gradient(135deg, #2b2b2b 50%, #1a1a1a 50%); }
 
+/* tiny pictures of each task board look: three lists on the board */
+.kg-board-preview {
+  display: flex;
+  gap: 6%;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  padding: 10% 8%;
+  border: 1px solid var(--w-line);
+  border-radius: 4px;
+  background: var(--tb-bg);
+  font-family: var(--tb-font);
+}
+.kg-board-preview i { flex: 1; border-radius: calc(var(--tb-col-radius) / 2.5); border: 1px solid var(--tb-border); border-top: 3px solid var(--tb-accent); background: var(--tb-col); }
+.kg-board-preview i:nth-child(2) { margin-bottom: 18%; }
+.kg-board-preview i:nth-child(3) { margin-bottom: 32%; }
+
 .kg-settings-foot { display: flex; justify-content: flex-end; padding: 10px 20px 16px; }
 
 .kg-btn {
@@ -821,4 +838,91 @@ html:not([data-os='phone']) .kg-dialog.kg-movable { position: absolute; max-heig
   clip: rect(0 0 0 0);
   clip-path: inset(50%);
   white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------------------
+   Task board looks (Settings › Task board), for games played on a task board.
+   Each look sets these tokens; the previews in Settings use them too, so they
+   are set on the preview as well as on <html>.
+
+   --tb-bg          the board behind the lists
+   --tb-col         a list (column)
+   --tb-col-head    a list's header
+   --tb-card        a card
+   --tb-border      list and card borders
+   --tb-fg, --tb-muted  text
+   --tb-accent, --tb-accent-fg  buttons, highlights
+   --tb-font, --tb-col-radius, --tb-card-radius */
+
+[data-board='enterprise'],
+[data-board-preview='enterprise'] {
+  --tb-bg: #f4f5f7;
+  --tb-col: #ffffff;
+  --tb-col-head: #f4f5f7;
+  --tb-card: #ffffff;
+  --tb-border: #dfe1e6;
+  --tb-fg: #172b4d;
+  --tb-muted: #5e6c84;
+  --tb-accent: #0052cc;
+  --tb-accent-fg: #ffffff;
+  --tb-font: 'Segoe UI', -apple-system, Arial, sans-serif;
+  --tb-col-radius: 3px;
+  --tb-card-radius: 3px;
+}
+[data-theme='dark'][data-board='enterprise'],
+[data-theme='dark'] [data-board-preview='enterprise'] {
+  --tb-bg: #1d2125;
+  --tb-col: #22272b;
+  --tb-col-head: #1d2125;
+  --tb-card: #2c333a;
+  --tb-border: #38414a;
+  --tb-fg: #b6c2cf;
+  --tb-muted: #8c9bab;
+  --tb-accent: #579dff;
+  --tb-accent-fg: #1d2125;
+}
+
+[data-board='basic'],
+[data-board-preview='basic'] {
+  --tb-bg: #0079bf;
+  --tb-col: #ebecf0;
+  --tb-col-head: #ebecf0;
+  --tb-card: #ffffff;
+  --tb-border: #d6d9dc;
+  --tb-fg: #172b4d;
+  --tb-muted: #5e6c84;
+  --tb-accent: #5aac44;
+  --tb-accent-fg: #ffffff;
+  --tb-font: 'Trebuchet MS', -apple-system, Arial, sans-serif;
+  --tb-col-radius: 10px;
+  --tb-card-radius: 6px;
+}
+[data-theme='dark'][data-board='basic'],
+[data-theme='dark'] [data-board-preview='basic'] {
+  --tb-bg: #0c4a74;
+  --tb-col: #101204;
+  --tb-col-head: #101204;
+  --tb-card: #22272b;
+  --tb-border: #333b43;
+  --tb-fg: #b6c2cf;
+  --tb-muted: #8c9bab;
+  --tb-accent: #4bce97;
+  --tb-accent-fg: #101204;
+}
+
+/* Pro is dark in both themes, like the Evergreen game it comes from. */
+[data-board='pro'],
+[data-board-preview='pro'] {
+  --tb-bg: #0d0d1a;
+  --tb-col: #1a1a2e;
+  --tb-col-head: #141422;
+  --tb-card: #0d0d1a;
+  --tb-border: #2a2a4a;
+  --tb-fg: #ffffff;
+  --tb-muted: #888888;
+  --tb-accent: #44ff88;
+  --tb-accent-fg: #0d0d1a;
+  --tb-font: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  --tb-col-radius: 8px;
+  --tb-card-radius: 6px;
 }

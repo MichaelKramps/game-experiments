@@ -1,0 +1,214 @@
+/* Solitaire on a task board. Colors, fonts and corners come from the task
+   board look in Settings (the --tb-* tokens in os/os.css). */
+
+/* Suit colors: two colors like real cards (hearts and diamonds red, spades
+   and clubs black), lighter on dark boards. */
+:root {
+  --su-S: #172b4d;
+  --su-H: #c9372c;
+  --su-D: #c9372c;
+  --su-C: #172b4d;
+}
+[data-theme='dark'],
+[data-board='pro'] {
+  --su-S: #dfe1e6;
+  --su-H: #f87168;
+  --su-D: #f87168;
+  --su-C: #dfe1e6;
+}
+
+.tb-win { font-family: var(--tb-font); }
+
+/* Board header: name, actions, moves and time */
+.tb-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--w-line);
+  font-size: 13px;
+}
+.tb-name { font-size: 15px; font-weight: 700; white-space: nowrap; }
+.tb-tools { display: flex; align-items: center; gap: 6px; min-width: 0; overflow-x: auto; }
+.tb-btn,
+.tb-pick select {
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--w-btn-border);
+  border-radius: 4px;
+  background: var(--w-btn);
+  color: var(--w-fg);
+  font: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.tb-btn:hover { background: var(--w-hover); }
+.tb-btn:disabled { opacity: 0.45; cursor: default; }
+.tb-btn:disabled:hover { background: var(--w-btn); }
+.tb-pick { display: flex; align-items: center; gap: 6px; color: var(--w-muted); font-size: 12.5px; white-space: nowrap; }
+.tb-pick select { padding: 0 6px; }
+.tb-stats { display: flex; gap: 14px; margin-left: auto; color: var(--w-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* Message bar */
+.tb-info {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  padding: 7px 14px;
+  border-bottom: 1px solid var(--w-line);
+  background: color-mix(in srgb, var(--tb-accent) 12%, var(--w-bg));
+  font-size: 12.5px;
+}
+.tb-info[hidden] { display: none; }
+.tb-info .kg-btn { padding: 3px 10px; font-size: 12px; }
+[data-os='phone'] .tb-info .kg-btn { width: auto; padding: 6px 12px; }
+
+/* The board: two rows of lists on the board background */
+.tb-board {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 14px;
+  background: var(--tb-bg);
+  color: var(--tb-fg);
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+.tb-row { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 10px; align-items: start; }
+.tb-top { margin-bottom: 12px; }
+
+.tb-list {
+  border: 1px solid var(--tb-border);
+  border-radius: var(--tb-col-radius);
+  background: var(--tb-col);
+  overflow: hidden;
+}
+.tb-list.can { border-color: var(--tb-accent); box-shadow: 0 0 0 2px var(--tb-accent); }
+.tb-list-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 7px 9px;
+  background: var(--tb-col-head);
+  color: var(--tb-muted);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.tb-list-head span:first-child { overflow: hidden; text-overflow: ellipsis; }
+.tb-count { padding: 0 6px; border-radius: 9px; background: color-mix(in srgb, var(--tb-muted) 18%, transparent); font-size: 11px; font-weight: 500; font-variant-numeric: tabular-nums; }
+[data-board='enterprise'] .tb-list-head { text-transform: uppercase; font-size: 11px; letter-spacing: 0.03em; }
+[data-board='basic'] .tb-list-head { color: var(--tb-fg); font-weight: 700; }
+[data-board='pro'] .tb-list-head { color: var(--tb-accent); letter-spacing: 0.04em; }
+
+.tb-cards { position: relative; margin: 0 7px 8px; }
+
+/* Cards are tickets */
+.tb-card {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 58px;
+  padding: 5px 8px 5px 10px;
+  border: 1px solid var(--tb-border);
+  border-radius: var(--tb-card-radius);
+  background: var(--tb-card);
+  box-shadow: 0 1px 1px rgb(9 30 66 / 0.18);
+  font-size: 12.5px;
+  overflow: hidden;
+}
+.tb-card.up { border-left: 4px solid var(--su); }
+.tb-card.s-S { --su: var(--su-S); }
+.tb-card.s-H { --su: var(--su-H); }
+.tb-card.s-D { --su: var(--su-D); }
+.tb-card.s-C { --su: var(--su-C); }
+.tb-card.pickable { cursor: grab; touch-action: none; }
+.tb-card.sel { outline: 2px solid var(--tb-accent); outline-offset: -1px; z-index: 1; }
+.tb-card.lifted { visibility: hidden; }
+.tb-card-line { display: flex; align-items: baseline; gap: 7px; white-space: nowrap; }
+.tb-card-line b { color: var(--su); font-weight: 700; font-variant-numeric: tabular-nums; }
+.tb-card-name { overflow: hidden; color: var(--tb-fg); text-overflow: ellipsis; }
+.tb-card-meta { margin-top: 7px; }
+.tb-label {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--su) 16%, var(--tb-card));
+  color: var(--su);
+  font-size: 10.5px;
+  font-weight: 600;
+}
+
+/* Face-down cards: collapsed tickets with greyed-out lines */
+.tb-card.down {
+  background:
+    linear-gradient(var(--tb-border), var(--tb-border)) 9px 9px / 45% 5px no-repeat,
+    linear-gradient(var(--tb-border), var(--tb-border)) 9px 21px / 70% 5px no-repeat,
+    var(--tb-col-head);
+}
+.tb-card.down.slim {
+  background:
+    linear-gradient(var(--tb-border), var(--tb-border)) 9px 50% / 55% 5px no-repeat,
+    var(--tb-col-head);
+  box-shadow: none;
+}
+.tb-deck-text { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; background: var(--tb-col-head); color: var(--tb-muted); font-size: 12px; line-height: 1.3; }
+.tb-stock .tb-cards { cursor: pointer; }
+
+.tb-empty {
+  display: grid;
+  place-items: center;
+  height: 58px;
+  padding: 4px;
+  border: 1px dashed var(--tb-border);
+  border-radius: var(--tb-card-radius);
+  color: var(--tb-muted);
+  font-size: 11.5px;
+  text-align: center;
+}
+.tb-deck-again { color: var(--tb-accent); font-weight: 600; }
+
+/* The cards being dragged */
+.tb-ghost { position: fixed; z-index: 100; pointer-events: none; font-family: var(--tb-font); }
+.tb-ghost .tb-card { box-shadow: 0 6px 16px rgb(0 0 0 / 0.25); }
+
+.short { display: none; }
+
+/* Phones: smaller tickets with just the code, and short list names */
+[data-os='phone'] .full { display: none; }
+[data-os='phone'] .short { display: inline; }
+[data-os='phone'] .tb-head { flex-wrap: wrap; gap: 8px 10px; padding: 8px 10px; }
+[data-os='phone'] .tb-name { display: none; }
+[data-os='phone'] .tb-stats { margin-left: 0; }
+[data-os='phone'] .tb-board { padding: 8px 6px; }
+[data-os='phone'] .tb-row { gap: 4px; }
+[data-os='phone'] .tb-list-head { padding: 5px 4px; font-size: 10px; }
+[data-os='phone'] .tb-list-head .tb-count { display: none; }
+[data-os='phone'] .tb-cards { margin: 0 3px 5px; }
+[data-os='phone'] .tb-card,
+[data-os='phone'] .tb-empty { height: 44px; }
+[data-os='phone'] .tb-card { padding: 3px 3px 3px 5px; font-size: 12px; }
+[data-os='phone'] .tb-card.up { border-left-width: 3px; }
+[data-os='phone'] .tb-card-name,
+[data-os='phone'] .tb-card-meta { display: none; }
+[data-os='phone'] .tb-empty { font-size: 9.5px; }
+[data-os='phone'] .tb-deck-text { font-size: 10px; }
+
+/* Help */
+.tb-help .kg-dialog { display: flex; flex-direction: column; width: min(500px, 100%); }
+.tb-help .notes-page,
+[data-os='value'] .tb-help .notes-page { flex: 0 1 auto; min-height: 0; padding: 16px 20px; font-size: 15px; }
+.tb-help .notes-page h2 { margin: 14px 0 4px; font-size: 1em; }
+.tb-help .notes-page h2:first-child { margin-top: 0; }
+.tb-help .notes-page ul { margin: 0 0 6px; padding-left: 1.4em; }
+.tb-help .notes-page li + li { margin-top: 6px; }
+.tb-help .notes-status { align-items: center; }
+.tb-help .notes-status .kg-btn { margin-left: auto; }
+[data-os='quality'] .tb-help .notes-status,
+[data-os='phone'] .tb-help .notes-status { display: flex; }

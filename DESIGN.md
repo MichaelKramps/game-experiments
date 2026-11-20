@@ -6,7 +6,7 @@ Status: first version built (2026-10-23). Expect iteration on the look and layou
 
 ## Implementation
 
-- `os/os.js` + `os/os.css`: the shared shell. Every site page and listed game loads both (os.js in `<head>`, before stylesheets). It stamps `<html data-os data-theme>`, adds the desktop icons, the OS bar, a launcher menu and the Settings window, and exposes `window.KG` for games (`os`, `pick`, `prompt`, `path`, `workArea`, `makeWindow`, `onChange`). The comments at the top of each file document the API and color tokens.
+- `os/os.js` + `os/os.css`: the shared shell. Every site page and listed game loads both (os.js in `<head>`, before stylesheets). It stamps `<html data-os data-theme data-board>`, adds the desktop icons, the OS bar, a launcher menu and the Settings window, and exposes `window.KG` for games (`os`, `pick`, `prompt`, `path`, `workArea`, `makeWindow`, `onChange`). The comments at the top of each file document the API and color tokens.
 - `os/site.css`: contents of the site's own windows (Files, Notes).
 - Games keep only content styles and build on the shell's `--w-*` / `--t-*` color tokens. Window chrome comes from the shell.
 - Phone layout = viewport under 1080px wide (`max-width: 1079.98px`). That covers every phone either way up (landscape phones are about 667–1000px wide) and tablets in portrait. Tablets in landscape (about 1180px and up) and desktop windows 1080px and wider get the desktop look. In the phone layout the OS is always `phone`, and in-game text uses the Power (unix) style.
@@ -33,8 +33,8 @@ Every site page **and** every listed game shows the same desktop icons:
   - diff guess key (`diff-guess-key/`): listed under this name, with the same name in the browser tab. Since 2026-11-11 it's a plain word-guessing game with no journal (it was Kramps' Journal before that). The folder was `jamies-journal/` until 2026-11-12; the old URL 301-redirects to `/diff-guess-key/`.
   - Since 2026-11-18 the games are a folder tree: **Games** › **Free Games** › two folders. The page opens on **Free Games** (no hash); `#games` is the top level, which holds only Free Games for now. Up goes to the parent folder, the path shows parents as links, and the sidebar lists Free Games with its folders indented under it. Free Games holds:
     - **Kramps Games** (`#kramps`): the originals, diff guess key and Ctrl+Alt+Deal (`ctrl-alt-deal/`).
-    - **Classic Games** (`#classic`): classic games reskinned as work. Spreadsheet ones live under `/spreadsheet-games/<game>/` (see `SEO_PLAN.md`). So far: Minesweeper (`spreadsheet-games/minesweeper/`) and Chess (`spreadsheet-games/chess/`), each with its own `DESIGN.md`. `/spreadsheet-games/` 302-redirects to `/#classic` until it gets its own hub page.
-  - A game's icon in the list shows the app it's played in: a terminal by default, `icon: 'sheet'` for a spreadsheet (Minesweeper, Chess), `icon: 'file'` for a file explorer (Ctrl+Alt+Deal).
+    - **Classic Games** (`#classic`): classic games reskinned as work. Spreadsheet ones live under `/spreadsheet-games/<game>/` (see `SEO_PLAN.md`). So far: Minesweeper (`spreadsheet-games/minesweeper/`) and Chess (`spreadsheet-games/chess/`), plus Solitaire on a task board (`solitaire/`), each with its own `DESIGN.md`. `/spreadsheet-games/` 302-redirects to `/#classic` until it gets its own hub page.
+  - A game's icon in the list shows the app it's played in: a terminal by default, `icon: 'sheet'` for a spreadsheet (Minesweeper, Chess), `icon: 'file'` for a file explorer (Ctrl+Alt+Deal), `icon: 'board'` for a task board (Solitaire).
   - (Changed 2026-11-10: the Word Games, Deckbuilding Games and World of Evergreen folders were removed. Letter Groups and Jo's Discovery are now unlisted, and Jamie's Journal was renamed Kramps' Journal on the list.)
 - (Changed 2026-11-12: the Games page became the home page. The old home page's "Welcome" window and the Home desktop icon were removed; the Games icon now links to `/`. `games.html` was deleted and 301-redirected to `/`. A game, one folder down, highlights Games.)
 - **About (`about.html`)**: a desktop with a notepad window open holding the about text. Keep the current text minus the full-games/Google-login part (not built yet).
@@ -50,11 +50,13 @@ The modal holds the visitor's choices, saved in browser storage (`localStorage`)
 |---|---|---|
 | OS | **Value** (Windows-like), **Quality** (Mac-like), **Power** (Linux-like, GNOME/Ubuntu style) | Value |
 | Theme | Light, Dark | Light |
+| Task board | **Basic** (Trello-like: blue board, rounded light lists, green accent), **Pro** (Evergreen's own: dark navy, neon green, monospace; dark in both themes), **Enterprise** (Jira-like: grey board, white square lists, uppercase headers, blue accent) | Enterprise |
 
 - Each OS look should read as the real OS at a glance, but **never use real trademarks**: no real OS or product names (Windows, macOS, Linux, PowerShell, Finder, Terminal.app…) and no real logos, in labels, window titles or game text.
 - The OS setting carries into the listed games: window chrome, terminal styling (Value's terminal looks like PowerShell, etc.), and in-game text such as prompts and commands may change to match.
 - The theme setting also carries into the games, including their content, not just the frame.
-- Built-in apps use generic names on every OS: **Terminal**, **Files**, **Notes**, **Spreadsheet**. The spreadsheet look (menu row, toolbar, formula bar, lettered grid, sheet tabs, status bar) is shared by the spreadsheet games in `spreadsheet-games/sheet.css`.
+- The task board setting (added 2026-11-20, ported from the Evergreen game's Agile Board setting) styles games played on a task board, starting with the planned solitaire. os.js stamps `<html data-board>`; os.css sets `--tb-*` tokens per look, with dark-theme versions of Basic and Enterprise. Names follow the OS tiers instead of product names.
+- Built-in apps use generic names on every OS: **Terminal**, **Files**, **Notes**, **Spreadsheet**, **Tasks** (the task board). The spreadsheet look (menu row, toolbar, formula bar, lettered grid, sheet tabs, status bar) is shared by the spreadsheet games in `spreadsheet-games/sheet.css`.
 
 ## Looks
 
@@ -68,7 +70,7 @@ All modern-era. The desktop is a solid color for now.
 | Dark terminal | classic blue shell | dark gray | aubergine |
 | In-game shell | `PS C:\Users\jo>`, `dir`, `type`, backslash paths | zsh `jo@host ~ %` | bash `jo@host:~$` |
 
-- **Phone** (under 1080px wide): a generic layout for every OS: windows fill the screen, and Games/About/New Games/Settings sit in a bottom tab bar (slimmer in landscape on phones). The Settings window shows only the theme option.
+- **Phone** (under 1080px wide): a generic layout for every OS: windows fill the screen, and Games/About/New Games/Settings sit in a bottom tab bar (slimmer in landscape on phones). The Settings window shows the theme and task board options, not the OS.
 
 ## Email list
 

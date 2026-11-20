@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Kramps Games: Games That Look Like Work</title>
-  <meta name="description" content="Free browser games disguised as work: Minesweeper and chess in a spreadsheet, a terminal word game and a poker deckbuilder that look like everyday computer tasks. No ads, no sign up.">
+  <meta name="description" content="Free browser games disguised as work: Minesweeper and chess in a spreadsheet, solitaire on a task board, a terminal word game and a poker deckbuilder that look like everyday computer tasks. No ads, no sign up.">
   <link rel="canonical" href="https://kramps.games/">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Kramps Games">
@@ -30,6 +30,7 @@
     <ul>
       <li><a href="/spreadsheet-games/minesweeper/">Spreadsheet Minesweeper</a>: Minesweeper in a spreadsheet that looks like Excel.</li>
       <li><a href="/spreadsheet-games/chess/">Spreadsheet Chess</a>: chess against the computer in a spreadsheet that looks like Excel.</li>
+      <li><a href="/solitaire/">Solitaire at work</a>: free Klondike solitaire with no ads that looks like a task board.</li>
     </ul>
   </header>
   <div class="window" id="files" data-app="Files">
@@ -55,7 +56,7 @@
           <a class="file-row" href="#classic">
             <span class="file-name"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 7a2 2 0 0 1 2-2h5l2 2h9a2 2 0 0 1 2 2v1H2z" class="i-folder-back"/><rect x="2" y="9" width="20" height="11" rx="2" class="i-folder"/></svg><span>Classic Games</span></span>
             <span class="file-kind">Folder</span>
-            <span class="file-desc">2 games</span>
+            <span class="file-desc">3 games</span>
           </a>
         </div>
         <div class="files-status" id="status">2 items</div>
@@ -84,6 +85,7 @@
       games: [
         { name: 'Minesweeper', href: 'spreadsheet-games/minesweeper/', kind: 'Logic puzzle', icon: 'sheet', desc: 'clear the sheet without revealing a mine' },
         { name: 'Chess', href: 'spreadsheet-games/chess/', kind: 'Board game', icon: 'sheet', desc: 'play chess against the computer, easy to hard' },
+        { name: 'Solitaire', href: 'solitaire/', kind: 'Card game', icon: 'board', desc: 'Klondike solitaire on a task board, draw 3 or draw 1' },
       ],
     };
     const FREE = { id: '', name: 'Free Games', folders: [KRAMPS, CLASSIC] };
@@ -102,7 +104,8 @@
     // A game's icon shows the app it's played in: a terminal (the default),
     // a spreadsheet, or a file for games played in a file explorer.
     const FILE_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2.5h8.5l4.5 4.5v13a1.5 1.5 0 0 1-1.5 1.5h-11.5a1.5 1.5 0 0 1-1.5-1.5v-16a1.5 1.5 0 0 1 1.5-1.5z" class="i-paper"/><path d="M14.5 2.5V7h4.5" class="i-fold"/><path d="M8 12h8M8 15.5h8M8 19h5" class="i-lines"/></svg>';
-    const GAME_ICONS = { sheet: SHEET_ICON, file: FILE_ICON };
+    const BOARD_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2.5" class="i-paper"/><rect x="6" y="6.5" width="3.5" height="11" rx="1" class="i-board"/><rect x="10.25" y="6.5" width="3.5" height="7.5" rx="1" class="i-board"/><rect x="14.5" y="6.5" width="3.5" height="4.5" rx="1" class="i-board"/></svg>';
+    const GAME_ICONS = { sheet: SHEET_ICON, file: FILE_ICON, board: BOARD_ICON };
 
     const $ = (id) => document.getElementById(id);
     const esc = (s) => s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);

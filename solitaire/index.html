@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Solitaire at Work: Free Klondike, No Ads, Looks Like a Task Board</title>
+  <meta name="description" content="Play Klondike solitaire at work on a board that looks like a team's task tracker. Free, no ads, no download, no sign up. Draw 3 or draw 1.">
+  <link rel="canonical" href="https://kramps.games/solitaire/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Kramps Games">
+  <meta property="og:title" content="Solitaire at Work: Free Klondike, No Ads, Looks Like a Task Board">
+  <meta property="og:description" content="Klondike solitaire disguised as a task board. Free, no ads. A game that looks like work.">
+  <meta property="og:url" content="https://kramps.games/solitaire/">
+  <script src="../os/os.js"></script>
+  <link rel="stylesheet" href="../os/os.css">
+  <link rel="stylesheet" href="../os/site.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Read by search engines and screen readers; hidden so the window keeps the disguise. -->
+  <header class="sr-only">
+    <h1>Solitaire at work: free Klondike solitaire that looks like a task board</h1>
+    <p>A hidden solitaire game for the office. The cards are tickets on a team's task board, so it looks like work while you play. Classic Klondike solitaire, free in your browser with no ads, no download and no sign up.</p>
+    <h2>How to play</h2>
+    <ul>
+      <li>Move every card to the four Done lists, one per suit, from ace up to king.</li>
+      <li>In the seven columns, build down in alternating colors: hearts and diamonds go on spades and clubs, and spades and clubs go on hearts and diamonds. Only a king can go in an empty column.</li>
+      <li>Click a card to pick it up, then click where it goes, or drag it. Places it can go are highlighted. Double-click a card to send it to Done.</li>
+      <li>Click the Deck to turn over three cards (or one, with Draw 1). When the Deck runs out, click it to start it over.</li>
+      <li>Cards have no suit symbols: each one is named, like eight-hearts (8H), and colored like real cards: hearts and diamonds red, spades and clubs black.</li>
+    </ul>
+    <p>More <a href="/#classic">classic games that look like work</a>: <a href="/spreadsheet-games/minesweeper/">Spreadsheet Minesweeper</a> and <a href="/spreadsheet-games/chess/">Spreadsheet Chess</a>. Or try an original: <a href="/ctrl-alt-deal/">Ctrl+Alt+Deal</a>, a poker deckbuilder with cards as files, and <a href="/diff-guess-key/">diff guess key</a>, a word game that looks like a terminal. <a href="/">All Kramps Games</a>.</p>
+  </header>
+
+  <div class="window tb-win" id="board" data-app="Tasks">
+    <div class="titlebar">
+      <div class="lights"><span class="close"></span><span class="min"></span><span class="max"></span></div>
+      <div class="window-title" id="board-title">Solitaire</div>
+    </div>
+    <div class="tb-head">
+      <div class="tb-name">Q4 Planning</div>
+      <div class="tb-tools">
+        <button class="tb-btn" type="button" id="new" title="New game (F2)">New game</button>
+        <button class="tb-btn" type="button" id="undo" title="Undo (Ctrl+Z)">Undo</button>
+        <label class="tb-pick">Draw <select id="draw" aria-label="Cards turned over from the Deck">
+          <option value="3">3 cards</option>
+          <option value="1">1 card</option>
+        </select></label>
+        <button class="tb-btn" type="button" id="help">Help</button>
+      </div>
+      <div class="tb-stats"><span id="moves"></span><span id="clock"></span></div>
+    </div>
+    <div class="tb-info" id="info" aria-live="polite"></div>
+    <div class="tb-board" id="lists"></div>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>

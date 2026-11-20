@@ -2,9 +2,12 @@
 // computer. Load this file in <head>, before any stylesheet that depends on
 // it, so the OS and theme are stamped on <html> before the first paint:
 //
-//   <html data-os="value|quality|power|phone" data-theme="light|dark">
+//   <html data-os="value|quality|power|phone" data-theme="light|dark"
+//         data-board="basic|pro|enterprise">
 //
-// Settings (OS + theme) live in localStorage and apply site-wide. Below 1080px
+// Settings (OS, theme, task board look) live in localStorage and apply
+// site-wide. The task board look styles games played on a task board, through
+// the --tb-* tokens in os.css. Below 1080px
 // wide (every phone either way up, most tablets in portrait, narrow desktop
 // windows) the OS is always "phone" — a generic layout — and only the theme
 // applies.
@@ -12,7 +15,7 @@
 // Once the DOM is ready the shell adds the desktop icons (Games, About,
 // New Games, Settings), the OS's bar (taskbar / menu bar / top bar), a launcher
 // menu, the Settings window and the New Games (email signup) window. Pages describe their open windows with
-// <div class="window" data-app="Terminal|Files|Notes"> so the bars can list them.
+// <div class="window" data-app="Terminal|Files|Notes|Spreadsheet|Tasks"> so the bars can list them.
 //
 // Games use window.KG:
 //   KG.os()            effective OS ('phone' on narrow screens)
@@ -30,7 +33,11 @@
   const KEY = 'kramps-os-settings';
   const OSES = { value: 'Value', quality: 'Quality', power: 'Power' };
   const THEMES = { light: 'Light', dark: 'Dark' };
-  const DEFAULTS = { os: 'value', theme: 'light' };
+  // Task board looks, named like the OS tiers: Basic is the friendly blue one
+  // with rounded lists, Pro the dark one with neon green, Enterprise the grey,
+  // square, corporate one. (Ported from the Evergreen game's agile board.)
+  const BOARDS = { basic: 'Basic', pro: 'Pro', enterprise: 'Enterprise' };
+  const DEFAULTS = { os: 'value', theme: 'light', board: 'enterprise' };
   // The phone layout: anything under 1080px wide. Phones in landscape top out
   // around 1000px, so they all get it.
   const PHONE = window.matchMedia('(max-width: 1079.98px)');
@@ -57,6 +64,7 @@
     return {
       os: saved.os in OSES ? saved.os : DEFAULTS.os,
       theme: saved.theme in THEMES ? saved.theme : DEFAULTS.theme,
+      board: saved.board in BOARDS ? saved.board : DEFAULTS.board,
     };
   }
 
@@ -75,6 +83,7 @@
   function stamp() {
     root.dataset.os = os();
     root.dataset.theme = settings.theme;
+    root.dataset.board = settings.board;
     if (os() === 'power') loadFonts();
   }
 
@@ -346,6 +355,7 @@
     Notes: `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="2.5" width="16" height="19" rx="2.5" class="i-paper"/><path d="M8 8h8M8 12h8M8 16h5" class="i-lines"/></svg>`,
     Account: `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2.5" class="i-paper"/><path d="M7 8h10M7 12h10M7 16h6" class="i-lines"/><path d="M12 8v8" class="i-lines"/></svg>`,
     Spreadsheet: `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2.5" class="i-paper"/><path d="M3.5 5.5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2V8h-17z" class="i-sheet"/><path d="M4 13h16M4 17.5h16M9.5 8v12.5M15 8v12.5" class="i-lines"/></svg>`,
+    Tasks: `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2.5" class="i-paper"/><rect x="6" y="6.5" width="3.5" height="11" rx="1" class="i-board"/><rect x="10.25" y="6.5" width="3.5" height="7.5" rx="1" class="i-board"/><rect x="14.5" y="6.5" width="3.5" height="4.5" rx="1" class="i-board"/></svg>`,
   };
 
   const NAV = [
@@ -461,6 +471,11 @@
             <legend>Theme</legend>
             <div class="kg-choices kg-themes">${Object.entries(THEMES).map(([v, l]) => choice('kg-theme', v, l, `<span class="kg-swatch" data-swatch="${v}"></span>`)).join('')}</div>
           </fieldset>
+          <fieldset class="kg-field">
+            <legend>Task board</legend>
+            <div class="kg-choices">${Object.entries(BOARDS).map(([v, l]) => choice('kg-board', v, l, `<span class="kg-board-preview" data-board-preview="${v}"><i></i><i></i><i></i></span>`)).join('')}</div>
+            <p class="kg-hint">Changes games played on a task board.</p>
+          </fieldset>
         </div>
         <div class="kg-settings-foot"><button class="kg-btn kg-primary" type="button" data-kg-close>Done</button></div>
       </div>`,
@@ -468,6 +483,7 @@
     modal.addEventListener('change', (e) => {
       if (e.target.name === 'kg-os') set({ os: e.target.value });
       if (e.target.name === 'kg-theme') set({ theme: e.target.value });
+      if (e.target.name === 'kg-board') set({ board: e.target.value });
     });
     modal.addEventListener('click', (e) => {
       if (e.target === modal || e.target.closest('[data-kg-close]')) closeModals();
@@ -623,7 +639,7 @@
 
   function syncSettings() {
     for (const input of els.settings.querySelectorAll('input')) {
-      input.checked = input.value === settings[input.name === 'kg-os' ? 'os' : 'theme'];
+      input.checked = input.value === settings[input.name.slice(3)]; // kg-os, kg-theme, kg-board
     }
   }
 

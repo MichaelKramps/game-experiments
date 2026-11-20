@@ -58,7 +58,7 @@ Takeaways:
 2. Sudoku (spreadsheet)
 3. 2048 (spreadsheet) — original is MIT-licensed; keep the license notice if reusing code
 4. Chess (spreadsheet) — built 2026-11-19 at `/spreadsheet-games/chess/`, ahead of Sudoku and 2048; computer opponent is Stockfish (GPLv3) in a Web Worker
-5. Solitaire / Klondike — disguise undecided (not a spreadsheet); see "Solitaire keywords" above
+5. Solitaire / Klondike — built 2026-11-20 at `/solitaire/` as a task board (not a spreadsheet), ahead of Sudoku and 2048; see "Solitaire keywords" above
 
 Build the spreadsheet look once as a reusable shell inside the `os/` desktop (column letters, row numbers, formula bar, sheet tabs, selected-cell box, themed per OS setting), so game #1 is "shell + Minesweeper" and later games are mostly game logic.
 
