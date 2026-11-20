@@ -1,0 +1,161 @@
+/* Chess's cells. The board is the bordered range B2:I9 on the Budget tab, with
+   the file letters in row 1 and the rank numbers in column A. The Moves tab
+   holds the move list in A1:C. */
+
+:root {
+  --ch-band: #5b7392 4%;      /* the darker squares: a faint tint over the cell background */
+  --ch-black: #1b1b1b;        /* black's pieces */
+  --ch-white: #1b1b1b;        /* white's pieces (outlined glyphs; filled in dark mode) */
+  --ch-letter-black: #1d5fbf; /* black's pieces in letter mode */
+  --ch-pick: #d3e6dc;
+  --ch-last: #fff4ce;
+  --ch-check: #fbd5d1;
+}
+[data-theme='dark'] {
+  --ch-band: #ffffff 3%;
+  --ch-black: #121212;
+  --ch-white: #f4f4f4;
+  --ch-letter-black: #7fb2ff;
+  --ch-pick: #24483a;
+  --ch-last: #433519;
+  --ch-check: #5a2a26;
+}
+
+/* Taller rows and wider columns than the default sheet. */
+#sheet { --s-cell: 72px; --s-row: 32px; }
+[data-os='phone'] #sheet { --s-cell: 36px; --s-row: 36px; }
+
+.sheet-grid td { position: relative; font-size: 13px; cursor: cell; }
+
+/* Move list columns (as wide as the rest now that every column is wide) */
+.sheet-grid th.wide,
+.sheet-grid td.wide { width: var(--s-cell); min-width: var(--s-cell); }
+.sheet-grid td.log { padding: 0 6px; text-align: left; font-size: 12.5px; }
+.sheet-grid td.log.num { text-align: right; color: var(--w-muted); }
+.sheet-grid td.loghead { padding: 0 6px; text-align: left; font-weight: 600; font-size: 12.5px; border-bottom: 1px solid var(--w-muted); }
+.sheet-grid td.loghead.num { text-align: right; }
+.sheet-grid td.result { font-weight: 600; }
+
+/* Board labels (a–h above, 8–1 beside) */
+.sheet-grid td.lab { color: var(--w-muted); font-size: 12px; font-weight: 600; }
+
+/* Squares */
+.sheet-grid td.sq { background: var(--w-bg); }
+.sheet-grid td.sq.dk { background: color-mix(in srgb, var(--ch-band), var(--w-bg)); }
+.sheet-grid td.sq.last { background: var(--ch-last); }
+.sheet-grid td.sq.pick { background: var(--ch-pick); }
+.sheet-grid td.sq.check { background: var(--ch-check); }
+.playing .sheet-grid td.sq.mine { cursor: pointer; }
+
+/* the board's outer edge */
+.sheet-grid td.et { border-top: 1px solid var(--w-muted); }
+.sheet-grid td.el { border-left: 1px solid var(--w-muted); }
+.sheet-grid td.er { border-right: 1px solid var(--w-muted); }
+.sheet-grid td.eb { border-bottom: 1px solid var(--w-muted); }
+
+/* Pieces: chess symbols, or letter codes */
+.sheet-grid td.pc {
+  font-family: 'Segoe UI Symbol', 'Apple Symbols', 'Noto Sans Symbols 2', 'DejaVu Sans', var(--ui);
+  font-size: 23px;
+  line-height: 1;
+}
+.sheet-grid td.pc.w { color: var(--ch-white); }
+.sheet-grid td.pc.b { color: var(--ch-black); }
+/* Dark mode: Black's dark pieces get a light outline so they show on the dark cells */
+[data-theme='dark'] .sheet-grid td.pc.b { -webkit-text-stroke: 1px #c4c4c4; }
+[data-theme='dark'] .letters .sheet-grid td.pc.b { -webkit-text-stroke: 0; }
+/* Points: plain numbers, Black's negative values in red like a budget's */
+[data-pieces='points'].letters .sheet-grid td.pc,
+[data-pieces='points'].letters .ch-promo .g { font-weight: 400; font-variant-numeric: tabular-nums; }
+[data-pieces='points'] .sheet-grid td.pc.b { color: var(--s-bad); }
+[data-theme='dark'] .ch-promo .g { color: var(--ch-white); }
+.letters .sheet-grid td.pc { font-family: var(--ui); font-size: 14px; font-weight: 600; }
+.letters .sheet-grid td.pc.b { color: var(--ch-letter-black); }
+[data-pieces='points'].letters .sheet-grid td.pc.b { color: var(--s-bad); }
+
+/* Where the picked piece can go: a dot on an empty square, a ring on a capture */
+.sheet-grid td.to::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 9px;
+  height: 9px;
+  margin: -4.5px 0 0 -4.5px;
+  border-radius: 50%;
+  background: var(--s-accent);
+  opacity: 0.55;
+  pointer-events: none;
+}
+.sheet-grid td.to.cap::after {
+  inset: 2px;
+  width: auto;
+  height: auto;
+  margin: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: inset 0 0 0 2px var(--s-accent);
+}
+
+/* the selected cell */
+.sheet-grid td.sel { box-shadow: inset 0 0 0 2px var(--s-accent); }
+
+/* Promotion: a dropdown like a data-validation list */
+.ch-promo {
+  position: fixed;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  min-width: 128px;
+  padding: 3px;
+  border: 1px solid var(--w-border);
+  border-radius: 4px;
+  background: var(--w-bg);
+  box-shadow: 0 6px 18px rgb(0 0 0 / 0.18);
+  font-family: var(--ui);
+  font-size: 13px;
+}
+.ch-promo button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border: none;
+  border-radius: 3px;
+  background: none;
+  color: var(--w-fg);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.ch-promo button:hover,
+.ch-promo button:focus-visible { background: var(--w-hover); outline: none; }
+.ch-promo .g { min-width: 26px; font-family: 'Segoe UI Symbol', 'Apple Symbols', 'Noto Sans Symbols 2', 'DejaVu Sans', var(--ui); font-size: 20px; text-align: center; }
+.letters .ch-promo .g { font-family: var(--ui); font-size: 14px; font-weight: 600; }
+[data-os='phone'] .ch-promo button { padding: 10px 12px; }
+
+/* Help: the license line */
+.sheet-help .credits { color: var(--w-muted); font-size: 0.85em; }
+
+/* Custom rating dialog */
+.ch-custom .kg-dialog { display: flex; flex-direction: column; width: min(360px, 100%); font-family: var(--ui); }
+.ch-custom-body { display: grid; gap: 12px; padding: 16px 18px 8px; }
+.ch-custom-body label { display: grid; grid-template-columns: 1fr 96px; align-items: center; column-gap: 12px; font-size: 13.5px; font-weight: 600; }
+.ch-custom-body label span { grid-row: 2; color: var(--w-muted); font-size: 12px; font-weight: 400; }
+.ch-custom-body input {
+  grid-row: 1 / span 2;
+  grid-column: 2;
+  height: 30px;
+  padding: 0 8px;
+  border: 1px solid var(--w-btn-border);
+  border-radius: 4px;
+  background: var(--w-bg);
+  color: var(--w-fg);
+  font: inherit;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+.ch-custom-body input:focus { outline: 2px solid var(--s-accent); outline-offset: -1px; }
+.ch-custom-note { margin: 0; color: var(--w-muted); font-size: 12px; line-height: 1.45; }
+.ch-custom-foot { display: flex; justify-content: flex-end; gap: 8px; padding: 10px 18px 16px; }
+[data-os='phone'] .ch-custom-foot .kg-btn { width: auto; flex: 1; }

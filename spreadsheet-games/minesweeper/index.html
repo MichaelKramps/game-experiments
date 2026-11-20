@@ -21,18 +21,18 @@
   <!-- Read by search engines and screen readers; hidden so the window keeps the disguise. -->
   <header class="sr-only">
     <h1>Spreadsheet Minesweeper: Minesweeper in an Excel-style spreadsheet</h1>
-    <p>A free Minesweeper game that looks like a spreadsheet, so it looks like work while you play. The board is a range of shaded cells in a budget sheet. Play it in your browser with no download, no ads and no sign up.</p>
+    <p>A free Minesweeper game that looks like a spreadsheet, so it looks like work while you play. The board is a range of cells in a budget sheet, with a dash in every cell you haven't revealed. Turn on Shading for an easier-to-read board. Play it in your browser with no download, no ads and no sign up.</p>
     <h2>How to play</h2>
     <ul>
-      <li>Click a shaded cell to reveal it. Your first click is always safe.</li>
-      <li>A revealed number counts the mines in the 8 cells around it. A blank cell has none, and opens its neighbors for you.</li>
-      <li>Right-click a shaded cell to flag it as a mine. On a phone, long-press it or turn on Flag mode.</li>
+      <li>Hidden cells show a dash. Click one to reveal it. Your first click is always safe.</li>
+      <li>A revealed number counts the mines in the 8 cells around it. A 0 has none, and opens its neighbors for you.</li>
+      <li>Right-click a hidden cell to flag it as a mine. On a phone, long-press it or turn on Flag mode.</li>
       <li>Click a number that already has that many flags around it to reveal the rest of its neighbors.</li>
       <li>Reveal every cell that isn't a mine to clear the sheet. Reveal a mine and the game is over.</li>
       <li>Keyboard: arrow keys move, Enter or Space reveals, F flags.</li>
     </ul>
     <p>Sizes: Beginner (9 by 9, 10 mines), Intermediate (16 by 16, 40 mines) and Expert (30 by 16, 99 mines), or pick a custom size up to 30 by 24.</p>
-    <p>More <a href="/#classic">classic games that look like work</a>, or try an original: <a href="/diff-guess-key/">diff guess key</a>, a word game that looks like a terminal, and <a href="/ctrl-alt-deal/">Ctrl+Alt+Deal</a>, a poker deckbuilder. <a href="/">All Kramps Games</a>.</p>
+    <p>More <a href="/#classic">classic games that look like work</a>: <a href="/spreadsheet-games/chess/">Spreadsheet Chess</a>. Or try an original: <a href="/diff-guess-key/">diff guess key</a>, a word game that looks like a terminal, and <a href="/ctrl-alt-deal/">Ctrl+Alt+Deal</a>, a poker deckbuilder. <a href="/">All Kramps Games</a>.</p>
   </header>
 
   <div class="window sheet-win" id="sheet" data-app="Spreadsheet">
@@ -52,6 +52,7 @@
         <option value="custom-new">Custom size…</option>
       </select></label>
       <button class="tool" type="button" id="flag-mode" aria-pressed="false" title="Flag mode: clicks flag cells instead of revealing them"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 17.5v-15M5 3h9l-2.5 3.5L14 10H5"/></svg>Flag</button>
+      <button class="tool" type="button" id="shade" aria-pressed="false" title="Shade hidden cells and leave zeros blank"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="3" width="14" height="14" rx="1"/><path d="M3 10h14M10 3v14"/><path d="M3.5 3.5h6v6h-6z" fill="currentColor" stroke="none"/></svg>Shading</button>
       <span class="sep deco-sep" aria-hidden="true"></span>
       <span class="deco" aria-hidden="true"><b>B</b></span><span class="deco" aria-hidden="true"><i>I</i></span><span class="deco" aria-hidden="true"><u>U</u></span>
       <span class="sep deco-sep" aria-hidden="true"></span>

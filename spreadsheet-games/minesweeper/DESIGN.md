@@ -6,9 +6,11 @@ Minesweeper in a spreadsheet window, at `/spreadsheet-games/minesweeper/`. Liste
 
 - One **Spreadsheet** window, titled "Minesweeper" ("Minesweeper - Spreadsheet" on Value, "Minesweeper — Spreadsheet" on Power). The chrome comes from `../sheet.css`, shared with future spreadsheet games.
 - Menu row: File, Home, Insert, Formulas, Data, View are for show; **Help** opens a Notes-style how-to-play dialog.
-- Toolbar: **New** (F2), **Size** (Beginner 9×9/10, Intermediate 16×16/40, Expert 30×16/99 — the standard sizes; then the last custom size once one is set, e.g. "Custom · 30×12 · 50", and **Custom size…**), **Flag** mode toggle, then bold/italic/underline/$/%/.00/Σ for show (hidden on phones).
-- Formula bar: the name box shows the selected cell (e.g. `E5`). The formula shows `=NEIGHBORS(E5)` for a revealed cell, `=FLAG()` for a flag, `#REF!` / `#N/A` after a loss, and nothing for a hidden cell.
-- The board is the range starting at A1 with a thin outer border. **Hidden cells are shaded** (a light fill, like a highlighted range); revealed cells are plain and show their number (blank for 0). The sheet runs on to column AZ and row 60+ with ordinary empty cells.
+- Toolbar: **New** (F2), **Size** (Beginner 9×9/10, Intermediate 16×16/40, Expert 30×16/99 — the standard sizes; then the last custom size once one is set, e.g. "Custom · 30×12 · 50", and **Custom size…**), **Flag** mode toggle, **Shading** toggle, then bold/italic/underline/$/%/.00/Σ for show (hidden on phones).
+- Formula bar: the name box shows the selected cell (e.g. `E5`). The formula shows `=NEIGHBORS(E5)` for a revealed cell, `=FLAG()` for a flag, `#REF!` / `#N/A` after a loss, and the cell's text for a hidden cell (- by default, nothing with Shading).
+- The board is the range starting at A1 with a thin outer border. Columns are 40px wide (25% wider than the shared sheet's 32px; 36px on phones). The sheet runs on to column AZ and row 60+ with ordinary empty cells.
+- **Default look (the better disguise, since 2026-11-19):** no fills at all. Hidden cells show a grey **-**; revealed cells show their number, with **0** (grey) for cells with no mines around them, so the board reads like a range of data.
+- **Shading** (toolbar toggle, saved): the original look. Hidden cells are shaded (a light fill, like a highlighted range) and blank; zeros are left blank.
 - **Flag** = a red comment marker in the cell's top-right corner.
 - Loss: every unflagged mine shows `#REF!` in red; the one that was clicked gets a red fill; wrong flags show `#N/A`.
 - Message bar (the yellow notice under the formula bar): before the first click it says how to start; on a win "Sheet cleared in m:ss" with the best time, **New game** and **Email me new games** (opens the email signup); on a loss "#REF! That cell was a mine." with **New game**. Hidden while playing.
@@ -30,7 +32,7 @@ Minesweeper in a spreadsheet window, at `/spreadsheet-games/minesweeper/`. Liste
 
 ## Saving
 
-localStorage, all optional: `spreadsheet-minesweeper-<level>` (the game in progress for each size, `custom` included, so switching size resumes that size's game), `-custom-size` (the last custom width/height/mines), `-level` (last size), `-best` (best time per size), `-window` (window rect).
+localStorage, all optional: `spreadsheet-minesweeper-<level>` (the game in progress for each size, `custom` included, so switching size resumes that size's game), `-custom-size` (the last custom width/height/mines), `-level` (last size), `-best` (best time per size), `-shade` (Shading on), `-window` (window rect).
 
 ## SEO
 

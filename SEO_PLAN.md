@@ -25,17 +25,40 @@ Context for building new games on kramps.games (browser games disguised as work 
 | boss key games | 10–100 | 0% | Homepage/about copy |
 | games disguised as work | 10–100 | 0% | Homepage/about copy |
 | games to play at work without getting caught | 10–100 | new | Homepage/about copy |
-| minesweeper spreadsheet, solitaire disguised as excel, spreadsheet solitaire | no data | — | Secondary terms for games #1 and #5 |
+| terminal games | 100–1K | 0% | Possible hub for the terminal games (diff guess key, a terminal solitaire) |
+| unblocked games at work | 100–1K | 0% | Homepage/about copy (careful: "unblocked" is mostly students getting past filters) |
+| minesweeper spreadsheet, solitaire disguised as excel, spreadsheet solitaire | no data | — | — |
 
-Solitaire has no keyword with measured volume, so it's the weakest search bet on the list.
+## Solitaire keywords (researched 2026-11-20)
+
+Kramps doesn't think a spreadsheet is the best disguise for solitaire, so a wider list was checked.
+
+| Keyword | Volume | Notes |
+|---|---|---|
+| free solitaire no download | 10K–100K | Huge but generic; big solitaire sites and Google's own game own it |
+| simple solitaire | 1K–10K | Generic |
+| solitaire no ads | 1K–10K | Generic, but "no ads" is a real differentiator for this site |
+| solitaire unblocked | 1K–10K | Mostly students; +900% 3-month trend |
+| spider solitaire unblocked | 1K–10K | Mostly students; Spider, not Klondike |
+| klondike solitaire no ads | 100–1K | Best-matched generic term |
+| hidden solitaire, secret solitaire, office solitaire, solitaire at work, play solitaire at work, minimalist solitaire | 10–100 each | The "at work" cluster: small but exactly the audience |
+| terminal solitaire, text solitaire | 10–100 each | Fits a terminal disguise |
+| inbox solitaire, trello solitaire | 10–100 each | Fits an inbox / task-board disguise (Trello is a trademark: descriptive copy only) |
+| kanban solitaire, task board solitaire, to do list solitaire, jira solitaire, email solitaire, ascii solitaire, discreet / disguised / stealth solitaire, boss key solitaire, solitaire boss mode, solitaire that looks like work, solitaire for work, work solitaire, clean solitaire, how to play solitaire at work without getting caught | no data | — |
+
+Takeaways:
+
+- No disguise-specific term has real volume; the disguise should be picked for play and fit, not search. Terminal (terminal/text solitaire, plus "terminal games" at 100–1K) and inbox/task board (inbox/trello solitaire) each pick up a few searches; kanban/task board itself has none.
+- Target the page at the "at work" cluster (hidden, secret, office, at work: together maybe 50–300 a month) plus "solitaire no ads" / "klondike solitaire no ads" as stretch terms, e.g. title "Solitaire at Work: Free Klondike With No Ads That Looks Like …".
+- Solitaire is no longer the weakest bet: the "at work" cluster is similar in size to Sudoku/2048/Chess's keywords, and the no-ads terms are a long-shot upside.
 
 ## Build order
 
 1. Minesweeper (spreadsheet disguise) — built 2026-11-18 at `/spreadsheet-games/minesweeper/`
 2. Sudoku (spreadsheet)
 3. 2048 (spreadsheet) — original is MIT-licensed; keep the license notice if reusing code
-4. Chess (spreadsheet)
-5. Solitaire / Klondike (spreadsheet)
+4. Chess (spreadsheet) — built 2026-11-19 at `/spreadsheet-games/chess/`, ahead of Sudoku and 2048; computer opponent is Stockfish (GPLv3) in a Web Worker
+5. Solitaire / Klondike — disguise undecided (not a spreadsheet); see "Solitaire keywords" above
 
 Build the spreadsheet look once as a reusable shell inside the `os/` desktop (column letters, row numbers, formula bar, sheet tabs, selected-cell box, themed per OS setting), so game #1 is "shell + Minesweeper" and later games are mostly game logic.
 
@@ -67,4 +90,4 @@ Build the spreadsheet look once as a reusable shell inside the `os/` desktop (co
 
 ## Next research step
 
-Run Keyword Planner "Discover new keywords" seeded with `excel games` and `minesweeper in excel` to find more "[game] in excel" terms with volume (including whether any solitaire term has volume).
+Run Keyword Planner "Discover new keywords" seeded with `excel games` and `minesweeper in excel` to find more "[game] in excel" terms with volume. (Solitaire terms were checked 2026-11-20, above.)

@@ -22,11 +22,17 @@
   --n8: #a8a8a8;
 }
 
+/* Columns 25% wider than the default sheet's (phones keep the default 36px). */
+#sheet { --s-cell: 40px; }
+[data-os='phone'] #sheet { --s-cell: 36px; }
+
 .sheet-grid td { position: relative; font-size: 13px; cursor: cell; }
 .sheet-grid td.b { background: var(--w-bg); }
-.sheet-grid td.h { background: var(--s-shade); }
-.sheet-grid td.h:hover { background: var(--s-shade-hover); }
-.playing .sheet-grid td.h:active { background: var(--w-bg); }
+/* Hidden cells: plain with a "-" by default; shaded with Shading on */
+.sheet-grid td.h { color: var(--w-muted); }
+.shaded .sheet-grid td.h { background: var(--s-shade); }
+.shaded .sheet-grid td.h:hover { background: var(--s-shade-hover); }
+.shaded.playing .sheet-grid td.h:active { background: var(--w-bg); }
 
 /* the board's outer edge */
 .sheet-grid td.et { border-top: 1px solid var(--w-muted); }
@@ -34,6 +40,7 @@
 .sheet-grid td.er { border-right: 1px solid var(--w-muted); }
 .sheet-grid td.eb { border-bottom: 1px solid var(--w-muted); }
 
+.sheet-grid td.n0 { color: var(--w-muted); }
 .sheet-grid td.n1 { color: var(--n1); }
 .sheet-grid td.n2 { color: var(--n2); }
 .sheet-grid td.n3 { color: var(--n3); }

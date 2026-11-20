@@ -12,7 +12,7 @@
   // mines). The most mines is w*h - 9, so the first click's 3×3 always fits.
   const CUSTOM = { minW: 9, maxW: 30, minH: 9, maxH: 24, minM: 10 };
   const maxMines = (w, h) => w * h - 9;
-  const KEY = 'spreadsheet-minesweeper'; // + '-level', '-best', '-<level>', '-custom-size'
+  const KEY = 'spreadsheet-minesweeper'; // + '-level', '-best', '-<level>', '-custom-size', '-shade'
   const LONG_PRESS = 450;
 
   const $ = (id) => document.getElementById(id);
@@ -46,6 +46,10 @@
 
   let g;
   let counts = [];
+  // The default look is the better disguise: hidden cells are plain and show
+  // "-", and revealed cells with no mines around them show "0". Shading turns
+  // on the original look: hidden cells shaded, zeros blank.
+  let shade = read(`${KEY}-shade`) === true;
 
   const whole = (v, lo, hi) => Number.isInteger(v) && v >= lo && v <= hi;
   const customOk = (s) => s && whole(s.w, CUSTOM.minW, CUSTOM.maxW) && whole(s.h, CUSTOM.minH, CUSTOM.maxH) && whole(s.m, CUSTOM.minM, maxMines(s.w, s.h));
@@ -223,10 +227,10 @@
 
   function cellView(i) {
     const lost = g.state === 'lost';
-    if (g.open[i]) return { cls: `n${counts[i]}`, text: counts[i] ? String(counts[i]) : '' };
+    if (g.open[i]) return { cls: `n${counts[i]}`, text: counts[i] || !shade ? String(counts[i]) : '' };
     if (lost && g.mines[i] && !g.flag[i]) return { cls: `mine${i === g.boom ? ' boom' : ''}`, text: '#REF!' };
     if (lost && g.flag[i] && !g.mines[i]) return { cls: 'wrong', text: '#N/A' };
-    return { cls: g.flag[i] ? 'h f' : 'h', text: '' };
+    return { cls: g.flag[i] ? 'h f' : 'h', text: shade ? '' : '-' };
   }
 
   function render() {
@@ -248,6 +252,7 @@
     renderStatus();
     renderInfo();
     document.querySelector('.sheet-win').classList.toggle('playing', !over());
+    document.querySelector('.sheet-win').classList.toggle('shaded', shade);
   }
 
   function renderSel() {
@@ -263,8 +268,8 @@
       const i = sel.y * g.w + sel.x;
       const v = cellView(i);
       if (g.open[i]) f = `=NEIGHBORS(${r})`;
+      else if (g.flag[i] && g.state !== 'lost') f = '=FLAG()';
       else if (v.text) f = v.text;
-      else if (g.flag[i]) f = '=FLAG()';
     }
     $('formula').textContent = f;
   }
@@ -288,8 +293,8 @@
     info.hidden = false;
     if (g.state === 'ready') {
       info.innerHTML = phone
-        ? 'Tap a shaded cell to start. Long-press a cell, or turn on Flag, to flag a mine.'
-        : 'Click a shaded cell to start. Right-click to flag a mine. Help has the rules.';
+        ? `Tap a ${shade ? 'shaded' : 'hidden (-)'} cell to start. Long-press a cell, or turn on Flag, to flag a mine.`
+        : `Click a ${shade ? 'shaded' : 'hidden (-)'} cell to start. Right-click to flag a mine. Help has the rules.`;
     } else if (g.state === 'won') {
       const name = size(g.level).name;
       let best = '';
@@ -510,6 +515,13 @@
     document.body.append(box);
     form.elements.w.select();
   }
+  $('shade').setAttribute('aria-pressed', String(shade));
+  $('shade').addEventListener('click', (e) => {
+    shade = !shade;
+    e.currentTarget.setAttribute('aria-pressed', String(shade));
+    write(`${KEY}-shade`, shade);
+    render();
+  });
   $('flag-mode').addEventListener('click', (e) => {
     flagMode = !flagMode;
     e.currentTarget.setAttribute('aria-pressed', String(flagMode));
@@ -533,14 +545,18 @@
   const HELP = `
     <h2>Clear the sheet</h2>
     <ul>
-      <li>Click a shaded cell to reveal it. Your first click is always safe.</li>
-      <li>A number counts the mines in the 8 cells around it. A blank cell has none, and opens its neighbors for you.</li>
+      <li>Hidden cells show a dash (-). Click one to reveal it. Your first click is always safe.</li>
+      <li>A number counts the mines in the 8 cells around it. A 0 has none, and opens its neighbors for you.</li>
       <li>Reveal every cell that isn't a mine to win. Reveal a mine and it's over.</li>
     </ul>
     <h2>Flags</h2>
     <ul>
-      <li>Right-click a shaded cell to flag it as a mine (a red corner marker). On a phone, long-press it, or turn on <b>Flag</b> in the toolbar.</li>
+      <li>Right-click a hidden cell to flag it as a mine (a red corner marker). On a phone, long-press it, or turn on <b>Flag</b> in the toolbar.</li>
       <li>Click a number that already has that many flags around it to reveal the rest of its neighbors.</li>
+    </ul>
+    <h2>Shading</h2>
+    <ul>
+      <li>Turn on <b>Shading</b> in the toolbar for an easier-to-read board: hidden cells are shaded and zeros are left blank.</li>
     </ul>
     <h2>Keyboard</h2>
     <ul>

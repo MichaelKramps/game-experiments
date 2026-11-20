@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Spreadsheet Chess: Play Chess That Looks Like Excel</title>
+  <meta name="description" content="Play chess against the computer in a spreadsheet that looks like Excel, free in your browser. Easy to hard levels or a custom rating. No download, no ads, no sign up.">
+  <link rel="canonical" href="https://kramps.games/spreadsheet-games/chess/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Kramps Games">
+  <meta property="og:title" content="Spreadsheet Chess: Play Chess That Looks Like Excel">
+  <meta property="og:description" content="Play chess against the computer in a spreadsheet, free in your browser. A game that looks like work.">
+  <meta property="og:url" content="https://kramps.games/spreadsheet-games/chess/">
+  <script src="../../os/os.js"></script>
+  <link rel="stylesheet" href="../../os/os.css">
+  <link rel="stylesheet" href="../../os/site.css">
+  <link rel="stylesheet" href="../sheet.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Read by search engines and screen readers; hidden so the window keeps the disguise. -->
+  <header class="sr-only">
+    <h1>Spreadsheet Chess: play chess against the computer in an Excel-style spreadsheet</h1>
+    <p>A free chess game that looks like a spreadsheet, so it looks like work while you play. The board is a range of cells in a budget sheet and the moves are logged on a second sheet tab. Play the computer in your browser with no download, no ads and no sign up.</p>
+    <h2>How to play</h2>
+    <ul>
+      <li>Click one of your pieces, then click the cell it should move to. Dots show where it can go.</li>
+      <li>Pick Easy, Medium or Hard (rated about 2000), or enter a custom rating for the computer from 1320 to 3190. Choose whether you play White or Black.</li>
+      <li>The pieces are letter codes (K, Q, R, B, N, P), like data in a sheet. The Pieces menu can show them as point values instead (pawn 1, knight 3, bishop 3.1, rook 5, queen 9, king 100, with Black's negative), so the board looks like a table of numbers, or as chess icons.</li>
+      <li>Undo takes back your last move. Keyboard: arrow keys move, Enter or Space picks and moves, Ctrl+Z undoes, F2 starts a new game.</li>
+      <li>All the standard rules apply: castling, en passant, promotion, and draws by stalemate, repetition, the 50-move rule and insufficient material.</li>
+    </ul>
+    <p>The computer opponent is Stockfish, the open-source chess engine, running in your browser.</p>
+    <p>More <a href="/#classic">classic games that look like work</a>: <a href="/spreadsheet-games/minesweeper/">Spreadsheet Minesweeper</a>. Or try an original: <a href="/diff-guess-key/">diff guess key</a>, a word game that looks like a terminal, and <a href="/ctrl-alt-deal/">Ctrl+Alt+Deal</a>, a poker deckbuilder. <a href="/">All Kramps Games</a>.</p>
+  </header>
+
+  <div class="window sheet-win" id="sheet" data-app="Spreadsheet">
+    <div class="titlebar">
+      <div class="lights"><span class="close"></span><span class="min"></span><span class="max"></span></div>
+      <div class="window-title" id="sheet-title">Chess</div>
+    </div>
+    <div class="sheet-menu">
+      <span class="deco-menu">File</span><span class="on deco-menu">Home</span><span class="deco-menu">Insert</span><span class="deco-menu">Formulas</span><span class="deco-menu">Data</span><span class="deco-menu">View</span><button type="button" id="help">Help</button>
+    </div>
+    <div class="sheet-tools">
+      <button class="tool" type="button" id="new" title="New game (F2)"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 2.5h7l3.5 3.5v11.5h-10.5z"/><path d="M12 2.5V6h3.5"/></svg>New</button>
+      <button class="tool" type="button" id="undo" title="Undo your last move (Ctrl+Z)"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7.5 5 4 8.5 7.5 12"/><path d="M4 8.5h7.5a4.5 4.5 0 0 1 0 9H9"/></svg>Undo</button>
+      <label>Level <select id="level" aria-label="Computer level">
+        <option value="easy">Easy</option>
+        <option value="medium">Medium</option>
+        <option value="hard">Hard</option>
+        <option value="custom-new">Custom rating…</option>
+      </select></label>
+      <label>Play as <select id="side" aria-label="Play as">
+        <option value="w">White</option>
+        <option value="b">Black</option>
+      </select></label>
+      <label>Pieces <select id="pieces" aria-label="Show pieces as">
+        <option value="letters">Letters</option>
+        <option value="points">Points</option>
+        <option value="icons">Icons</option>
+      </select></label>
+      <span class="sep deco-sep" aria-hidden="true"></span>
+      <span class="deco" aria-hidden="true"><b>B</b></span><span class="deco" aria-hidden="true"><i>I</i></span><span class="deco" aria-hidden="true"><u>U</u></span>
+      <span class="sep deco-sep" aria-hidden="true"></span>
+      <span class="deco" aria-hidden="true">$</span><span class="deco" aria-hidden="true">%</span><span class="deco" aria-hidden="true">.00</span><span class="deco" aria-hidden="true">Σ</span>
+    </div>
+    <div class="sheet-formula">
+      <span class="name-box" id="namebox">A1</span>
+      <span class="fx" aria-hidden="true">fx</span>
+      <span class="formula" id="formula"></span>
+    </div>
+    <div class="sheet-info" id="info" aria-live="polite"></div>
+    <div class="sheet-wrap" id="wrap" tabindex="0" aria-label="Chess board">
+      <table class="sheet-grid" id="grid"></table>
+    </div>
+    <div class="sheet-foot">
+      <div class="sheet-tabs" role="tablist" aria-label="Sheets"><button type="button" role="tab" data-tab="board" class="on" aria-selected="true">Budget</button><button type="button" role="tab" data-tab="moves" aria-selected="false">Moves</button><span aria-hidden="true">Notes</span></div>
+      <div class="sheet-status">
+        <span class="state" id="state">Ready</span>
+        <span id="who"></span>
+        <span id="movenum"></span>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="game.js"></script>
+</body>
+</html>
