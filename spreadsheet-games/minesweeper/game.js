@@ -401,7 +401,7 @@
   });
 
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'F2' && !document.querySelector('.kg-modal')) {
+    if (e.key === 'F2' && !document.querySelector('.kg-modal:not([hidden])')) {
       e.preventDefault();
       newGame();
     }

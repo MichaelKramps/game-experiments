@@ -656,7 +656,7 @@ wrap.addEventListener('keydown', (e) => {
 });
 
 document.addEventListener('keydown', (e) => {
-  if (document.querySelector('.kg-modal')) return;
+  if (document.querySelector('.kg-modal:not([hidden])')) return;
   if (e.key === 'F2') {
     e.preventDefault();
     newGame();
