@@ -1,0 +1,43 @@
+/* 2048's cells. The board is A1:D4; tiles are plain numbers. With Color
+   scale on, they're shaded green to red by size, like conditional formatting. */
+
+/* Wide, tall cells so big numbers fit and the board is easy to read. */
+#sheet { --s-cell: 72px; --s-row: 40px; }
+[data-os='phone'] #sheet { --s-cell: 72px; --s-row: 60px; }
+
+.sheet-grid td { font-size: 14px; cursor: cell; }
+[data-os='phone'] .sheet-grid td.b { font-size: 18px; }
+
+/* Swipes move the tiles on touch screens instead of scrolling the sheet. */
+[data-os='phone'] .sheet-wrap { touch-action: none; }
+
+/* the board's outer edge */
+.sheet-grid td.et { border-top: 1px solid var(--w-muted); }
+.sheet-grid td.el { border-left: 1px solid var(--w-muted); }
+.sheet-grid td.er { border-right: 1px solid var(--w-muted); }
+.sheet-grid td.eb { border-bottom: 1px solid var(--w-muted); }
+
+/* Color scale: hue 120 (green) at 2 down to 0 (red) at 2048 and up */
+.scaled .sheet-grid td.v {
+  --hue: max(0, calc(120 - (var(--lv) - 1) * 12));
+  background: hsl(var(--hue) 70% 82%);
+  color: #1b1b1b;
+}
+[data-theme='dark'] .scaled .sheet-grid td.v {
+  background: hsl(var(--hue) 45% 28%);
+  color: #f0f0f0;
+}
+.sheet-grid td.big { font-weight: 600; }
+
+/* A new tile fades in; a merged one flashes, like a recalculated cell. */
+@keyframes s2048-in { from { color: transparent; } }
+@keyframes s2048-pop { from { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--s-accent) 55%, transparent); } }
+.sheet-grid td.new { animation: s2048-in 0.25s ease-out; }
+.sheet-grid td.pop { animation: s2048-pop 0.35s ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  .sheet-grid td.new,
+  .sheet-grid td.pop { animation: none; }
+}
+
+/* the selected cell */
+.sheet-grid td.sel { box-shadow: inset 0 0 0 2px var(--s-accent); }

@@ -1,0 +1,60 @@
+/* Sudoku's cells. The puzzle is A1:I9; column J and row 10 are its sums. */
+
+:root {
+  --su-in: #1d5fbf; /* the player's numbers: blue, like input cells in a model */
+}
+[data-theme='dark'] {
+  --su-in: #7fb2ff;
+}
+
+/* Wider columns so notes fit; phones keep the shared 36px. */
+#sheet { --s-cell: 52px; --s-row: 30px; }
+[data-os='phone'] #sheet { --s-cell: 36px; --s-row: 36px; }
+
+.sheet-grid td { font-size: 13px; cursor: cell; }
+
+/* Row and column sums */
+.sheet-grid td.tot { color: var(--w-muted); }
+
+/* Puzzle cells */
+.sheet-grid td.gv { color: var(--w-fg); }
+.sheet-grid td.in { color: var(--su-in); }
+.sheet-grid td.bad { color: var(--s-bad); }
+.sheet-grid td.same { background: color-mix(in srgb, var(--s-accent) 12%, var(--w-bg)); }
+.sheet-grid td.nt { color: var(--w-muted); font-size: 9.5px; letter-spacing: -0.3px; }
+[data-os='phone'] .sheet-grid td.nt { font-size: 8px; line-height: 1.05; white-space: normal; word-break: break-all; }
+
+/* 3×3 blocks: a darker border, like a formatted range */
+.sheet-grid td.et { border-top: 1px solid var(--w-muted); }
+.sheet-grid td.el { border-left: 1px solid var(--w-muted); }
+.sheet-grid td.er { border-right: 1px solid var(--w-muted); }
+.sheet-grid td.eb { border-bottom: 1px solid var(--w-muted); }
+
+/* the selected cell */
+.sheet-grid td.sel { box-shadow: inset 0 0 0 2px var(--s-accent); }
+
+/* Number bar: phones only (desktops type) */
+.su-pad { display: none; }
+[data-os='phone'] .su-pad {
+  flex: none;
+  display: grid;
+  grid-template-columns: repeat(9, 1fr) 1.6fr;
+  gap: 4px;
+  padding: 6px 8px;
+  border-top: 1px solid var(--w-line);
+  background: var(--w-chrome);
+}
+.su-pad button {
+  height: 40px;
+  padding: 0;
+  border: 1px solid var(--w-btn-border);
+  border-radius: 4px;
+  background: var(--w-btn);
+  color: var(--w-fg);
+  font: inherit;
+  font-size: 17px;
+  font-variant-numeric: tabular-nums;
+  touch-action: manipulation;
+}
+.su-pad button[data-erase] { font-size: 13px; }
+.su-pad button.done { color: var(--w-muted); opacity: 0.5; }

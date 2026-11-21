@@ -56,7 +56,7 @@ Takeaways:
 
 1. Minesweeper (spreadsheet disguise) — built 2026-11-18 at `/spreadsheet-games/minesweeper/`
 2. Sudoku (spreadsheet) — built 2026-11-21 at `/spreadsheet-games/sudoku/`
-3. 2048 (spreadsheet) — original is MIT-licensed; keep the license notice if reusing code
+3. 2048 (spreadsheet) — built 2026-11-21 at `/spreadsheet-games/2048/`; written from scratch (no code from the MIT-licensed original), continues past 2048
 4. Chess (spreadsheet) — built 2026-11-19 at `/spreadsheet-games/chess/`, ahead of Sudoku and 2048; computer opponent is Stockfish (GPLv3) in a Web Worker
 5. Solitaire / Klondike — built 2026-11-20 at `/solitaire/` as a task board (not a spreadsheet), ahead of Sudoku and 2048; see "Solitaire keywords" above
 
