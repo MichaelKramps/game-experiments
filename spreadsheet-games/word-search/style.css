@@ -1,0 +1,62 @@
+/* Word Search's cells. The letters are a range from A1; the word list is a
+   column beside it (under it on phones). Found words get a light fill, like
+   conditional formatting. */
+
+#sheet { --s-cell: 30px; --s-row: 28px; }
+
+.sheet-grid td.L { font-size: 14px; font-weight: 500; cursor: pointer; }
+/* Drags pick letters instead of scrolling the sheet on touch screens. */
+.sheet-grid td.L { touch-action: none; }
+[data-os='phone'] .sheet-grid td.L { font-size: 15px; }
+
+/* the grid's outer edge */
+.sheet-grid td.et { border-top: 1px solid var(--w-muted); }
+.sheet-grid td.el { border-left: 1px solid var(--w-muted); }
+.sheet-grid td.er { border-right: 1px solid var(--w-muted); }
+.sheet-grid td.eb { border-bottom: 1px solid var(--w-muted); }
+
+/* The word list: a wide Words column and a narrow Found column. */
+.sheet-grid th.wcol { width: 170px; min-width: 170px; }
+.sheet-grid th.fcol { width: 56px; min-width: 56px; }
+.sheet-grid td.w { padding: 0 8px; text-align: left; }
+.sheet-grid td.hd { font-weight: 600; background: var(--s-head); }
+.sheet-grid td.w.done { color: var(--w-muted); text-decoration: line-through; }
+.sheet-grid td.ok { color: var(--s-accent); font-weight: 600; }
+[data-os='phone'] .sheet-grid td.w { padding: 0 6px; font-size: 13px; }
+
+/* Found-word fills (light, like conditional formatting) */
+.sheet-grid td[data-f='0'] { background: #c6efce; }
+.sheet-grid td[data-f='1'] { background: #ffeb9c; }
+.sheet-grid td[data-f='2'] { background: #cfe2f3; }
+.sheet-grid td[data-f='3'] { background: #ffc7ce; }
+.sheet-grid td[data-f='4'] { background: #e4d4f4; }
+.sheet-grid td[data-f='5'] { background: #fde0c5; }
+.sheet-grid td[data-f='6'] { background: #c9efe9; }
+.sheet-grid td[data-f='7'] { background: #f8d3e6; }
+[data-theme='dark'] .sheet-grid td[data-f='0'] { background: #24513a; }
+[data-theme='dark'] .sheet-grid td[data-f='1'] { background: #5a4a14; }
+[data-theme='dark'] .sheet-grid td[data-f='2'] { background: #1f4466; }
+[data-theme='dark'] .sheet-grid td[data-f='3'] { background: #622a33; }
+[data-theme='dark'] .sheet-grid td[data-f='4'] { background: #45305f; }
+[data-theme='dark'] .sheet-grid td[data-f='5'] { background: #5f3d1c; }
+[data-theme='dark'] .sheet-grid td[data-f='6'] { background: #1d5149; }
+[data-theme='dark'] .sheet-grid td[data-f='7'] { background: #5c2a45; }
+
+/* The letters being selected: a range highlight */
+.sheet-grid td.L.pick {
+  background: color-mix(in srgb, var(--s-accent) 22%, var(--w-bg));
+  box-shadow: inset 0 0 0 1px var(--s-accent);
+  color: var(--s-accent);
+  font-weight: 700;
+}
+
+/* A word just found flashes, like a recalculated cell. */
+@keyframes ws-pop { from { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--s-accent) 60%, transparent); } }
+.sheet-grid td.pop { animation: ws-pop 0.6s ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  .sheet-grid td.pop { animation: none; }
+}
+
+/* the selected cell */
+.sheet-grid td.sel { box-shadow: inset 0 0 0 2px var(--s-accent); }
+.sheet-grid td.L.pick.sel { box-shadow: inset 0 0 0 2px var(--s-accent); }

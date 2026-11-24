@@ -93,6 +93,16 @@
   let modalOpen = false;
   let payoutMenuOpen = false;
   let fresh = new Set(); // ids drawn in the last draw, highlighted once
+  const cardsView = KG.fileView($('view'), {
+    switchEl: $('view-switch'),
+    storageKey: 'ctrl-alt-deal-view',
+    columns: [
+      { label: 'Rank', width: '48px', phoneWidth: '34px' },
+      { label: 'Suit', width: '80px', phoneWidth: '66px' },
+      { label: 'Status', width: '110px', phoneWidth: '64px' },
+    ],
+    onChange: () => renderCards(),
+  });
   let helpHidden = false; // the banner's how-to text, dismissed until the page reloads
 
   const HOW_TO_KEY = 'ctrl-alt-deal-how-to-seen'; // the how-to note opens by itself only on a first visit
@@ -185,17 +195,20 @@
     return folder === 'hand' && run.phase === 'hold' ? run.round.trashed.includes(id) : selected.has(id);
   }
 
-  function cardTile(card, { extra = '' } = {}) {
-    const on = isSelected(card.id);
-    const cls = ['file', 'card-file'];
-    if (on) cls.push('selected');
-    if (fresh.has(card.id)) cls.push('fresh');
-    if (extra) cls.push(extra);
+  // A card as a file in the Cards window. KG.fileView (os.js) shows the
+  // folder as Large icons (default) or Details: Name, Rank, Suit, Status.
+  function cardItem(card, { cls = [], status = '' } = {}) {
     const notes = [card.bonus && '2x: any hand with this card pays double', card.boss && 'Added by a boss'].filter(Boolean).join(' · ');
-    return `<div class="${cls.join(' ')}" data-card="${card.id}" tabindex="0" role="option" aria-selected="${on}"${notes ? ` title="${notes}"` : ''}>
-      <span class="card-icon suit-${card.suit}">${E.cardLabel(card)}${card.bonus ? '<span class="card-bonus">2x</span>' : ''}</span>
-      <span class="file-label">${esc(fileName(card))}</span>
-    </div>`;
+    const tags = [card.bonus && '2x', card.boss && 'From boss'].filter(Boolean).join(' · ');
+    return {
+      name: fileName(card),
+      icon: `<span class="card-icon suit-${card.suit}">${E.cardLabel(card)}${card.bonus ? '<span class="card-bonus">2x</span>' : ''}</span>`,
+      cells: [E.rankLabel(card.rank), `<span class="suit-${card.suit} card-suit">${E.SUIT_NAMES[card.suit]}</span>`, status || (tags ? `<span class="muted">${tags}</span>` : '')],
+      attrs: { 'data-card': card.id },
+      cls: [...cls, fresh.has(card.id) && 'fresh'],
+      selected: isSelected(card.id),
+      title: notes,
+    };
   }
 
   // -------------------------------------------------------------------------
@@ -251,19 +264,25 @@
       side('deck', FOLDER_ICON) +
       side('hand', FOLDER_ICON);
 
-    let tiles;
-    if (folder === 'deck') tiles = deckCards().map((c) => cardTile(c));
-    else if (folder === 'hand') {
-      // After a bigger hand is scored, the cards outside its best 5 are dimmed.
-      const scored = run.phase !== 'hold' && run.last?.scored;
-      const extra = (c) => (run.phase === 'hold' ? '' : scored && !scored.includes(c.id) ? 'done unscored' : 'done');
-      tiles = handCards().map((c) => cardTile(c, { extra: extra(c) }));
+    let items;
+    if (folder === 'deck') items = deckCards().map((c) => cardItem(c));
+    else {
+      // During a hand, Status says which cards get replaced. After a bigger
+      // hand is scored, the cards outside its best 5 are dimmed.
+      const hold = run.phase === 'hold';
+      const scored = !hold && run.last?.scored;
+      items = handCards().map((c) => {
+        if (hold) return cardItem(c, { status: isSelected(c.id) ? '<span class="card-status replace">Replace</span>' : '<span class="card-status">Keep</span>' });
+        // Status only matters when some cards didn't count (hands over 5 cards).
+        const out = scored && !scored.includes(c.id);
+        return cardItem(c, { cls: ['done', out && 'dim'], status: out ? '<span class="card-status">Not scored</span>' : '' });
+      });
     }
 
     const empty = {
       hand: 'No hand dealt yet.',
     };
-    $('view').innerHTML = tiles.length ? tiles.join('') : `<p class="empty">${empty[folder] || 'This folder is empty.'}</p>`;
+    cardsView.render(items, { empty: empty[folder] || 'This folder is empty.' });
     $('view').setAttribute('role', 'listbox');
     $('view').setAttribute('aria-multiselectable', String(folder === 'hand'));
     $('view').dataset.folder = folder;

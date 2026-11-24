@@ -206,50 +206,16 @@ body.no-color {
 .banner.bad b { color: inherit; }
 .banner .kg-btn { margin-left: 6px; }
 
-.icon-view {
-  flex: 1;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(106px, 1fr));
-  align-content: start;
-  gap: 4px;
-  padding: 12px;
-  overflow: auto;
-  outline: none;
-}
-.icon-view .empty { grid-column: 1 / -1; padding: 10px 4px; color: var(--w-muted); }
-
-.file {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 5px;
-  padding: 8px 4px 6px;
-  border: 1px solid transparent;
-  border-radius: 5px;
-  text-align: center;
-  cursor: default;
-  user-select: none;
-  -webkit-user-select: none;
-  -webkit-touch-callout: none;
-  outline: none;
-}
-.file:hover { background: var(--w-hover); }
-.file:focus-visible { border-color: var(--w-accent); }
-.file.selected { background: var(--w-select); border-color: color-mix(in srgb, var(--w-accent) 45%, transparent); }
-[data-os='quality'] .file.selected { border-color: transparent; }
-[data-os='quality'] .file.selected .file-label { background: var(--w-accent); color: var(--w-accent-fg); }
-.file.done { cursor: default; }
-.file.unscored { opacity: 0.45; }
-.file.done:hover { background: none; }
-
-.file-label {
-  max-width: 100%;
-  padding: 0 4px;
-  border-radius: 3px;
-  font-size: 12px;
-  line-height: 1.3;
-  overflow-wrap: break-word;
-}
+/* The Cards folder is drawn by KG.fileView (../os/site.css › File views);
+   this styles the card icon for each view and the Status column. */
+.card-status { color: var(--w-muted); }
+.card-status.replace { color: var(--w-accent); font-weight: 600; }
+.card-suit { font-weight: 600; }
+.cards .fv-tiles { --fv-tile: 106px; }
+.card-suit.suit-S { color: var(--suit-S); }
+.card-suit.suit-H { color: var(--suit-H); }
+.card-suit.suit-D { color: var(--suit-D); }
+.card-suit.suit-C { color: var(--suit-C); }
 
 /* a card file: a page with a folded corner */
 .card-icon {
@@ -287,9 +253,19 @@ body.no-color {
 .card-icon.suit-C { color: #1d7f3a; }
 body.no-color .card-icon { color: #1d2329; }
 body.no-color .paytable .ups { color: var(--w-fg); }
-.file.selected .card-icon::after { background: linear-gradient(225deg, var(--w-select) 50%, #dfe4ea 50%); }
-.file:hover:not(.selected) .card-icon::after { background: linear-gradient(225deg, var(--w-hover) 50%, #dfe4ea 50%); }
-.file.done:hover .card-icon::after { background: linear-gradient(225deg, var(--w-bg) 50%, #dfe4ea 50%); }
+.fv-item.selected .card-icon::after { background: linear-gradient(225deg, var(--w-select) 50%, #dfe4ea 50%); }
+.fv-item:hover:not(.selected) .card-icon::after { background: linear-gradient(225deg, var(--w-hover) 50%, #dfe4ea 50%); }
+.fv-item.done:hover .card-icon::after { background: linear-gradient(225deg, var(--w-bg) 50%, #dfe4ea 50%); }
+
+/* Details: a small page icon next to the file name; the 2x tag is in Status instead */
+.fv-list .card-icon { width: 22px; height: 28px; border-radius: 2px 5px 2px 2px; font-size: 9px; box-shadow: none; }
+.fv-list .card-icon::after { width: 6px; height: 6px; border-radius: 0 0 0 2px; }
+.fv-list .card-bonus { display: none; }
+[data-os='quality'] .fv-list .fv-item.selected .card-icon::after { background: linear-gradient(225deg, var(--w-accent) 50%, #dfe4ea 50%); }
+[data-os='quality'] .fv-list .fv-item:nth-child(even of .fv-item):not(.selected) .card-icon::after { background: linear-gradient(225deg, color-mix(in srgb, var(--w-bg) 94%, #7f7f7f) 50%, #dfe4ea 50%); }
+[data-os='quality'] .fv-list .fv-item.selected .card-status,
+[data-os='quality'] .fv-list .fv-item.selected .card-suit,
+[data-os='quality'] .fv-list .fv-item.selected .muted { color: inherit; }
 
 /* A card with Add 2x carries a small gold tag */
 .card-bonus {
@@ -323,12 +299,12 @@ body.no-color .paytable .ups { color: var(--w-fg); }
 .draw-odds .suit-D b { color: var(--suit-D); }
 .draw-odds .suit-C b { color: var(--suit-C); }
 
-.file.fresh .card-icon { animation: arrive 0.5s ease-out; }
+.fv-item.fresh .card-icon { animation: arrive 0.5s ease-out; }
 @keyframes arrive {
   from { transform: translateY(-6px); opacity: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .file.fresh .card-icon { animation: none; }
+  .fv-item.fresh .card-icon { animation: none; }
 }
 
 /* ---------------------------------------------------------------------------
@@ -519,8 +495,7 @@ body.no-color .paytable .ups { color: var(--w-fg); }
 [data-os='phone'] .tool-btn.shop span { display: inline; }
 [data-os='phone'] .tool-btn { padding: 0 7px; }
 [data-os='phone'] .files-toolbar { flex-wrap: wrap; justify-content: flex-end; height: auto; min-height: 40px; padding: 6px 10px; }
-[data-os='phone'] .icon-view { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
-[data-os='phone'] .file-label { padding: 0 1px; font-size: 11px; }
+[data-os='phone'] .fv-tiles { --fv-tile: 100px; }
 [data-os='phone'] .files-status { font-size: 11px; }
 [data-os='phone'] .acct { padding: 14px 16px 20px; }
 [data-os='phone'] .kg-btn.mini { width: auto; padding: 6px 10px; border-radius: 8px; font-size: 14px; }

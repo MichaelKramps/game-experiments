@@ -127,6 +127,100 @@
 [data-os='phone'] .file-name { font-size: 15px; }
 
 /* ---------------------------------------------------------------------------
+   File views (KG.fileView in os.js): a game's folder as Large icons
+   (.fv-tiles) or Details (.fv-list), and the toolbar switch between them.
+   Games size their own icons under .fv-tiles / .fv-list. */
+
+.fv { flex: 1; min-height: 0; overflow: auto; outline: none; }
+.fv-empty { padding: 12px 14px; color: var(--w-muted); }
+
+.fv-item {
+  border: 1px solid transparent;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  outline: none;
+}
+.fv-item:hover { background: var(--w-hover); }
+.fv-item:focus-visible { border-color: var(--w-accent); }
+.fv-item.selected { background: var(--w-select); }
+.fv-item.done { cursor: default; }
+.fv-item.done:hover { background: none; }
+.fv-item.dim { opacity: 0.45; }
+.fv-main { display: flex; align-items: center; min-width: 0; }
+.fv-icon { flex: none; display: grid; place-items: center; }
+.fv-name { min-width: 0; border-radius: 3px; }
+
+/* Large icons */
+.fv-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--fv-tile, 100px), 1fr));
+  align-content: start;
+  gap: 4px;
+  padding: 12px;
+}
+.fv-tiles .fv-empty { grid-column: 1 / -1; padding: 0 2px; }
+.fv-tiles .fv-item { border-radius: 5px; }
+.fv-tiles .fv-main { flex-direction: column; gap: 6px; padding: 10px 4px 6px; text-align: center; }
+.fv-tiles .fv-name { max-width: 100%; padding: 0 4px; font-size: 12px; line-height: 1.3; overflow-wrap: anywhere; }
+.fv-tiles .fv-item.selected { border-color: color-mix(in srgb, var(--w-accent) 45%, transparent); }
+[data-os='quality'] .fv-tiles .fv-item.selected { border-color: transparent; }
+[data-os='quality'] .fv-tiles .fv-item.selected .fv-name { background: var(--w-accent); color: var(--w-accent-fg); }
+
+/* Details */
+.fv-head,
+.fv-list .fv-item {
+  display: grid;
+  grid-template-columns: minmax(140px, 1fr) var(--fv-cols);
+  align-items: center;
+  gap: 12px;
+  padding: 0 14px;
+}
+.fv-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  height: 28px;
+  background: var(--w-bg);
+  border-bottom: 1px solid var(--w-line);
+  color: var(--w-muted);
+  font-size: 12px;
+}
+.fv-list .fv-item { min-height: 34px; }
+.fv-list .fv-main { gap: 9px; font-weight: 500; }
+.fv-list .fv-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fv-cell { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-variant-numeric: tabular-nums; }
+[data-os='quality'] .fv-list .fv-item:nth-child(even of .fv-item):not(.selected) { background: rgba(127, 127, 127, 0.06); }
+[data-os='quality'] .fv-list .fv-item.selected { background: var(--w-accent); color: var(--w-accent-fg); }
+[data-os='quality'] .fv-list .fv-item.selected .fv-cell * { color: inherit; }
+
+/* The Large icons / Details switch */
+.fv-switch { display: flex; flex: none; gap: 2px; }
+.fv-switch button {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 28px;
+  padding: 0;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  color: var(--w-fg);
+  cursor: pointer;
+}
+.fv-switch button:hover { background: var(--w-hover); }
+.fv-switch button[aria-pressed='true'] { background: var(--w-select); }
+.fv-switch svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+
+[data-os='phone'] .fv-tiles { --fv-tile: 84px; }
+[data-os='phone'] .fv-tiles .fv-name { font-size: 11px; }
+[data-os='phone'] .fv-head,
+[data-os='phone'] .fv-list .fv-item { grid-template-columns: minmax(110px, 1fr) var(--fv-cols-phone, var(--fv-cols)); gap: 8px; padding: 0 12px; }
+[data-os='phone'] .fv-list .fv-item { min-height: 48px; }
+[data-os='phone'] .fv-switch button { width: 34px; height: 34px; }
+
+/* ---------------------------------------------------------------------------
    Notes */
 
 .notes-menu {

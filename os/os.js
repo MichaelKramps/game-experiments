@@ -26,6 +26,8 @@
 //   KG.prompt(user, host, dir)  a shell prompt in the current OS's style
 //   KG.path(p)         a path written with the current OS's separators
 //   KG.openSignup()    open the New Games email signup window
+//   KG.fileView(el, opts)  a folder view (Large icons / Details) with a
+//                      toolbar switch; see "File views" below
 //
 // It also loads Google Analytics, so every page that includes it is tracked.
 
@@ -761,6 +763,103 @@
     }
   }
 
+  // -------------------------------------------------------------------------
+  // File views: a game's folder of items (cards, dice...) shown as Large
+  // icons or as a Details list, with a two-button view switch for the
+  // toolbar. The choice is saved per game. Styles: site.css › File views.
+  //
+  //   const fv = KG.fileView(el, {
+  //     switchEl,      // an empty element in the toolbar to hold the switch
+  //     storageKey,    // where the chosen view is saved ('tiles' | 'list')
+  //     defaultView,   // 'tiles' (default) or 'list'
+  //     columns,       // Details columns after Name: [{ label, width, phoneWidth }]
+  //     onChange,      // called after the player switches views
+  //   });
+  //   fv.render(items, { empty })  fv.mode()  fv.set('tiles' | 'list')
+  //
+  // Each item: { name (text), icon (HTML, sized by the game's CSS under
+  // .fv-tiles / .fv-list), cells (HTML per column, Details only), attrs
+  // ({ 'data-card': 3 }), cls (extra classes: 'done', 'fresh', 'dim'...),
+  // selected, title, label (accessible name) }.
+
+  const FV_ICONS = {
+    tiles: '<rect x="3" y="3" width="5.5" height="5.5" rx="1"/><rect x="11.5" y="3" width="5.5" height="5.5" rx="1"/><rect x="3" y="11.5" width="5.5" height="5.5" rx="1"/><rect x="11.5" y="11.5" width="5.5" height="5.5" rx="1"/>',
+    list: '<path d="M7 5h10M7 10h10M7 15h10"/><path d="M3 5h.5M3 10h.5M3 15h.5"/>',
+  };
+  const fvEsc = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+
+  function fileView(el, opts = {}) {
+    const columns = opts.columns || [];
+    let mode = opts.defaultView === 'list' ? 'list' : 'tiles';
+    try {
+      const saved = opts.storageKey && localStorage.getItem(opts.storageKey);
+      if (saved === 'tiles' || saved === 'list') mode = saved;
+    } catch {
+      // storage unavailable — the default view
+    }
+
+    const sw = opts.switchEl;
+    if (sw) {
+      sw.classList.add('fv-switch');
+      sw.setAttribute('role', 'group');
+      sw.setAttribute('aria-label', 'View');
+      sw.innerHTML = [
+        ['tiles', 'Large icons'],
+        ['list', 'Details'],
+      ]
+        .map(([m, t]) => `<button type="button" data-fv-view="${m}" title="${t}" aria-label="${t}"><svg viewBox="0 0 20 20" aria-hidden="true">${FV_ICONS[m]}</svg></button>`)
+        .join('');
+      sw.addEventListener('click', (e) => {
+        const b = e.target.closest('[data-fv-view]');
+        if (b) set(b.dataset.fvView);
+      });
+    }
+
+    function syncSwitch() {
+      if (sw) for (const b of sw.querySelectorAll('[data-fv-view]')) b.setAttribute('aria-pressed', String(b.dataset.fvView === mode));
+    }
+
+    function set(m) {
+      if (m !== 'tiles' && m !== 'list') return;
+      mode = m;
+      try {
+        if (opts.storageKey) localStorage.setItem(opts.storageKey, m);
+      } catch {
+        // storage unavailable — the choice lasts for this page only
+      }
+      syncSwitch();
+      opts.onChange?.(m);
+    }
+
+    function render(items, { empty = 'This folder is empty.' } = {}) {
+      const list = mode === 'list';
+      el.classList.add('fv');
+      el.classList.toggle('fv-tiles', !list);
+      el.classList.toggle('fv-list', list);
+      el.style.setProperty('--fv-cols', columns.map((c) => c.width || 'minmax(60px, 1fr)').join(' ') || '0px');
+      el.style.setProperty('--fv-cols-phone', columns.map((c) => c.phoneWidth || c.width || 'minmax(40px, 1fr)').join(' ') || '0px');
+      const head = list ? `<div class="fv-head" aria-hidden="true"><span>Name</span>${columns.map((c) => `<span>${fvEsc(c.label)}</span>`).join('')}</div>` : '';
+      const body = items.length
+        ? items
+            .map((it) => {
+              const cls = ['fv-item', ...(it.cls || []).filter(Boolean)];
+              if (it.selected) cls.push('selected');
+              const attrs = Object.entries(it.attrs || {})
+                .map(([k, v]) => ` ${k}="${fvEsc(v)}"`)
+                .join('');
+              const cells = list ? (it.cells || []).map((c) => `<span class="fv-cell">${c ?? ''}</span>`).join('') : '';
+              return `<div class="${cls.join(' ')}"${attrs} tabindex="0" role="option" aria-selected="${!!it.selected}"${it.title ? ` title="${fvEsc(it.title)}"` : ''}${it.label ? ` aria-label="${fvEsc(it.label)}"` : ''}><span class="fv-main"><span class="fv-icon">${it.icon || ''}</span><span class="fv-name">${fvEsc(it.name)}</span></span>${cells}</div>`;
+            })
+            .join('')
+        : `<p class="fv-empty">${fvEsc(empty)}</p>`;
+      el.innerHTML = head + body;
+      syncSwitch();
+    }
+
+    syncSwitch();
+    return { render, set, mode: () => mode };
+  }
+
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
 
@@ -771,6 +870,7 @@
     prompt,
     path,
     makeWindow,
+    fileView,
     settings: () => ({ ...settings }),
     set,
     openSettings: () => openModal('settings'),

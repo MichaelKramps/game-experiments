@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Spreadsheet Word Search: Word Search That Looks Like Excel</title>
+  <meta name="description" content="Play word search in a spreadsheet that looks like Excel, free in your browser. 40 themes, three sizes, new puzzles every game. No download, no ads, no sign up.">
+  <link rel="canonical" href="https://kramps.games/spreadsheet-games/word-search/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Kramps Games">
+  <meta property="og:title" content="Spreadsheet Word Search: Word Search That Looks Like Excel">
+  <meta property="og:description" content="Word search puzzles in a spreadsheet, free in your browser. A game that looks like work.">
+  <meta property="og:url" content="https://kramps.games/spreadsheet-games/word-search/">
+  <script src="../../os/os.js"></script>
+  <link rel="stylesheet" href="../../os/os.css">
+  <link rel="stylesheet" href="../../os/site.css">
+  <link rel="stylesheet" href="../sheet.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Read by search engines and screen readers; hidden so the window keeps the disguise. -->
+  <header class="sr-only">
+    <h1>Spreadsheet Word Search: word search puzzles in an Excel-style spreadsheet</h1>
+    <p>A free word search game that looks like a spreadsheet, so it looks like work while you play. The letters fill a range of cells and the words to find are listed in a column beside them. Play it in your browser with no download, no ads and no sign up.</p>
+    <h2>How to play</h2>
+    <ul>
+      <li>Each puzzle hides 12 words from one theme, like Office Supplies, Meeting Notes, Animals or Space. There are 40 themes.</li>
+      <li>Drag across a word to select it, or click its first letter and then its last. A word you find gets highlighted and checked off the list.</li>
+      <li>Words run in any direction: across, down, diagonally and backwards, and they cross each other. Easy is a 10 by 10 grid, Medium 12 by 12 and Hard 15 by 15.</li>
+      <li>Find all 12 to finish. Your best time on each level is saved.</li>
+    </ul>
+    <p>More <a href="/#classic">classic games that look like work</a>: <a href="/spreadsheet-games/minesweeper/">Spreadsheet Minesweeper</a>, <a href="/spreadsheet-games/sudoku/">Spreadsheet Sudoku</a>, <a href="/spreadsheet-games/2048/">Spreadsheet 2048</a>, <a href="/spreadsheet-games/chess/">Spreadsheet Chess</a>, <a href="/spreadsheet-games/yacht/">Yacht dice</a> and <a href="/solitaire/">Solitaire at work</a>. Or try an original: <a href="/diff-guess-key/">diff guess key</a>, a word game that looks like a terminal, and <a href="/ctrl-alt-deal/">Ctrl+Alt+Deal</a>, a poker deckbuilder. <a href="/">All Kramps Games</a>.</p>
+  </header>
+
+  <div class="window sheet-win" id="sheet" data-app="Spreadsheet">
+    <div class="titlebar">
+      <div class="lights"><span class="close"></span><span class="min"></span><span class="max"></span></div>
+      <div class="window-title" id="sheet-title">Word Search</div>
+    </div>
+    <div class="sheet-menu">
+      <span class="deco-menu">File</span><span class="on deco-menu">Home</span><span class="deco-menu">Insert</span><span class="deco-menu">Formulas</span><span class="deco-menu">Data</span><span class="deco-menu">View</span><button type="button" id="help">Help</button>
+    </div>
+    <div class="sheet-tools">
+      <button class="tool" type="button" id="new" title="New puzzle (F2)"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 2.5h7l3.5 3.5v11.5h-10.5z"/><path d="M12 2.5V6h3.5"/></svg>New</button>
+      <label>Level <select id="level" aria-label="Puzzle level">
+        <option value="easy">Easy</option>
+        <option value="medium" selected>Medium</option>
+        <option value="hard">Hard</option>
+      </select></label>
+      <span class="sep deco-sep" aria-hidden="true"></span>
+      <span class="deco" aria-hidden="true"><b>B</b></span><span class="deco" aria-hidden="true"><i>I</i></span><span class="deco" aria-hidden="true"><u>U</u></span>
+      <span class="sep deco-sep" aria-hidden="true"></span>
+      <span class="deco" aria-hidden="true">$</span><span class="deco" aria-hidden="true">%</span><span class="deco" aria-hidden="true">.00</span><span class="deco" aria-hidden="true">Σ</span>
+    </div>
+    <div class="sheet-formula">
+      <span class="name-box" id="namebox">A1</span>
+      <span class="fx" aria-hidden="true">fx</span>
+      <span class="formula" id="formula"></span>
+    </div>
+    <div class="sheet-info" id="info" aria-live="polite"></div>
+    <div class="sheet-wrap" id="wrap" tabindex="0" aria-label="Word search">
+      <table class="sheet-grid" id="grid"></table>
+    </div>
+    <div class="sheet-foot">
+      <div class="sheet-tabs" aria-hidden="true"><span class="on" id="tab"></span><span>Notes</span></div>
+      <div class="sheet-status">
+        <span class="state" id="state">Ready</span>
+        <span id="found"></span>
+        <span id="clock"></span>
+      </div>
+    </div>
+  </div>
+
+  <script src="words.js"></script>
+  <script src="engine.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>

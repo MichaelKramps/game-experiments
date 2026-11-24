@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Kramps Games: Games That Look Like Work</title>
-  <meta name="description" content="Free browser games disguised as work: Minesweeper, Sudoku, 2048 and chess in a spreadsheet, solitaire on a task board, a terminal word game and a poker deckbuilder that look like everyday computer tasks. No ads, no sign up.">
+  <meta name="description" content="Free browser games disguised as work: Minesweeper, Sudoku, 2048, chess, word search and Yacht dice in a spreadsheet, solitaire on a task board, a terminal word game and a poker deckbuilder that look like everyday computer tasks. No ads, no sign up.">
   <link rel="canonical" href="https://kramps.games/">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Kramps Games">
@@ -32,6 +32,8 @@
       <li><a href="/spreadsheet-games/sudoku/">Spreadsheet Sudoku</a>: Sudoku puzzles in a spreadsheet that looks like Excel.</li>
       <li><a href="/spreadsheet-games/2048/">Spreadsheet 2048</a>: the 2048 number puzzle in a spreadsheet that looks like Excel.</li>
       <li><a href="/spreadsheet-games/chess/">Spreadsheet Chess</a>: chess against the computer in a spreadsheet that looks like Excel.</li>
+      <li><a href="/spreadsheet-games/word-search/">Spreadsheet Word Search</a>: word search puzzles in 40 themes in a spreadsheet that looks like Excel.</li>
+      <li><a href="/spreadsheet-games/yacht/">Yacht</a>: the classic five dice game, with dice as files and a score sheet that looks like Excel.</li>
       <li><a href="/solitaire/">Solitaire at work</a>: free Klondike solitaire with no ads that looks like a task board.</li>
     </ul>
   </header>
@@ -58,7 +60,7 @@
           <a class="file-row" href="#classic">
             <span class="file-name"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 7a2 2 0 0 1 2-2h5l2 2h9a2 2 0 0 1 2 2v1H2z" class="i-folder-back"/><rect x="2" y="9" width="20" height="11" rx="2" class="i-folder"/></svg><span>Classic Games</span></span>
             <span class="file-kind">Folder</span>
-            <span class="file-desc">5 games</span>
+            <span class="file-desc">7 games</span>
           </a>
         </div>
         <div class="files-status" id="status">2 items</div>
@@ -78,7 +80,7 @@
       name: 'Kramps Games',
       games: [
         { name: 'diff guess key', href: 'diff-guess-key/', kind: 'Word deduction', desc: 'guess the 5 letter key before your tolerance runs out' },
-        { name: 'Ctrl+Alt+Deal', href: 'ctrl-alt-deal/', kind: 'Deckbuilder', icon: 'file', desc: 'edit your deck of cards to make stronger hands and earn more money' },
+        { name: 'Ctrl+Alt+Deal', href: 'ctrl-alt-deal/', kind: 'Deckbuilder', icon: 'multi', desc: 'edit your deck of cards to make stronger hands and earn more money' },
       ],
     };
     const CLASSIC = {
@@ -89,6 +91,8 @@
         { name: 'Sudoku', href: 'spreadsheet-games/sudoku/', kind: 'Logic puzzle', icon: 'sheet', desc: 'fill the sheet so every row, column and block has 1 to 9' },
         { name: '2048', href: 'spreadsheet-games/2048/', kind: 'Number puzzle', icon: 'sheet', desc: 'slide and add numbers up to 2048, then keep going' },
         { name: 'Chess', href: 'spreadsheet-games/chess/', kind: 'Board game', icon: 'sheet', desc: 'play chess against the computer, easy to hard' },
+        { name: 'Word Search', href: 'spreadsheet-games/word-search/', kind: 'Word puzzle', icon: 'sheet', desc: 'find 12 hidden words in a sheet of letters, 40 themes' },
+        { name: 'Yacht', href: 'spreadsheet-games/yacht/', kind: 'Dice game', icon: 'multi', desc: 'roll five dice and fill the score sheet in 13 turns' },
         { name: 'Solitaire', href: 'solitaire/', kind: 'Card game', icon: 'board', desc: 'Klondike solitaire on a task board, draw 3 or draw 1' },
       ],
     };
@@ -106,10 +110,13 @@
     const GAME_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="3" class="i-term"/><path d="m6 9 3 3-3 3M11 15h6" class="i-term-mark"/></svg>';
     const SHEET_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2.5" class="i-paper"/><path d="M3.5 5.5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2V8h-17z" class="i-sheet"/><path d="M4 13h16M4 17.5h16M9.5 8v12.5M15 8v12.5" class="i-lines"/></svg>';
     // A game's icon shows the app it's played in: a terminal (the default),
-    // a spreadsheet, or a file for games played in a file explorer.
+    // a spreadsheet, a file for games played in a file explorer, a task
+    // board, or two stacked windows for games played across more than one app
+    // (Ctrl+Alt+Deal, Yacht).
     const FILE_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2.5h8.5l4.5 4.5v13a1.5 1.5 0 0 1-1.5 1.5h-11.5a1.5 1.5 0 0 1-1.5-1.5v-16a1.5 1.5 0 0 1 1.5-1.5z" class="i-paper"/><path d="M14.5 2.5V7h4.5" class="i-fold"/><path d="M8 12h8M8 15.5h8M8 19h5" class="i-lines"/></svg>';
     const BOARD_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2.5" class="i-paper"/><rect x="6" y="6.5" width="3.5" height="11" rx="1" class="i-board"/><rect x="10.25" y="6.5" width="3.5" height="7.5" rx="1" class="i-board"/><rect x="14.5" y="6.5" width="3.5" height="4.5" rx="1" class="i-board"/></svg>';
-    const GAME_ICONS = { sheet: SHEET_ICON, file: FILE_ICON, board: BOARD_ICON };
+    const MULTI_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="2.5" width="13.5" height="12" rx="2" class="i-paper"/><path d="M8.5 4.5a1.5 1.5 0 0 1 1.5-1.5h9.5a1.5 1.5 0 0 1 1.5 1.5V6h-12.5z" class="i-sheet"/><rect x="2.5" y="9" width="13.5" height="12.5" rx="2" class="i-paper"/><path d="M3 11a1.5 1.5 0 0 1 1.5-1.5h9.5a1.5 1.5 0 0 1 1.5 1.5v1.5h-12.5z" class="i-board"/><path d="M5.5 15.5h7.5M5.5 18.5h5" class="i-lines"/></svg>';
+    const GAME_ICONS = { sheet: SHEET_ICON, file: FILE_ICON, board: BOARD_ICON, multi: MULTI_ICON };
 
     const $ = (id) => document.getElementById(id);
     const esc = (s) => s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);

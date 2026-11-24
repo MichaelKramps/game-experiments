@@ -59,6 +59,32 @@ Takeaways:
 3. 2048 (spreadsheet) — built 2026-11-21 at `/spreadsheet-games/2048/`; written from scratch (no code from the MIT-licensed original), continues past 2048
 4. Chess (spreadsheet) — built 2026-11-19 at `/spreadsheet-games/chess/`, ahead of Sudoku and 2048; computer opponent is Stockfish (GPLv3) in a Web Worker
 5. Solitaire / Klondike — built 2026-11-20 at `/solitaire/` as a task board (not a spreadsheet), ahead of Sudoku and 2048; see "Solitaire keywords" above
+6. Yacht (the Yahtzee-style dice game) — built 2026-11-23 at `/spreadsheet-games/yacht/`: dice as files plus a spreadsheet score sheet. Keywords not researched yet: check "yahtzee in excel", "yahtzee spreadsheet", "yacht dice game", "dice game at work" and "dice game no ads" in Keyword Planner, then revisit its `<title>` (currently "Yacht Dice Game at Work: Free, No Ads, Looks Like a Spreadsheet"). Some "yahtzee excel" searches want a printable score sheet, not a game.
+
+### Next games (picked by Kramps 2026-11-24)
+
+Chosen from a brainstorm of no/low lawsuit-risk classics (see Legal guardrails). Word Search was first (built 2026-11-24); the rest aren't ordered yet. The quickest builds are Reversi, Checkers, Four in a Row, Spider and FreeCell (they reuse Chess, Solitaire or have simple computer opponents). Backgammon and The Landlord's Game are the biggest. None of the keywords have been checked yet.
+
+| Game | Known as (descriptive SEO text only) | Disguise idea | Keywords to check |
+|---|---|---|---|
+| **Word Search** (built 2026-11-24 at `/spreadsheet-games/word-search/`) | — | Spreadsheet | word search in excel, word search at work, word search no ads |
+| Checkers | Draughts | Spreadsheet | checkers in excel, checkers at work, checkers no ads |
+| Reversi | Othello (trademark of MegaHouse) | Spreadsheet | reversi in excel, othello in excel, reversi no ads |
+| Four in a Row | Connect Four (Hasbro) | Spreadsheet | connect four in excel, four in a row game, connect 4 at work |
+| Salvo | Battleship (Hasbro) | Spreadsheet with two working sheet tabs (your fleet / their fleet) | battleship in excel, battleship spreadsheet, battleship at work |
+| Backgammon | — | Dice files (from Yacht) + board | backgammon in excel, backgammon at work, backgammon no ads |
+| Mancala | Kalah (avoid that name) | Spreadsheet row | mancala in excel, mancala at work, mancala no ads |
+| The Landlord's Game | Monopoly (Hasbro) | Property spreadsheet + board | monopoly in excel, monopoly spreadsheet, monopoly at work |
+| Hearts | — | Cards as files | hearts at work, hearts no ads, hearts card game no download |
+| Spades | — | Cards as files | spades at work, spades no ads |
+| Gin Rummy | — | Cards as files | gin rummy at work, gin rummy no ads |
+| Cribbage | — | Cards as files + spreadsheet pegging | cribbage in excel, cribbage at work, cribbage no ads |
+| Euchre | — | Cards as files | euchre at work, euchre no ads |
+| Crazy Eights | Uno (Mattel) | Cards as files | crazy eights no ads, uno at work |
+| Spider Solitaire | — | Task board, like Solitaire | spider solitaire at work, spider solitaire no ads (spider solitaire unblocked is 1K–10K, mostly students) |
+| FreeCell | — | Task board | freecell at work, freecell no ads |
+
+The Landlord's Game is low risk only with our own board layout and property names: no "Chance"/"Community Chest" cards, no "GO" corner, no mascot or Monopoly look. Cut from the brainstorm: Nine Men's Morris, Dots and Boxes, Go, Bulls and Cows, L'Attaque, Nonograms, Calcudoku, Kakuro, Mahjong Solitaire, Lights Out. Skipped for legal risk or size: Risk, Clue, Scrabble, Boggle.
 
 Build the spreadsheet look once as a reusable shell inside the `os/` desktop (column letters, row numbers, formula bar, sheet tabs, selected-cell box, themed per OS setting), so game #1 is "shell + Minesweeper" and later games are mostly game logic.
 
@@ -85,6 +111,7 @@ Build the spreadsheet look once as a reusable shell inside the `os/` desktop (co
 - Game rules/mechanics are not copyrightable; code, art, sound and names (trademarks) are protected.
 - Safe: solitaire variants, Minesweeper (don't copy Microsoft's graphics/smiley), Sudoku, Snake, chess, checkers, 2048, nonograms (don't call them "Picross"), mahjong solitaire.
 - Rename trademarked games: Wordle, Yahtzee, Battleship, Connect Four, Mastermind, Boggle, Scrabble, Uno.
+- Yahtzee (decided 2026-11-23): the game is **Yacht**, the public-domain game Yahtzee came from, with Yahtzee's rules (rules aren't protected). The five-of-a-kind category is "Yacht". "Yahtzee" never appears as the game's name, in the `<title>`/H1 or in the game UI; it may appear only descriptively in the meta description and hidden SEO text ("a Yahtzee-style dice game"), next to the line "Yahtzee is a trademark of Hasbro … not affiliated with Hasbro." No Hasbro logo, branding, cup art or score-pad artwork. Avoid look-alike names (Yatzee, Yatzy) and other brand names for the game (Kniffel, Kismet).
 - Avoid: Tetris (Tetris Holding v. Xio, 2012 — look and feel protected), Pac-Man, Space Invaders and other branded arcade games.
 - Disguises should be generic spreadsheet/inbox styles — no Microsoft logos/icons, no pixel-perfect Excel/Outlook copies, don't name games "Excel X". Using "Excel" descriptively in page copy ("Minesweeper that looks like an Excel spreadsheet") is different from branding a game with it; keep product names generic ("Spreadsheet Minesweeper").
 

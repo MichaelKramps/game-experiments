@@ -1,0 +1,163 @@
+/* Yacht: the score sheet's cells and the Dice window (a file browser). The
+   sheet chrome comes from ../sheet.css; the Files toolbar/sidebar/status from
+   ../../os/site.css. The file tiles, toolbar buttons, banner and phone screens
+   are adapted from ctrl-alt-deal/style.css. */
+
+:root { --good: #1a7f37; }
+[data-theme='dark'] { --good: #8fdc9a; }
+
+/* ---------------------------------------------------------------------------
+   Score sheet: A = category, B = how it scores, C = this game, then one
+   column per earlier game, newest first */
+
+.sheet-grid tr > :nth-child(2) { width: 150px; min-width: 150px; }
+.sheet-grid tr > :nth-child(3) { width: 180px; min-width: 180px; }
+#sheet { --s-cell: 64px; }
+[data-os='phone'] .sheet-grid tr > :nth-child(2) { width: 112px; min-width: 112px; }
+[data-os='phone'] .sheet-grid tr > :nth-child(3) { width: 150px; min-width: 150px; }
+[data-os='phone'] #sheet { --s-cell: 58px; --s-row: 34px; }
+
+.sheet-grid td { cursor: cell; }
+.sheet-grid td.ca { padding: 0 6px; text-align: left; }
+.sheet-grid td.cr { padding: 0 6px; color: var(--w-muted); text-align: left; font-size: 12px; }
+.sheet-grid td.cs { padding: 0 6px; text-align: right; }
+.sheet-grid td.head { font-weight: 600; border-bottom-color: var(--w-muted); }
+.sheet-grid td.cr.head { color: var(--w-fg); font-size: inherit; }
+.sheet-grid td.cs.head { text-align: right; }
+.sheet-grid td.tot { font-weight: 600; background: var(--s-head); }
+.sheet-grid td.grand { border-top: 1px solid var(--w-fg); border-bottom: 3px double var(--w-fg); }
+/* earlier games are muted; one left unfinished is italic too */
+.sheet-grid td.cs:not(:nth-child(4)) { color: var(--w-muted); }
+.sheet-grid td.cs.unfinished { font-style: italic; }
+[data-os='phone'] .sheet-grid td.cr { font-size: 11px; }
+
+/* An empty category the dice can go in: a grey italic preview to click */
+.sheet-grid td.can { cursor: pointer; }
+.sheet-grid td.preview { color: var(--w-muted); font-style: italic; }
+.sheet-grid td.preview.zero { opacity: 0.6; }
+.sheet-grid tr:has(td.can:hover) td.can { background: var(--s-head-on); }
+.sheet-grid tr:has(td.can:hover) td.preview { color: var(--s-accent); }
+
+/* A score that was just entered flashes, like a recalculated cell */
+@keyframes yacht-pop { from { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--s-accent) 55%, transparent); } }
+.sheet-grid td.pop { animation: yacht-pop 0.6s ease-out; }
+
+.sheet-grid td.sel { box-shadow: inset 0 0 0 2px var(--s-accent); }
+
+/* ---------------------------------------------------------------------------
+   Dice window: a file browser */
+
+.crumbs { flex: 1; }
+
+.tool-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 10px;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  color: var(--w-fg);
+  font: inherit;
+  cursor: default;
+}
+.tool-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.tool-btn:hover:not(:disabled) { background: var(--w-hover); }
+.tool-btn:disabled { opacity: 0.4; }
+.tool-btn.primary:not(:disabled) { color: var(--w-accent); border-color: var(--w-accent); }
+[data-os='power'] .tool-btn { background: var(--w-btn); font-weight: 700; }
+
+.files-side a em { margin-left: auto; color: var(--w-muted); font-size: 11px; font-style: normal; }
+
+.banner {
+  flex: none;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--w-line);
+  background: var(--w-side);
+  line-height: 1.45;
+}
+.banner:empty { display: none; }
+.banner .kg-btn { margin-left: 6px; }
+.kg-btn.mini { min-width: 0; padding: 3px 9px; font-size: 12px; }
+
+/* The dice folder is drawn by KG.fileView (site.css › File views); this only
+   sizes the die icon for each view and colors the Status column. */
+
+/* A die file's icon: the face, pips on a 3×3 grid. Always white like paper,
+   so it keeps light colors in the dark theme. */
+.die-icon {
+  display: grid;
+  grid-template: repeat(3, 1fr) / repeat(3, 1fr);
+  place-items: center;
+  background: #ffffff;
+  border: 1px solid #a9b2bc;
+}
+.die-icon i { border-radius: 50%; background: #1d2329; }
+.fv-tiles .die-icon { width: 46px; height: 46px; padding: 6px; border-radius: 9px; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12); }
+.fv-tiles .die-icon i { width: 8px; height: 8px; }
+.fv-tiles .fv-item.selected .die-icon { border-color: var(--w-accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--w-accent) 35%, transparent); }
+.fv-list .die-icon { width: 20px; height: 20px; padding: 3px; border-radius: 4px; }
+.fv-list .die-icon i { width: 3.5px; height: 3.5px; }
+[data-os='phone'] .fv-tiles .die-icon { width: 54px; height: 54px; }
+[data-os='phone'] .fv-tiles .die-icon i { width: 10px; height: 10px; }
+[data-os='phone'] .fv-list .die-icon { width: 26px; height: 26px; padding: 4px; }
+[data-os='phone'] .fv-list .die-icon i { width: 4.5px; height: 4.5px; }
+
+.die-status { color: var(--w-muted); }
+.die-status.reroll { color: var(--w-accent); font-weight: 600; }
+
+.fv-item.fresh .die-icon { animation: arrive 0.4s ease-out; }
+@keyframes arrive {
+  from { transform: rotate(-90deg) scale(0.6); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fv-item.fresh .die-icon,
+  .sheet-grid td.pop { animation: none; }
+}
+
+/* ---------------------------------------------------------------------------
+   Phones: one window at a time, switched with tabs along the top */
+
+.screen-tabs { display: none; }
+
+[data-os='phone'] .screen-tabs {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 50;
+  display: flex;
+  gap: 4px;
+  height: 48px;
+  padding: 6px 12px;
+  background: var(--w-chrome);
+  border-bottom: 1px solid var(--w-line);
+}
+[data-os='phone'] .screen-tabs button {
+  flex: 1;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  color: var(--w-muted);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+}
+[data-os='phone'] .screen-tabs button[aria-selected='true'] { background: var(--w-select); color: var(--w-fg); }
+
+[data-os='phone'] .window.sheet-win,
+[data-os='phone'] .window.roll-win { inset: 48px 0 var(--tabbar-h, 64px) 0; }
+[data-os='phone'] .window.sheet-win .titlebar,
+[data-os='phone'] .window.roll-win .titlebar { display: none; }
+[data-os='phone'] .window:not(.on-screen):not(.kg-dialog) { display: none; }
+
+[data-os='phone'] .files-side { display: none; }
+[data-os='phone'] .files-body { flex-direction: column; }
+[data-os='phone'] .files-toolbar { height: auto; min-height: 44px; padding: 6px 10px; }
+[data-os='phone'] .tool-btn { height: 34px; }
+[data-os='phone'] .tool-btn:not(.primary) span { display: none; }
+[data-os='phone'] .files-status { font-size: 11px; }
+[data-os='phone'] .banner .kg-btn { width: auto; padding: 4px 10px; font-size: 13px; }
+
+/* Every game button shows the pointer on hover (the shell's OS-style buttons default to the arrow) */
+.window button:not(:disabled),
+.screen-tabs button { cursor: pointer; }
