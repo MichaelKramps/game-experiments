@@ -1,0 +1,68 @@
+/* Four in a Row's cells. The board is the bordered range A1:G6 on the Board
+   tab: X is you, O the computer. The Moves tab logs each drop. */
+
+:root {
+  --f4-o: #1d5fbf;     /* the computer's O */
+  --f4-last: #fff4ce;  /* the last disc dropped */
+  --f4-win: #c6efce;   /* the four in a row */
+  --f4-win-fg: #0f5a2a;
+}
+[data-theme='dark'] {
+  --f4-o: #7fb2ff;
+  --f4-last: #433519;
+  --f4-win: #24513a;
+  --f4-win-fg: #b9f0c8;
+}
+
+/* Square-ish board cells, wider than the default sheet's. */
+#sheet { --s-cell: 46px; --s-row: 40px; }
+/* the Moves tab is a plain table: normal rows */
+#sheet.on-moves { --s-cell: 64px !important; --s-row: 26px !important; }
+
+.sheet-grid td { cursor: cell; }
+
+/* the board */
+.sheet-grid td.b { text-align: center; font-size: 21px; font-weight: 700; line-height: 1; }
+.playing .sheet-grid td.b { cursor: pointer; }
+.sheet-grid td.b.x { color: var(--w-fg); }
+.sheet-grid td.b.o { color: var(--f4-o); }
+.sheet-grid td.b.last { background: var(--f4-last); }
+.sheet-grid td.b.win { background: var(--f4-win); color: var(--f4-win-fg); }
+.sheet-grid td.b.ghost { color: color-mix(in srgb, var(--w-fg) 28%, transparent); }
+.sheet-grid td.b.col { background: color-mix(in srgb, var(--s-accent) 6%, var(--w-bg)); }
+.sheet-grid td.b.col.ghost { background: color-mix(in srgb, var(--s-accent) 12%, var(--w-bg)); }
+[data-os='phone'] .sheet-grid td.b { font-size: 22px; }
+
+/* the board's outer edge */
+.sheet-grid td.et { border-top: 1px solid var(--w-muted); }
+.sheet-grid td.el { border-left: 1px solid var(--w-muted); }
+.sheet-grid td.er { border-right: 1px solid var(--w-muted); }
+.sheet-grid td.eb { border-bottom: 1px solid var(--w-muted); }
+
+/* A disc drops into its cell. */
+.sheet-grid td.b span { display: inline-block; }
+@keyframes f4-drop { from { transform: translateY(-70%); opacity: 0; } }
+.sheet-grid td.b.drop span { animation: f4-drop 0.22s ease-in; }
+@media (prefers-reduced-motion: reduce) {
+  .sheet-grid td.b.drop span { animation: none; }
+}
+
+/* The Moves tab: Move | Player | Column | Cell */
+.t-moves tr > :nth-child(2) { width: 52px; min-width: 52px; }
+.t-moves tr > :nth-child(3) { width: 96px; min-width: 96px; }
+.t-moves tr > :nth-child(4),
+.t-moves tr > :nth-child(5) { width: 64px; min-width: 64px; }
+.sheet-grid td.hd { font-weight: 600; background: var(--s-head); padding: 0 6px; }
+.sheet-grid td.log { padding: 0 6px; text-align: left; }
+.sheet-grid td.c { text-align: center; }
+.sheet-grid td.num { font-variant-numeric: tabular-nums; }
+.sheet-grid td.log.o { color: var(--f4-o); }
+.sheet-grid td.result { font-weight: 600; }
+
+/* the selected cell */
+.sheet-grid td.sel { box-shadow: inset 0 0 0 2px var(--s-accent); }
+
+/* Phones: keep both sheet tabs visible; the level is in the toolbar anyway. */
+.sheet-tabs { flex: none; }
+[data-os='phone'] #who { display: none; }
+[data-os='phone'] .sheet-status { gap: 12px; }
