@@ -76,7 +76,7 @@ Chosen from a brainstorm of no/low lawsuit-risk classics (see Legal guardrails).
 | Mancala | Kalah (avoid that name) | Spreadsheet row | mancala in excel, mancala at work, mancala no ads |
 | The Landlord's Game | Monopoly (Hasbro) | Property spreadsheet + board | monopoly in excel, monopoly spreadsheet, monopoly at work |
 | Hearts | — | Cards as files | hearts at work, hearts no ads, hearts card game no download |
-| Spades | — | Cards as files | spades at work, spades no ads |
+| **Spades** (built 2026-11-24 at `/spreadsheet-games/spades/`) | — | Cards as files + spreadsheet scorecard | spades at work, spades no ads |
 | Gin Rummy | — | Cards as files | gin rummy at work, gin rummy no ads |
 | Cribbage | — | Cards as files + spreadsheet pegging | cribbage in excel, cribbage at work, cribbage no ads |
 | Euchre | — | Cards as files | euchre at work, euchre no ads |

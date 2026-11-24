@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Spades at Work: Free Spades Card Game, No Ads, Looks Like Work</title>
+  <meta name="description" content="Play Spades free in your browser with a computer partner against two computer opponents. Your cards are files and the scorecard is a spreadsheet. Nil and blind nil, first to 500. No download, no ads, no sign up.">
+  <link rel="canonical" href="https://kramps.games/spreadsheet-games/spades/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Kramps Games">
+  <meta property="og:title" content="Spades at Work: Free Spades Card Game, No Ads, Looks Like Work">
+  <meta property="og:description" content="Partnership Spades where your hand is a folder of files and the scorecard is a spreadsheet. Free in your browser. A game that looks like work.">
+  <meta property="og:url" content="https://kramps.games/spreadsheet-games/spades/">
+  <script src="../../os/os.js"></script>
+  <link rel="stylesheet" href="../../os/os.css">
+  <link rel="stylesheet" href="../../os/site.css">
+  <link rel="stylesheet" href="../sheet.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Read by search engines and screen readers; hidden so the windows keep the disguise. -->
+  <header class="sr-only">
+    <h1>Spades at work: the partnership card game, with cards as files and a spreadsheet scorecard</h1>
+    <p>A free Spades card game that looks like work. Your 13 cards are files in a file browser and every trick is logged in a spreadsheet. You and a computer partner play against two computer opponents. Play it in your browser with no download, no ads and no sign up.</p>
+    <h2>How to play</h2>
+    <ul>
+      <li>Each player gets 13 cards and bids how many tricks they will take. You and your partner add your bids together.</li>
+      <li>Follow the suit that was led if you can. Spades are trump and beat every other suit. You can't lead spades until one has been played.</li>
+      <li>Make your team's bid to score 10 points per trick bid, plus 1 per extra trick. Extra tricks are bags, and every 10 bags costs 100 points. Missing your bid loses 10 points per trick bid.</li>
+      <li>Bid nil to take no tricks at all for 100 points (lose 100 if you take one). When your team is behind by 100 or more you can bid blind nil before looking at your cards, for 200.</li>
+      <li>The first team to 500 points wins. A setting lets you play your partner's hand too.</li>
+    </ul>
+    <p>More <a href="/#classic">classic games that look like work</a>: <a href="/solitaire/">Solitaire at work</a>, <a href="/spreadsheet-games/yacht/">Yacht dice</a>, <a href="/spreadsheet-games/word-search/">Spreadsheet Word Search</a>, <a href="/spreadsheet-games/minesweeper/">Spreadsheet Minesweeper</a>, <a href="/spreadsheet-games/sudoku/">Spreadsheet Sudoku</a>, <a href="/spreadsheet-games/2048/">Spreadsheet 2048</a> and <a href="/spreadsheet-games/chess/">Spreadsheet Chess</a>. Or try an original: <a href="/ctrl-alt-deal/">Ctrl+Alt+Deal</a>, a poker deckbuilder with cards as files, and <a href="/diff-guess-key/">diff guess key</a>, a word game that looks like a terminal. <a href="/">All Kramps Games</a>.</p>
+  </header>
+
+  <!-- Phones show one window at a time; this switches between them. -->
+  <div class="screen-tabs" role="tablist" aria-label="Windows">
+    <button type="button" role="tab" data-screen="hand">Hand</button>
+    <button type="button" role="tab" data-screen="sheet">Scorecard</button>
+  </div>
+
+  <div class="window sheet-win" id="sheet" data-app="Spreadsheet">
+    <div class="titlebar">
+      <div class="lights"><span class="close"></span><span class="min"></span><span class="max"></span></div>
+      <div class="window-title" id="sheet-title">Scorecard</div>
+    </div>
+    <div class="sheet-menu">
+      <span class="deco-menu">File</span><span class="on deco-menu">Home</span><span class="deco-menu">Insert</span><span class="deco-menu">Formulas</span><span class="deco-menu">Data</span><span class="deco-menu">View</span><button type="button" id="help">Help</button>
+    </div>
+    <div class="sheet-tools">
+      <button class="tool" type="button" id="new" title="New game (F2)"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 2.5h7l3.5 3.5v11.5h-10.5z"/><path d="M12 2.5V6h3.5"/></svg>New</button>
+      <button class="tool" type="button" id="both" aria-pressed="false" title="Play your partner's (North's) hand as well as your own"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="7" cy="7" r="2.6"/><circle cx="13.5" cy="7" r="2.6"/><path d="M2.5 16c.4-2.6 2.2-4 4.5-4s4.1 1.4 4.5 4"/><path d="M11.3 12.2c.7-.2 1.4-.2 2.2-.2 2.3 0 4.1 1.4 4.5 4"/></svg>Play North</button>
+      <span class="sep deco-sep" aria-hidden="true"></span>
+      <span class="deco" aria-hidden="true"><b>B</b></span><span class="deco" aria-hidden="true"><i>I</i></span><span class="deco" aria-hidden="true"><u>U</u></span>
+      <span class="sep deco-sep" aria-hidden="true"></span>
+      <span class="deco" aria-hidden="true">$</span><span class="deco" aria-hidden="true">%</span><span class="deco" aria-hidden="true">.00</span><span class="deco" aria-hidden="true">Σ</span>
+    </div>
+    <div class="sheet-formula">
+      <span class="name-box" id="namebox">A1</span>
+      <span class="fx" aria-hidden="true">fx</span>
+      <span class="formula" id="formula"></span>
+    </div>
+    <div class="sheet-info" id="info" aria-live="polite"></div>
+    <div class="sheet-wrap" id="wrap" tabindex="0" aria-label="Scorecard">
+      <table class="sheet-grid" id="grid"></table>
+    </div>
+    <div class="sheet-foot">
+      <div class="sheet-tabs" role="tablist" aria-label="Sheets"><button type="button" role="tab" data-tab="tricks" class="on" aria-selected="true">Tricks</button><button type="button" role="tab" data-tab="scores" aria-selected="false">Scores</button><span aria-hidden="true">Notes</span></div>
+      <div class="sheet-status">
+        <span class="state" id="state">Ready</span>
+        <span id="score"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="window hand-win" id="hand" data-app="Files">
+    <div class="titlebar">
+      <div class="lights"><span class="close"></span><span class="min"></span><span class="max"></span></div>
+      <div class="window-title" id="hand-title">Hand</div>
+    </div>
+    <div class="files-toolbar">
+      <div class="crumbs" id="crumbs"></div>
+      <div id="view-switch"></div>
+      <button class="tool-btn" id="hand-help" type="button" title="How to play"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7.5"/><path d="M7.8 7.8a2.3 2.3 0 1 1 3 2.2c-.6.3-.8.7-.8 1.3v.4"/><path d="M10 14.4v.1"/></svg><span>Help</span></button>
+      <button class="tool-btn primary" id="play-btn" type="button" title="Play the selected card (Enter)"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h11M11 5.5 15.5 10 11 14.5"/></svg><span>Play</span></button>
+    </div>
+    <div class="files-body">
+      <nav class="files-side" id="side" aria-label="Folders"></nav>
+      <section class="files-main">
+        <div class="banner" id="banner" aria-live="polite"></div>
+        <div id="view" tabindex="-1" role="listbox" aria-label="Cards"></div>
+        <div class="files-status" id="status"></div>
+      </section>
+    </div>
+  </div>
+
+  <script src="engine.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>

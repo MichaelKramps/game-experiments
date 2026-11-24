@@ -1,0 +1,223 @@
+/* Spades: the Scorecard's cells and the Hand window (a file browser). The
+   sheet chrome comes from ../sheet.css; the Files toolbar/sidebar/status and
+   the folder views (KG.fileView) from ../../os/site.css. The card icon is
+   Ctrl+Alt+Deal's; the toolbar, banner and phone screens are Yacht's. */
+
+:root {
+  --suit-S: #1d2329;
+  --suit-H: #c8202f;
+  --suit-D: #1f5fc4;
+  --suit-C: #1d7f3a;
+  --us: #1a7f37;
+  --them: #a2461b;
+}
+[data-theme='dark'] {
+  --suit-S: #e6e8eb;
+  --suit-H: #ff7b7b;
+  --suit-D: #7fb0ff;
+  --suit-C: #7fd99a;
+  --us: #8fdc9a;
+  --them: #f0a27a;
+}
+
+/* ---------------------------------------------------------------------------
+   Scorecard */
+
+.sheet-grid td { cursor: cell; }
+.sheet-grid td.hd { font-weight: 600; background: var(--s-head); padding: 0 6px; }
+.sheet-grid td.lab { padding: 0 6px; text-align: left; color: var(--w-muted); }
+.sheet-grid td.c { text-align: center; }
+.sheet-grid td.num { font-variant-numeric: tabular-nums; }
+.sheet-grid td.us { color: var(--us); }
+.sheet-grid td.them { color: var(--them); }
+.sheet-grid td.neg { color: var(--s-bad); }
+.sheet-grid td.tot { font-weight: 600; }
+.sheet-grid td.live { color: var(--w-muted); font-style: italic; }
+
+/* Tricks: wider label column, card columns, Led / Won */
+.t-tricks tr > :nth-child(2) { width: 72px; min-width: 72px; }
+.t-tricks tr > :nth-child(n + 3):nth-child(-n + 6) { width: 52px; min-width: 52px; }
+.t-tricks tr > :nth-child(7),
+.t-tricks tr > :nth-child(8) { width: 60px; min-width: 60px; }
+[data-os='phone'] .t-tricks tr > :nth-child(2) { width: 60px; min-width: 60px; }
+[data-os='phone'] .t-tricks tr > :nth-child(n + 3):nth-child(-n + 6) { width: 44px; min-width: 44px; }
+[data-os='phone'] .t-tricks tr > :nth-child(7),
+[data-os='phone'] .t-tricks tr > :nth-child(8) { width: 52px; min-width: 52px; }
+
+/* Scores: Hand label, then 5 columns per team */
+.t-scores tr > :nth-child(2) { width: 64px; min-width: 64px; }
+.t-scores tr > :nth-child(3),
+.t-scores tr > :nth-child(8) { width: 68px; min-width: 68px; }
+.t-scores tr > :nth-child(n + 4):nth-child(-n + 7),
+.t-scores tr > :nth-child(n + 9):nth-child(-n + 12) { width: 46px; min-width: 46px; }
+
+/* card labels in the log: suit colors, the winning card bold */
+.sheet-grid td.card { font-family: var(--mono); font-weight: 600; }
+.sheet-grid td.s-S, .banner .s-S { color: var(--suit-S); }
+.sheet-grid td.s-H, .banner .s-H { color: var(--suit-H); }
+.sheet-grid td.s-D, .banner .s-D { color: var(--suit-D); }
+.sheet-grid td.s-C, .banner .s-C { color: var(--suit-C); }
+.sheet-grid td.card.win { background: color-mix(in srgb, var(--s-accent) 16%, var(--w-bg)); }
+.sheet-grid td.card.lead { text-decoration: underline; text-underline-offset: 3px; }
+.sheet-grid td.cur { background: var(--s-head); }
+.sheet-grid td.card.cur.lead { background: color-mix(in srgb, var(--s-accent) 12%, var(--s-head)); }
+.banner b[class^='s-'] { font-family: var(--mono); }
+
+@keyframes spades-pop { from { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--s-accent) 60%, transparent); } }
+.sheet-grid td.pop { animation: spades-pop 0.6s ease-out; }
+
+.sheet-grid td.sel { box-shadow: inset 0 0 0 2px var(--s-accent); }
+
+/* ---------------------------------------------------------------------------
+   Hand window: a file browser */
+
+.crumbs { flex: 1; }
+
+.tool-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 10px;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  color: var(--w-fg);
+  font: inherit;
+  cursor: default;
+}
+.tool-btn[hidden] { display: none; }
+.tool-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.tool-btn:hover:not(:disabled) { background: var(--w-hover); }
+.tool-btn:disabled { opacity: 0.4; }
+.tool-btn.primary:not(:disabled) { color: var(--w-accent); border-color: var(--w-accent); }
+[data-os='power'] .tool-btn { background: var(--w-btn); font-weight: 700; }
+
+.files-side a em { margin-left: auto; color: var(--w-muted); font-size: 11px; font-style: normal; }
+
+.banner {
+  flex: none;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--w-line);
+  background: var(--w-side);
+  line-height: 1.6;
+}
+.banner:empty { display: none; }
+.banner .kg-btn { margin-left: 4px; }
+.kg-btn.mini { min-width: 0; padding: 3px 9px; font-size: 12px; }
+.banner select {
+  height: 26px;
+  padding: 0 6px;
+  border: 1px solid var(--w-btn-border);
+  border-radius: 4px;
+  background: var(--w-btn);
+  color: var(--w-fg);
+  font: inherit;
+}
+
+/* The cards: drawn by KG.fileView; this styles the card icon per view. */
+.card-status { color: var(--w-muted); }
+.card-status.play { color: var(--w-accent); font-weight: 600; }
+.card-suit { font-weight: 600; }
+.card-suit.suit-S { color: var(--suit-S); }
+.card-suit.suit-H { color: var(--suit-H); }
+.card-suit.suit-D { color: var(--suit-D); }
+.card-suit.suit-C { color: var(--suit-C); }
+.hand-win .fv-tiles { --fv-tile: 112px; }
+
+/* a card file: a page with a folded corner, always white like paper */
+.card-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 54px;
+  background: #ffffff;
+  border: 1px solid #a9b2bc;
+  border-radius: 3px 10px 3px 3px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+  color: #1d2329;
+  font-family: var(--mono);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+.card-icon::after {
+  content: '';
+  position: absolute;
+  top: -1px;
+  right: -1px;
+  width: 10px;
+  height: 10px;
+  background: linear-gradient(225deg, var(--w-bg) 50%, #dfe4ea 50%);
+  border-bottom: 1px solid #a9b2bc;
+  border-left: 1px solid #a9b2bc;
+  border-radius: 0 0 0 3px;
+}
+.card-icon.suit-H { color: #c8202f; }
+.card-icon.suit-D { color: #1f5fc4; }
+.card-icon.suit-C { color: #1d7f3a; }
+.fv-item.selected .card-icon::after { background: linear-gradient(225deg, var(--w-select) 50%, #dfe4ea 50%); }
+.fv-item:hover:not(.selected) .card-icon::after { background: linear-gradient(225deg, var(--w-hover) 50%, #dfe4ea 50%); }
+.fv-tiles .fv-item.selected .card-icon { border-color: var(--w-accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--w-accent) 35%, transparent); }
+
+/* Details: a small page icon next to the file name */
+.fv-list .card-icon { width: 22px; height: 28px; border-radius: 2px 5px 2px 2px; font-size: 9px; box-shadow: none; }
+.fv-list .card-icon::after { width: 6px; height: 6px; border-radius: 0 0 0 2px; }
+[data-os='quality'] .fv-list .fv-item.selected .card-icon::after { background: linear-gradient(225deg, var(--w-accent) 50%, #dfe4ea 50%); }
+[data-os='quality'] .fv-list .fv-item:nth-child(even of .fv-item):not(.selected) .card-icon::after { background: linear-gradient(225deg, color-mix(in srgb, var(--w-bg) 94%, #7f7f7f) 50%, #dfe4ea 50%); }
+[data-os='quality'] .fv-list .fv-item.selected .card-status,
+[data-os='quality'] .fv-list .fv-item.selected .card-suit { color: inherit; }
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet-grid td.pop { animation: none; }
+}
+
+/* ---------------------------------------------------------------------------
+   Phones: one window at a time, switched with tabs along the top */
+
+.screen-tabs { display: none; }
+
+[data-os='phone'] .screen-tabs {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 50;
+  display: flex;
+  gap: 4px;
+  height: 48px;
+  padding: 6px 12px;
+  background: var(--w-chrome);
+  border-bottom: 1px solid var(--w-line);
+}
+[data-os='phone'] .screen-tabs button {
+  flex: 1;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  color: var(--w-muted);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+}
+[data-os='phone'] .screen-tabs button[aria-selected='true'] { background: var(--w-select); color: var(--w-fg); }
+
+[data-os='phone'] .window.sheet-win,
+[data-os='phone'] .window.hand-win { inset: 48px 0 var(--tabbar-h, 64px) 0; }
+[data-os='phone'] .window.sheet-win .titlebar,
+[data-os='phone'] .window.hand-win .titlebar { display: none; }
+[data-os='phone'] .window:not(.on-screen):not(.kg-dialog) { display: none; }
+
+[data-os='phone'] .files-side { display: none; }
+[data-os='phone'] .files-body { flex-direction: column; }
+[data-os='phone'] .files-toolbar { height: auto; min-height: 44px; padding: 6px 10px; }
+[data-os='phone'] .tool-btn { height: 34px; }
+[data-os='phone'] .tool-btn:not(.primary) span { display: none; }
+[data-os='phone'] .files-status { font-size: 11px; }
+[data-os='phone'] .banner .kg-btn { width: auto; padding: 4px 10px; font-size: 13px; }
+[data-os='phone'] .hand-win .fv-tiles { --fv-tile: 104px; }
+
+/* Every game button shows the pointer on hover */
+.window button:not(:disabled),
+.screen-tabs button { cursor: pointer; }

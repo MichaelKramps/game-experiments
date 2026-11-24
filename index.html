@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Kramps Games: Games That Look Like Work</title>
-  <meta name="description" content="Free browser games disguised as work: Minesweeper, Sudoku, 2048, chess, word search and Yacht dice in a spreadsheet, solitaire on a task board, a terminal word game and a poker deckbuilder that look like everyday computer tasks. No ads, no sign up.">
+  <meta name="description" content="Free browser games disguised as work: Minesweeper, Sudoku, 2048, chess, word search and Yacht dice in a spreadsheet, Spades and solitaire with cards you can play at work, a terminal word game and a poker deckbuilder that look like everyday computer tasks. No ads, no sign up.">
   <link rel="canonical" href="https://kramps.games/">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Kramps Games">
@@ -34,6 +34,7 @@
       <li><a href="/spreadsheet-games/chess/">Spreadsheet Chess</a>: chess against the computer in a spreadsheet that looks like Excel.</li>
       <li><a href="/spreadsheet-games/word-search/">Spreadsheet Word Search</a>: word search puzzles in 40 themes in a spreadsheet that looks like Excel.</li>
       <li><a href="/spreadsheet-games/yacht/">Yacht</a>: the classic five dice game, with dice as files and a score sheet that looks like Excel.</li>
+      <li><a href="/spreadsheet-games/spades/">Spades at work</a>: the partnership card game with a computer partner, cards as files and a spreadsheet scorecard.</li>
       <li><a href="/solitaire/">Solitaire at work</a>: free Klondike solitaire with no ads that looks like a task board.</li>
     </ul>
   </header>
@@ -60,7 +61,7 @@
           <a class="file-row" href="#classic">
             <span class="file-name"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 7a2 2 0 0 1 2-2h5l2 2h9a2 2 0 0 1 2 2v1H2z" class="i-folder-back"/><rect x="2" y="9" width="20" height="11" rx="2" class="i-folder"/></svg><span>Classic Games</span></span>
             <span class="file-kind">Folder</span>
-            <span class="file-desc">7 games</span>
+            <span class="file-desc">8 games</span>
           </a>
         </div>
         <div class="files-status" id="status">2 items</div>
@@ -93,6 +94,7 @@
         { name: 'Chess', href: 'spreadsheet-games/chess/', kind: 'Board game', icon: 'sheet', desc: 'play chess against the computer, easy to hard' },
         { name: 'Word Search', href: 'spreadsheet-games/word-search/', kind: 'Word puzzle', icon: 'sheet', desc: 'find 12 hidden words in a sheet of letters, 40 themes' },
         { name: 'Yacht', href: 'spreadsheet-games/yacht/', kind: 'Dice game', icon: 'multi', desc: 'roll five dice and fill the score sheet in 13 turns' },
+        { name: 'Spades', href: 'spreadsheet-games/spades/', kind: 'Card game', icon: 'multi', desc: 'partner with the computer, bid, and take tricks to 500' },
         { name: 'Solitaire', href: 'solitaire/', kind: 'Card game', icon: 'board', desc: 'Klondike solitaire on a task board, draw 3 or draw 1' },
       ],
     };
@@ -112,7 +114,7 @@
     // A game's icon shows the app it's played in: a terminal (the default),
     // a spreadsheet, a file for games played in a file explorer, a task
     // board, or two stacked windows for games played across more than one app
-    // (Ctrl+Alt+Deal, Yacht).
+    // (Ctrl+Alt+Deal, Yacht, Spades).
     const FILE_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2.5h8.5l4.5 4.5v13a1.5 1.5 0 0 1-1.5 1.5h-11.5a1.5 1.5 0 0 1-1.5-1.5v-16a1.5 1.5 0 0 1 1.5-1.5z" class="i-paper"/><path d="M14.5 2.5V7h4.5" class="i-fold"/><path d="M8 12h8M8 15.5h8M8 19h5" class="i-lines"/></svg>';
     const BOARD_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2.5" class="i-paper"/><rect x="6" y="6.5" width="3.5" height="11" rx="1" class="i-board"/><rect x="10.25" y="6.5" width="3.5" height="7.5" rx="1" class="i-board"/><rect x="14.5" y="6.5" width="3.5" height="4.5" rx="1" class="i-board"/></svg>';
     const MULTI_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="2.5" width="13.5" height="12" rx="2" class="i-paper"/><path d="M8.5 4.5a1.5 1.5 0 0 1 1.5-1.5h9.5a1.5 1.5 0 0 1 1.5 1.5V6h-12.5z" class="i-sheet"/><rect x="2.5" y="9" width="13.5" height="12.5" rx="2" class="i-paper"/><path d="M3 11a1.5 1.5 0 0 1 1.5-1.5h9.5a1.5 1.5 0 0 1 1.5 1.5v1.5h-12.5z" class="i-board"/><path d="M5.5 15.5h7.5M5.5 18.5h5" class="i-lines"/></svg>';
