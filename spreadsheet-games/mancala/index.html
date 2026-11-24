@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Spreadsheet Mancala: Free Mancala Game That Looks Like Excel</title>
+  <meta name="description" content="Play mancala against the computer in a spreadsheet that looks like Excel, free in your browser. The seeds are numbers in the cells. Easy, Medium and Hard, 1 to 10 seeds per pit. No download, no ads, no sign up.">
+  <link rel="canonical" href="https://kramps.games/spreadsheet-games/mancala/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Kramps Games">
+  <meta property="og:title" content="Spreadsheet Mancala: Free Mancala Game That Looks Like Excel">
+  <meta property="og:description" content="Mancala against the computer, in a spreadsheet where the seeds are numbers. Free in your browser. A game that looks like work.">
+  <meta property="og:url" content="https://kramps.games/spreadsheet-games/mancala/">
+  <script src="../../os/os.js"></script>
+  <link rel="stylesheet" href="../../os/os.css">
+  <link rel="stylesheet" href="../../os/site.css">
+  <link rel="stylesheet" href="../sheet.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Read by search engines and screen readers; hidden so the window keeps the disguise. -->
+  <header class="sr-only">
+    <h1>Spreadsheet Mancala: the mancala board game in an Excel-style spreadsheet</h1>
+    <p>A free mancala game that looks like a spreadsheet, so it looks like work while you play. The pits and stores are cells and the seeds are numbers in them. Play the computer in your browser with no download, no ads and no sign up.</p>
+    <h2>How to play</h2>
+    <ul>
+      <li>Each side has six pits and a store. Your pits are along the bottom and your store is on the right. Every pit starts with 4 seeds, or any number from 1 to 10.</li>
+      <li>On your turn, pick one of your pits. Its seeds are sown one at a time, counter-clockwise, into the next pits and your store, skipping the computer's store.</li>
+      <li>If the last seed lands in your store, you go again. If it lands in an empty pit on your side and the pit across has seeds, you capture them both into your store.</li>
+      <li>When one side runs out of seeds, each player keeps what is left on their side. The bigger store wins.</li>
+      <li>Play the computer on Easy, Medium or Hard. Every move is logged on the Moves sheet, and your record is kept for each level.</li>
+    </ul>
+    <p>More <a href="/#classic">classic games that look like work</a>: <a href="/spreadsheet-games/chess/">Spreadsheet Chess</a>, <a href="/spreadsheet-games/four-in-a-row/">Spreadsheet Four in a Row</a>, <a href="/spreadsheet-games/minesweeper/">Spreadsheet Minesweeper</a>, <a href="/spreadsheet-games/sudoku/">Spreadsheet Sudoku</a>, <a href="/spreadsheet-games/2048/">Spreadsheet 2048</a>, <a href="/spreadsheet-games/word-search/">Spreadsheet Word Search</a>, <a href="/spreadsheet-games/yacht/">Yacht dice</a>, <a href="/spreadsheet-games/spades/">Spades at work</a> and <a href="/solitaire/">Solitaire at work</a>. Or try an original: <a href="/diff-guess-key/">diff guess key</a>, a word game that looks like a terminal, and <a href="/ctrl-alt-deal/">Ctrl+Alt+Deal</a>, a poker deckbuilder. <a href="/">All Kramps Games</a>.</p>
+  </header>
+
+  <div class="window sheet-win" id="sheet" data-app="Spreadsheet">
+    <div class="titlebar">
+      <div class="lights"><span class="close"></span><span class="min"></span><span class="max"></span></div>
+      <div class="window-title" id="sheet-title">Mancala</div>
+    </div>
+    <div class="sheet-menu">
+      <span class="deco-menu">File</span><span class="on deco-menu">Home</span><span class="deco-menu">Insert</span><span class="deco-menu">Formulas</span><span class="deco-menu">Data</span><span class="deco-menu">View</span><button type="button" id="help">Help</button>
+    </div>
+    <div class="sheet-tools">
+      <button class="tool" type="button" id="new" title="New game (F2)"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 2.5h7l3.5 3.5v11.5h-10.5z"/><path d="M12 2.5V6h3.5"/></svg>New</button>
+      <button class="tool" type="button" id="undo" title="Undo your last move (Ctrl+Z)"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7.5 5 4 8.5 7.5 12"/><path d="M4 8.5h7.5a4.5 4.5 0 0 1 0 9H9"/></svg>Undo</button>
+      <label>Level <select id="level" aria-label="Computer level">
+        <option value="easy">Easy</option>
+        <option value="medium" selected>Medium</option>
+        <option value="hard">Hard</option>
+      </select></label>
+      <label>Seeds <select id="seeds" aria-label="Seeds per pit"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option></select></label>
+      <label>First <select id="first" aria-label="Who goes first">
+        <option value="alternate" selected>Take turns</option>
+        <option value="you">You</option>
+        <option value="cpu">Computer</option>
+      </select></label>
+      <span class="sep deco-sep" aria-hidden="true"></span>
+      <span class="deco" aria-hidden="true"><b>B</b></span><span class="deco" aria-hidden="true"><i>I</i></span><span class="deco" aria-hidden="true"><u>U</u></span>
+      <span class="sep deco-sep" aria-hidden="true"></span>
+      <span class="deco" aria-hidden="true">$</span><span class="deco" aria-hidden="true">%</span><span class="deco" aria-hidden="true">.00</span><span class="deco" aria-hidden="true">Σ</span>
+    </div>
+    <div class="sheet-formula">
+      <span class="name-box" id="namebox">A1</span>
+      <span class="fx" aria-hidden="true">fx</span>
+      <span class="formula" id="formula"></span>
+    </div>
+    <div class="sheet-info" id="info" aria-live="polite"></div>
+    <div class="sheet-wrap" id="wrap" tabindex="0" aria-label="Mancala board">
+      <table class="sheet-grid" id="grid"></table>
+    </div>
+    <div class="sheet-foot">
+      <div class="sheet-tabs" role="tablist" aria-label="Sheets"><button type="button" role="tab" data-tab="board" class="on" aria-selected="true">Board</button><button type="button" role="tab" data-tab="moves" aria-selected="false">Moves</button><span aria-hidden="true">Notes</span></div>
+      <div class="sheet-status">
+        <span class="state" id="state">Ready</span>
+        <span id="who"></span>
+        <span id="move"></span>
+      </div>
+    </div>
+  </div>
+
+  <script src="engine.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>

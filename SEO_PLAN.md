@@ -63,7 +63,7 @@ Takeaways:
 
 ### Next games (picked by Kramps 2026-11-24)
 
-Chosen from a brainstorm of no/low lawsuit-risk classics (see Legal guardrails). Word Search, Spades and Four in a Row are built (2026-11-24); the rest aren't ordered yet. The quickest builds are Reversi, Checkers, Four in a Row, Spider and FreeCell (they reuse Chess, Solitaire or have simple computer opponents). Backgammon and The Landlord's Game are the biggest. None of the keywords have been checked yet.
+Chosen from a brainstorm of no/low lawsuit-risk classics (see Legal guardrails). Word Search, Spades, Four in a Row and Mancala are built (2026-11-24); the rest aren't ordered yet. The quickest builds are Reversi, Checkers, Four in a Row, Spider and FreeCell (they reuse Chess, Solitaire or have simple computer opponents). Backgammon and The Landlord's Game are the biggest. None of the keywords have been checked yet.
 
 | Game | Known as (descriptive SEO text only) | Disguise idea | Keywords to check |
 |---|---|---|---|
@@ -73,7 +73,7 @@ Chosen from a brainstorm of no/low lawsuit-risk classics (see Legal guardrails).
 | **Four in a Row** (built 2026-11-24 at `/spreadsheet-games/four-in-a-row/`) | Connect Four (Hasbro) | Spreadsheet | connect four in excel, four in a row game, connect 4 at work |
 | Salvo | Battleship (Hasbro) | Spreadsheet with two working sheet tabs (your fleet / their fleet) | battleship in excel, battleship spreadsheet, battleship at work |
 | Backgammon | — | Dice files (from Yacht) + board | backgammon in excel, backgammon at work, backgammon no ads |
-| Mancala | Kalah (avoid that name) | Spreadsheet row | mancala in excel, mancala at work, mancala no ads |
+| **Mancala** (built 2026-11-24 at `/spreadsheet-games/mancala/`) | Kalah (avoid that name) | Spreadsheet row | mancala in excel, mancala at work, mancala no ads |
 | The Landlord's Game | Monopoly (Hasbro) | Property spreadsheet + board | monopoly in excel, monopoly spreadsheet, monopoly at work |
 | Hearts | — | Cards as files | hearts at work, hearts no ads, hearts card game no download |
 | **Spades** (built 2026-11-24 at `/spreadsheet-games/spades/`) | — | Cards as files + spreadsheet scorecard | spades at work, spades no ads |

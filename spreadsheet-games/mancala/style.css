@@ -1,0 +1,83 @@
+/* Mancala's cells. The board is A1:H2 on the Board tab: the computer's store
+   A1:A2 (merged), its pits B1:G1, your pits B2:G2 and your store H1:H2
+   (merged). The seeds are plain numbers. A small totals table sits under it.
+   The Moves tab logs each move. */
+
+:root {
+  --mc-cpu: #1d5fbf;     /* the computer's side */
+  --mc-last: #fff4ce;    /* where the last seed landed */
+  --mc-sow: #c6efce;     /* a seed just dropped in */
+  --mc-sow-fg: #0f5a2a;
+  --mc-pick: #ffe2b8;    /* the pit being emptied */
+  --mc-cap: #ffc7ce;     /* captured pits */
+  --mc-store: color-mix(in srgb, var(--s-accent) 7%, var(--w-bg));
+}
+[data-theme='dark'] {
+  --mc-cpu: #7fb2ff;
+  --mc-last: #433519;
+  --mc-sow: #24513a;
+  --mc-sow-fg: #b9f0c8;
+  --mc-pick: #5f3d1c;
+  --mc-cap: #622a33;
+}
+
+#sheet { --s-cell: 50px; --s-row: 40px; }
+/* the Moves tab is a plain table: normal rows */
+#sheet.on-moves { --s-cell: 64px !important; --s-row: 26px !important; }
+
+.sheet-grid td { cursor: cell; }
+
+/* the stores' columns (A and H) are wider */
+/* (set on the header row only: the merged stores shift nth-child in row 2) */
+.t-board thead th:nth-child(2),
+.t-board thead th:nth-child(9) { width: 72px; min-width: 72px; }
+[data-os='phone'] .t-board thead th:nth-child(2),
+[data-os='phone'] .t-board thead th:nth-child(9) { width: 56px; min-width: 56px; }
+
+/* pits and stores */
+.sheet-grid td.pit,
+.sheet-grid td.store { text-align: center; font-size: 19px; font-variant-numeric: tabular-nums; line-height: 1; }
+.sheet-grid td.store { font-size: 24px; font-weight: 700; background: var(--mc-store); }
+.sheet-grid td.cpu { color: var(--mc-cpu); }
+.sheet-grid td.zero { color: var(--w-muted); }
+.sheet-grid td.can { cursor: pointer; font-weight: 600; }
+.sheet-grid td.can:hover { background: color-mix(in srgb, var(--s-accent) 10%, var(--w-bg)); }
+.sheet-grid td.last { background: var(--mc-last); }
+.sheet-grid td.pick { background: var(--mc-pick); }
+.sheet-grid td.cap { background: var(--mc-cap); }
+.sheet-grid td.sow { background: var(--mc-sow); color: var(--mc-sow-fg); font-weight: 700; }
+@keyframes mc-pop { from { transform: scale(1.35); } }
+.sheet-grid td.sow span { display: inline-block; animation: mc-pop 0.25s ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  .sheet-grid td.sow span { animation: none; }
+}
+
+/* the board's outer edge */
+.sheet-grid td.et { border-top: 1px solid var(--w-muted); }
+.sheet-grid td.el { border-left: 1px solid var(--w-muted); }
+.sheet-grid td.er { border-right: 1px solid var(--w-muted); }
+.sheet-grid td.eb { border-bottom: 1px solid var(--w-muted); }
+
+/* the totals table and the Moves tab */
+.sheet-grid td.hd { font-weight: 600; background: var(--s-head); padding: 0 6px; }
+.sheet-grid td.lab { padding: 0 6px; text-align: left; }
+.sheet-grid td.num { font-variant-numeric: tabular-nums; }
+.sheet-grid td.tot { font-weight: 600; }
+.sheet-grid td.log { padding: 0 6px; text-align: left; }
+.sheet-grid td.result { font-weight: 600; }
+.sheet-grid td.c { text-align: center; }
+.t-moves tr > :nth-child(2) { width: 52px; min-width: 52px; }
+.t-moves tr > :nth-child(3) { width: 96px; min-width: 96px; }
+.t-moves tr > :nth-child(4),
+.t-moves tr > :nth-child(5) { width: 56px; min-width: 56px; }
+.t-moves tr > :nth-child(6) { width: 150px; min-width: 150px; }
+
+/* the selected cell */
+.sheet-grid td.sel { box-shadow: inset 0 0 0 2px var(--s-accent); }
+
+/* Phones: keep both sheet tabs visible; the level is in the toolbar anyway. */
+.sheet-tabs { flex: none; }
+[data-os='phone'] #who { display: none; }
+[data-os='phone'] .sheet-status { gap: 12px; }
+/* the totals headers mustn't widen the pit columns on phones */
+[data-os='phone'] .t-board td.hd { padding: 0 2px; font-size: 12px; }
