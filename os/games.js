@@ -52,6 +52,7 @@ const KGGames = (() => {
     name: 'Task Board Games',
     games: [
       { name: 'Solitaire', href: '/solitaire/', kind: 'Card game', icon: 'board', desc: 'Klondike solitaire on a task board, draw 3 or draw 1' },
+      { name: 'FreeCell', href: '/freecell/', kind: 'Card game', icon: 'board', desc: 'FreeCell solitaire on a task board, deals numbered 1 to 32000' },
     ],
   };
   const ALL = [...SPREADSHEET.games, ...MULTI.games, ...TERMINAL.games, ...TASKBOARD.games];
@@ -60,7 +61,7 @@ const KGGames = (() => {
   const CLASSIC = {
     id: 'classic',
     name: 'Classic Games',
-    games: pick('Minesweeper', 'Sudoku', '2048', 'Chess', 'Four in a Row', 'Mancala', 'Reversi', 'Word Search', 'Yacht', 'Spades', 'Solitaire'),
+    games: pick('Minesweeper', 'Sudoku', '2048', 'Chess', 'Four in a Row', 'Mancala', 'Reversi', 'Word Search', 'Yacht', 'Spades', 'Solitaire', 'FreeCell'),
   };
   const FREE = { id: '', name: 'Free Games', page: '/', title: 'Kramps Games: Games That Look Like Work', folders: [KRAMPS, CLASSIC, SPREADSHEET, MULTI, TERMINAL, TASKBOARD] };
   const ROOT = { id: 'games', name: 'Games', folders: [FREE] };

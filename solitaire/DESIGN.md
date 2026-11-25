@@ -33,6 +33,10 @@ Klondike solitaire on a task board, at `/solitaire/`. Listed on the home page in
 - Changing **Draw** starts a new game right away if the current game has no moves or is won; otherwise it applies to the next new game.
 - The clock starts with the first move and runs only while the page is visible.
 
+## Shared with FreeCell
+
+`freecell/` (built 2026-11-25) links this folder's `style.css` for the whole task board look and only overrides what differs (8 lists per row, one-line tickets). A change to `style.css` here changes FreeCell too, so check both.
+
 ## Saving
 
 localStorage, all optional: `solitaire` (the game), `-settings` (draw mode), `-stats` (wins and best time per draw mode), `-window`.

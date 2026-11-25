@@ -1,0 +1,41 @@
+/* FreeCell on the task board. The board, lists and card tickets come from
+   ../solitaire/style.css (shared look); this file only changes what differs:
+   8 lists per row and shorter one-line tickets, since every card is face up
+   and the columns get long. */
+
+.tb-row { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+
+/* One-line tickets: the colored edge and code carry the suit color. */
+.tb-card,
+.tb-empty { height: 34px; }
+.tb-card { padding: 0 8px 0 9px; display: flex; align-items: center; }
+.tb-card-meta { display: none; }
+.tb-card-line { min-width: 0; }
+
+/* the deal number box, styled like the toolbar's selects */
+.tb-pick input {
+  width: 4.2em;
+  height: 28px;
+  padding: 0 6px;
+  border: 1px solid var(--w-btn-border);
+  border-radius: 4px;
+  background: var(--w-bg);
+  color: var(--w-fg);
+  font: inherit;
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+}
+.tb-pick input:focus { outline: 2px solid var(--tb-accent); outline-offset: -1px; }
+
+/* a card on its way to Done while the board finishes itself */
+@keyframes fc-home { from { transform: scale(1.12); } }
+.tb-done .tb-card.arrived { animation: fc-home 0.12s ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  .tb-done .tb-card.arrived { animation: none; }
+}
+
+[data-os='phone'] .tb-card,
+[data-os='phone'] .tb-empty { height: 30px; }
+[data-os='phone'] .tb-card { padding: 0 2px 0 4px; font-size: 11px; }
+[data-os='phone'] .tb-row { gap: 3px; }
+[data-os='phone'] .tb-pick input { height: 32px; }
