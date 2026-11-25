@@ -151,7 +151,7 @@
   const cellRef = (i) => ref(i % W, Math.floor(i / W));
 
   const COLS = 14;
-  const ROWS = 40;
+  let rows = 40; // grows when a tab needs more (see renderSheet)
   let tds = [];
   let cells = new Map(); // "x,y" → { text, cls, f, html } for the current tab
 
@@ -159,7 +159,7 @@
     let html = '<thead><tr><th></th>';
     for (let x = 0; x < COLS; x++) html += `<th scope="col" data-x="${x}">${colName(x)}</th>`;
     html += '</tr></thead><tbody>';
-    for (let y = 0; y < ROWS; y++) {
+    for (let y = 0; y < rows; y++) {
       html += `<tr><th scope="row">${y + 1}</th>`;
       for (let x = 0; x < COLS; x++) html += `<td data-x="${x}" data-y="${y}"></td>`;
       html += '</tr>';
@@ -246,6 +246,12 @@
     cells = new Map();
     if (tab === 'board') boardSheet();
     else movesSheet();
+    // the grid grows to fit (a long game's Moves log runs past row 40)
+    const need = Math.max(0, ...[...cells.keys()].map((k) => +k.split(',')[1])) + 3;
+    if (need > rows) {
+      rows = Math.ceil(need / 10) * 10;
+      build();
+    }
     grid.classList.toggle('t-moves', tab === 'moves');
     win.classList.toggle('on-moves', tab === 'moves');
     for (const td of tds) {
@@ -299,7 +305,8 @@
       html = `${settings.first === 'you' ? 'You\'ll go first' : 'The computer will go first'} from your next new game. <button class="kg-btn" type="button" data-new>Start it now</button>`;
     } else if (!yourMoves()) {
       const went = g.first === CPU ? ' The computer goes first this game.' : '';
-      html = `You're <b>X</b>, the computer is <b>O</b>. ${click} a column to drop your X into its lowest empty cell. Four in a row across, down or diagonally wins.${went}`;
+      // one <span>, so the bar (a wrapping flex row) keeps the sentence together
+      html = `<span>You're <b>X</b>, the computer is <b>O</b>. ${click} a column to drop your X into its lowest empty cell. Four in a row across, down or diagonally wins.${went}</span>`;
     }
     info.hidden = !html;
     if (info.innerHTML !== html) info.innerHTML = html;
@@ -387,7 +394,7 @@
     if (moves[e.key]) {
       e.preventDefault();
       sel.x = Math.max(0, Math.min(COLS - 1, sel.x + moves[e.key][0]));
-      sel.y = Math.max(0, Math.min(ROWS - 1, sel.y + moves[e.key][1]));
+      sel.y = Math.max(0, Math.min(rows - 1, sel.y + moves[e.key][1]));
       renderSel();
       tds[sel.y * COLS + sel.x].scrollIntoView({ block: 'nearest', inline: 'nearest' });
       return;

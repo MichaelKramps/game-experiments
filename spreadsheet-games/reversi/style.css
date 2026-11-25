@@ -1,0 +1,83 @@
+/* Reversi's cells. The board is the bordered range A1:H8 on the Board tab:
+   X is you, O the computer. A small score table sits under it. The Moves tab
+   logs each move. */
+
+:root {
+  --rv-o: #1d5fbf;      /* the computer's O */
+  --rv-last: #fff4ce;   /* the piece just placed */
+  --rv-flip: #c6efce;   /* a piece flipping */
+  --rv-flip-fg: #0f5a2a;
+  --rv-flipped: #eef8f0; /* the pieces the last move flipped */
+  --rv-no: #ffc7ce;     /* hovering a cell you can't play */
+}
+[data-theme='dark'] {
+  --rv-o: #7fb2ff;
+  --rv-last: #433519;
+  --rv-flip: #24513a;
+  --rv-flip-fg: #b9f0c8;
+  --rv-flipped: #1d2f24;
+  --rv-no: #4a2229;
+}
+
+/* Square board cells. */
+#sheet { --s-cell: 44px; --s-row: 40px; }
+/* the Moves tab is a plain table: normal rows */
+#sheet.on-moves { --s-cell: 64px !important; --s-row: 26px !important; }
+
+.sheet-grid td { cursor: cell; }
+
+/* the board */
+.sheet-grid td.b { text-align: center; font-size: 21px; font-weight: 700; line-height: 1; }
+.sheet-grid td.b.x { color: var(--w-fg); }
+.sheet-grid td.b.o { color: var(--rv-o); }
+.sheet-grid td.b.flipped { background: var(--rv-flipped); }
+.sheet-grid td.b.last { background: var(--rv-last); }
+.sheet-grid td.b.flip { background: var(--rv-flip); color: var(--rv-flip-fg); }
+/* Hover: a legal cell shows a grey X and tints what it would flip; any other
+   empty cell shows it can't be played. */
+.sheet-grid td.b.ghost { color: color-mix(in srgb, var(--w-fg) 30%, transparent); cursor: pointer; background: color-mix(in srgb, var(--s-accent) 10%, var(--w-bg)); }
+.sheet-grid td.b.would { background: color-mix(in srgb, var(--s-accent) 16%, var(--w-bg)); }
+.sheet-grid td.b.no { background: var(--rv-no); cursor: not-allowed; }
+[data-os='phone'] .sheet-grid td.b { font-size: 20px; }
+
+/* the board's outer edge */
+.sheet-grid td.et { border-top: 1px solid var(--w-muted); }
+.sheet-grid td.el { border-left: 1px solid var(--w-muted); }
+.sheet-grid td.er { border-right: 1px solid var(--w-muted); }
+.sheet-grid td.eb { border-bottom: 1px solid var(--w-muted); }
+
+/* A piece is placed or flips. */
+.sheet-grid td.b span { display: inline-block; }
+@keyframes rv-flip { from { transform: scaleX(0.1); } }
+@keyframes rv-place { from { transform: scale(1.4); opacity: 0.3; } }
+.sheet-grid td.b.flip span { animation: rv-flip 0.16s ease-out; }
+.sheet-grid td.b.placed span { animation: rv-place 0.18s ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  .sheet-grid td.b.flip span,
+  .sheet-grid td.b.placed span { animation: none; }
+}
+
+/* the score table and the Moves tab */
+.sheet-grid td.hd { font-weight: 600; background: var(--s-head); padding: 0 6px; }
+.sheet-grid td.lab { padding: 0 6px; text-align: left; }
+.sheet-grid td.log { padding: 0 6px; text-align: left; }
+.sheet-grid td.c { text-align: center; }
+.sheet-grid td.num { font-variant-numeric: tabular-nums; }
+.sheet-grid td.tot { font-weight: 600; }
+.sheet-grid td.log.o,
+.sheet-grid td.lab.o { color: var(--rv-o); }
+.sheet-grid td.pass { color: var(--w-muted); font-style: italic; }
+.sheet-grid td.result { font-weight: 600; }
+/* Moves: Move | Player | Cell | Flipped */
+.t-moves tr > :nth-child(2) { width: 52px; min-width: 52px; }
+.t-moves tr > :nth-child(3) { width: 110px; min-width: 110px; }
+.t-moves tr > :nth-child(4),
+.t-moves tr > :nth-child(5) { width: 64px; min-width: 64px; }
+
+/* the selected cell */
+.sheet-grid td.sel { box-shadow: inset 0 0 0 2px var(--s-accent); }
+
+/* Phones: keep both sheet tabs visible; the level is in the toolbar anyway. */
+.sheet-tabs { flex: none; }
+[data-os='phone'] #who { display: none; }
+[data-os='phone'] .sheet-status { gap: 12px; }

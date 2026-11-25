@@ -25,6 +25,7 @@ const KGGames = (() => {
       { name: 'Chess', href: '/spreadsheet-games/chess/', kind: 'Board game', icon: 'sheet', desc: 'play chess against the computer, easy to hard' },
       { name: 'Four in a Row', href: '/spreadsheet-games/four-in-a-row/', kind: 'Board game', icon: 'sheet', desc: 'drop X\'s down the columns and line up four before the computer' },
       { name: 'Mancala', href: '/spreadsheet-games/mancala/', kind: 'Board game', icon: 'sheet', desc: 'sow seeds around the board and fill your store, easy to hard' },
+      { name: 'Reversi', href: '/spreadsheet-games/reversi/', kind: 'Board game', icon: 'sheet', desc: 'place X\'s to flip the computer\'s O\'s, most pieces wins' },
       { name: 'Word Search', href: '/spreadsheet-games/word-search/', kind: 'Word puzzle', icon: 'sheet', desc: 'find 12 hidden words in a sheet of letters, 40 themes' },
     ],
   };
@@ -59,7 +60,7 @@ const KGGames = (() => {
   const CLASSIC = {
     id: 'classic',
     name: 'Classic Games',
-    games: pick('Minesweeper', 'Sudoku', '2048', 'Chess', 'Four in a Row', 'Mancala', 'Word Search', 'Yacht', 'Spades', 'Solitaire'),
+    games: pick('Minesweeper', 'Sudoku', '2048', 'Chess', 'Four in a Row', 'Mancala', 'Reversi', 'Word Search', 'Yacht', 'Spades', 'Solitaire'),
   };
   const FREE = { id: '', name: 'Free Games', page: '/', title: 'Kramps Games: Games That Look Like Work', folders: [KRAMPS, CLASSIC, SPREADSHEET, MULTI, TERMINAL, TASKBOARD] };
   const ROOT = { id: 'games', name: 'Games', folders: [FREE] };
