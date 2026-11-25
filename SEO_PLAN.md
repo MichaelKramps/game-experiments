@@ -25,7 +25,7 @@ Context for building new games on kramps.games (browser games disguised as work 
 | boss key games | 10–100 | 0% | Homepage/about copy |
 | games disguised as work | 10–100 | 0% | Homepage/about copy |
 | games to play at work without getting caught | 10–100 | new | Homepage/about copy |
-| terminal games | 100–1K | 0% | Possible hub for the terminal games (diff guess key, a terminal solitaire) |
+| terminal games | 100–1K | 0% | Terminal Games hub, `/terminal-games/` (built 2026-11-25; only diff guess key so far, add terminal games to strengthen it) |
 | unblocked games at work | 100–1K | 0% | Homepage/about copy (careful: "unblocked" is mostly students getting past filters) |
 | minesweeper spreadsheet, solitaire disguised as excel, spreadsheet solitaire | no data | — | — |
 
@@ -96,7 +96,7 @@ Build the spreadsheet look once as a reusable shell inside the `os/` desktop (co
 - Each game page: unique title + meta description containing its target keyword, a short description of the game and how to play, links to the hub, sibling games, and at least one of the original games (diff guess key, Ctrl+Alt+Deal).
 - Add every new page to `sitemap.xml`.
 - Tab title: decided 2026-11-18 to use the keyword title as is ("Spreadsheet Minesweeper: Minesweeper That Looks Like Excel"), even though it shows in the tab. Revisit if it hurts the disguise; the fallback is a disguised title set after the first click (search engines don't click).
-- `/spreadsheet-games/` 302-redirects to the home page's Classic Games folder (`/#classic`) until the hub page is built (once 2–3 spreadsheet games exist; switch the redirect off then).
+- The hub `/spreadsheet-games/` was built 2026-11-25 (it replaced a 302 to `/#classic`): the home page's Files window opened to the Spreadsheet Games folder, with its own keyword title ("Spreadsheet Games: Free Games That Look Like Excel"), meta description mentioning "excel games", and a hidden header linking all 9 spreadsheet games. See `DESIGN.md` › Pages. Check the "excel games" results page and revisit the title once it has search data.
 
 ## SEO baseline (done 2026-11-18)
 

@@ -2,8 +2,10 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://kramps.games/</loc></url>
   <url><loc>https://kramps.games/about</loc></url>
+  <url><loc>https://kramps.games/terminal-games/</loc></url>
   <url><loc>https://kramps.games/diff-guess-key/</loc></url>
   <url><loc>https://kramps.games/ctrl-alt-deal/</loc></url>
+  <url><loc>https://kramps.games/spreadsheet-games/</loc></url>
   <url><loc>https://kramps.games/spreadsheet-games/minesweeper/</loc></url>
   <url><loc>https://kramps.games/spreadsheet-games/sudoku/</loc></url>
   <url><loc>https://kramps.games/spreadsheet-games/2048/</loc></url>
